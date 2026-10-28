@@ -11,7 +11,10 @@ export default function useEditRecord(resource, id, setFormData) {
       if (!active) return;
       setFormData(current => Object.fromEntries(Object.keys(current).map(key => {
         let value = data[key] ?? '';
-        if (key === 'cadCarnet' && value) {
+        if (key === 'activo') {
+          value = data[key] !== undefined && data[key] !== null ? Boolean(data[key]) : true;
+        }
+        if (['cadCarnet', 'fechaEmision', 'fechaCaducidad'].includes(key) && value) {
           value = Array.isArray(value)
             ? value.map((part, index) => index === 0 ? part : String(part).padStart(2, '0')).join('-')
             : value.includes('/') ? value.split('/').reverse().join('-') : value.slice(0, 10);

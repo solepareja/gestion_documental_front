@@ -34,18 +34,28 @@
 .create-actions { grid-column: 1 / -1; display: flex; justify-content: flex-end; align-items: center; flex-wrap: wrap; gap: 12px; margin: 8px -36px 0; padding: 22px 36px; background: #fafafa; border-top: 1px solid #eee; }
 .create-required-note { margin-right: auto; max-width: 230px; font-size: 11px; line-height: 1.7; color: #737780; }
 .create-actions button { min-height: 42px; padding-inline: 20px; }
+@media (max-width: 820px) {
+  .create-header { padding: 24px 24px; gap: 16px; }
+  .create-content { padding: 24px 24px 0; }
+  .create-actions { margin-inline: -24px; padding: 20px 24px; }
+  .create-required-note { flex-basis: 100%; max-width: none; margin-bottom: 6px; }
+}
 @media (max-width: 640px) {
   .create-page { margin-top: 0; }
-  .create-header { padding: 24px 20px; gap: 14px; }
+  .create-header { padding: 20px 16px; gap: 12px; }
   .create-icon { width: 42px; height: 46px; padding: 10px; }
-  .create-header h1 { font-size: 23px; }
-  .create-content { padding: 24px 20px 0; }
-  .create-form { grid-template-columns: minmax(0, 1fr); gap: 20px; }
-  .create-actions { margin-inline: -20px; padding: 20px; }
-  .create-required-note { flex-basis: 100%; max-width: none; }
+  .create-header h1 { font-size: 22px; }
+  .create-content { padding: 20px 16px 0; }
+  .create-form { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .create-actions { margin-inline: -16px; padding: 16px; }
   .create-actions button { flex: 1; }
 }
 
 body {
   font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+}
+
+html {
+  overflow-y: scroll;
+  scrollbar-gutter: stable;
 }

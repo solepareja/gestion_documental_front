@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import api from '../../services/api';
 import Button from '../../components/Button';
+import DocumentosTabla from '../../components/DocumentosTabla';
 
 export default function VehiculoDetalle() {
   const [vehiculo, setVehiculo] = useState(null);
@@ -216,19 +217,8 @@ export default function VehiculoDetalle() {
         {/* Identificación del Vehículo */}
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-2xl bg-brand-50 border border-brand-100/60 flex items-center justify-center text-brand-600 flex-shrink-0 shadow-xs">
-            <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.75}
-                d="M8 17a2 2 0 100-4 2 2 0 000 4zm8 0a2 2 0 100-4 2 2 0 000 4z"
-              />
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.75}
-                d="M3 13h18l-1.5-6H4.5L3 13zm0 0v4a1 1 0 001 1h1m12 0h1a1 1 0 001-1v-4m-16 0h18"
-              />
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M3 13h18l-1.5-6H4.5L3 13zm0 0v5h3m15-5v5h-3M6 18h12M7 13v5m10-5v5" />
             </svg>
           </div>
 
@@ -237,13 +227,14 @@ export default function VehiculoDetalle() {
               <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
                 {nombreCompleto}
               </h1>
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
-                {vehiculo.estado || 'Activo'}
+              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                vehiculo.activo !== false
+                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60'
+                  : 'bg-gray-100 text-gray-600 border border-gray-200'
+              }`}>
+                {vehiculo.activo !== false ? 'Activo' : 'Inactivo'}
               </span>
             </div>
-            <p className="text-sm font-medium text-gray-500 mt-0.5">
-              {vehiculo.matricula || 'Sin matrícula'}
-            </p>
           </div>
         </div>
 
@@ -251,6 +242,7 @@ export default function VehiculoDetalle() {
         <div className="flex items-center gap-2 flex-wrap">
           <Button
             variant="secondary"
+            onClick={() => navigate(`/documentos/nuevo?vehiculoId=${id}&origen=vehiculo`)}
             icon={
               <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -326,11 +318,6 @@ export default function VehiculoDetalle() {
                   : 'Sin registrar'}
               </span>
             </div>
-
-            <div>
-              <span className="block text-xs font-medium text-gray-400 mb-1">Empresa</span>
-              <span className="text-sm font-semibold text-gray-800">{vehiculo.empresa || 'Sofás Valencia'}</span>
-            </div>
           </div>
         </div>
 
@@ -343,22 +330,32 @@ export default function VehiculoDetalle() {
           <div className="grid grid-cols-2 gap-y-5 gap-x-6">
             <div>
               <span className="block text-xs font-medium text-gray-400 mb-1">Tipo de vehículo</span>
-              <span className="text-sm font-semibold text-gray-800">{vehiculo.tipo || 'Furgoneta'}</span>
+              <span className="text-sm font-semibold text-gray-800">{vehiculo.tipo || 'Sin definir'}</span>
             </div>
 
             <div>
               <span className="block text-xs font-medium text-gray-400 mb-1">Combustible</span>
-              <span className="text-sm font-semibold text-gray-800">{vehiculo.combustible || 'Diésel'}</span>
+              <span className="text-sm font-semibold text-gray-800">{vehiculo.combustible || 'Sin definir'}</span>
             </div>
 
             <div>
               <span className="block text-xs font-medium text-gray-400 mb-1">Estado</span>
-              <span className="text-sm font-semibold text-emerald-600">{vehiculo.estado || 'Activo'}</span>
+              <span className={`text-sm font-semibold ${vehiculo.activo !== false ? 'text-emerald-600' : 'text-gray-500'}`}>
+                {vehiculo.activo !== false ? 'Activo' : 'Inactivo'}
+              </span>
             </div>
           </div>
         </div>
 
       </div>
+
+      <section className="mb-6">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <h2 className="text-base font-bold text-gray-900">Documentación del vehículo</h2>
+          <Link to={`/documentos?vehiculoId=${id}`} className="text-sm font-semibold text-brand-700 hover:underline">Ver en Documentos</Link>
+        </div>
+        <DocumentosTabla vehiculoId={id} enVehiculo />
+      </section>
 
       {/* Tarjeta: Conductor asignado */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-xs p-6">
@@ -381,7 +378,7 @@ export default function VehiculoDetalle() {
               </div>
               <div>
                 <p className="text-sm font-bold text-gray-900">
-                  {conductorAsignado.nombre}
+                  {conductorAsignado.nombre} {conductorAsignado.apellidos || ''}
                 </p>
                 <p className="text-xs text-gray-500 mt-0.5">
                   DNI: <span className="font-medium text-gray-700">{conductorAsignado.dni || 'Sin DNI'}</span>
@@ -476,7 +473,7 @@ export default function VehiculoDetalle() {
                   const yaTieneVehiculo = c.vehiculoId && String(c.vehiculoId) !== String(id);
                   return (
                     <option key={c.id} value={c.id}>
-                      {c.nombre} {c.dni ? `(${c.dni})` : ''} {yaTieneVehiculo ? `[Asignado a: ${c.vehiculoMatricula || 'otro vehículo'}]` : ''}
+                      {c.nombre} {c.apellidos ? `${c.apellidos} ` : ''}{c.dni ? `(${c.dni})` : ''} {yaTieneVehiculo ? `[Asignado a: ${c.vehiculoMatricula || 'otro vehículo'}]` : ''}
                     </option>
                   );
                 })}

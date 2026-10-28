@@ -45,19 +45,42 @@ export default function Usuarios() {
             )
         },
         {
-            header: 'Acciones', width: '240px',
-            render: usuario => <div className="flex items-start gap-2">
-                <Button variant="secondary" size="sm" aria-label={`Editar a ${usuario.nombre}`} onClick={() => navigate(`/usuarios/${usuario.id}/editar`)}>Editar</Button>
-                <DeleteButton resource="usuarios" id={usuario.id} name={usuario.nombre} size="sm"
-                    onDeleted={() => setUsuarios(current => current.filter(item => item.id !== usuario.id))} />
-            </div>
+            header: 'Acciones',
+            width: '150px',
+            render: (usuario) => (
+                <div className="flex items-center gap-1.5">
+                    <Button
+                        variant="secondary"
+                        size="sm"
+                        className="p-2"
+                        title={`Editar a ${usuario.nombre}`}
+                        aria-label={`Editar a ${usuario.nombre}`}
+                        onClick={() => navigate(`/usuarios/${usuario.id}/editar`)}
+                        icon={
+                            <svg aria-hidden="true" className="w-4 h-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                            </svg>
+                        }
+                    />
+                    <DeleteButton
+                        resource="usuarios"
+                        id={usuario.id}
+                        name={usuario.nombre}
+                        size="sm"
+                        iconOnly={true}
+                        onDeleted={() => setUsuarios((current) => current.filter((item) => item.id !== usuario.id))}
+                    />
+                </div>
+            )
         }
     ];
 
     return (
         <div>
             <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold text-gray-800">Usuarios</h1>
+                <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">
+                    Usuarios
+                </h1>
                 <Button onClick={() => navigate('/usuarios/nuevo')}>+ Añadir usuario</Button>
             </div>
 

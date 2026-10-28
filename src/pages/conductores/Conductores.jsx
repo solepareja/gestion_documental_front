@@ -3,12 +3,18 @@ import api from '../../services/api';
 import { Link, useNavigate } from 'react-router-dom';
 import Button from '../../components/Button';
 import Table from '../../components/Table';
+import ListFilters from '../../components/ListFilters';
+import { filtrarConductores, opcionesFiltro } from '../../services/filtros';
 
 export default function Conductores() {
     const [conductores, setConductores] = useState([]);
     const [cargando, setCargando] = useState(true);
     const [error, setError] = useState(null);
     const navigate = useNavigate();
+    const [filtros, setFiltros] = useState({ busqueda: '', asignacion: '', tipoCarnet: '' });
+    const cambiarFiltro = (key, value) => setFiltros(current => ({ ...current, [key]: value }));
+    const filtrados = filtrarConductores(conductores, filtros);
+    const hayFiltros = Object.values(filtros).some(value => value.trim());
 
     useEffect(() => {
         const cargarConductores = async () => {
@@ -26,7 +32,8 @@ export default function Conductores() {
     }, []);
 
     const columns = [
-        { header: 'Nombre', render: (persona) => <Link to={"/conductores/" + persona.id} className="text-brand-700 hover:text-brand-800 hover:underline font-semibold">{persona.nombre}</Link> },
+        { header: 'Nombre', render: (persona) => <Link to={"/conductores/" + persona.id} className="text-brand-600 hover:text-brand-800 hover:underline font-bold">{persona.nombre}</Link> },
+        { header: 'Apellidos', render: (persona) => persona.apellidos || '—' },
         { header: 'DNI', accessor: 'dni' },
         { header: 'Correo', accessor: 'correo' },
         {
@@ -34,7 +41,7 @@ export default function Conductores() {
             render: (conductor) => conductor.vehiculoId ? (
                 <Link
                     to={`/vehiculos/${conductor.vehiculoId}`}
-                    className="text-brand-600 hover:text-brand-800 hover:underline font-medium"
+                    className="text-brand-600 hover:text-brand-800 hover:underline font-bold"
                 >
                     {conductor.vehiculoMatricula || 'Ver vehículo'}
                 </Link>
@@ -47,7 +54,9 @@ export default function Conductores() {
     return (
         <div>
             <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold text-gray-800">Conductores</h1>
+                <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">
+                    Conductores
+                </h1>
                 
                 <Button onClick={() => navigate('/conductores/nuevo')}>
                     + Añadir conductor
@@ -56,11 +65,24 @@ export default function Conductores() {
 
             {error && <p className="text-red-500 mb-4">{error}</p>}
 
+            <ListFilters id="conductores" busqueda={filtros.busqueda} onSearch={value => cambiarFiltro('busqueda', value)}
+                placeholder="Nombre, DNI, correo, teléfono o matrícula…" active={hayFiltros} count={filtrados.length} total={conductores.length} loading={cargando} error={error}
+                onClear={() => setFiltros({ busqueda: '', asignacion: '', tipoCarnet: '' })}
+                filters={[
+                    { key: 'asignacion', label: 'Asignación de vehículo', allLabel: 'Todos los conductores', value: filtros.asignacion,
+                        onChange: value => cambiarFiltro('asignacion', value), options: [
+                            { value: 'asignado', label: 'Con vehículo asignado' }, { value: 'sin-asignar', label: 'Sin vehículo asignado' },
+                        ] },
+                    { key: 'tipoCarnet', label: 'Tipo de carnet', allLabel: 'Todos los carnets', value: filtros.tipoCarnet,
+                        onChange: value => cambiarFiltro('tipoCarnet', value),
+                        options: opcionesFiltro(conductores, 'tipoCarnet').map(value => ({ value, label: value })) },
+                ]} />
+
             <Table
                 columns={columns}
-                data={conductores}
+                data={filtrados}
                 isLoading={cargando}
-                emptyMessage="No hay conductores disponibles"
+                emptyMessage={hayFiltros ? 'No hay conductores que coincidan con la búsqueda y los filtros' : 'No hay conductores disponibles'}
             />
         </div>
     );

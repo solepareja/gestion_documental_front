@@ -2,12 +2,20 @@ import { useState } from 'react';
 import api from '../services/api';
 import Button from './Button';
 
-export default function DeleteButton({ resource, id, name, onDeleted, size = 'md' }) {
+export default function DeleteButton({
+  resource,
+  id,
+  name,
+  onDeleted,
+  size = 'md',
+  iconOnly = false,
+  className = '',
+}) {
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState(null);
 
   const handleDelete = async () => {
-    if (deleting || !window.confirm(`¿Quieres eliminar a ${name}? Esta acción no se puede deshacer.`)) return;
+    if (deleting || !window.confirm(`¿Quieres eliminar «${name}»? Esta acción no se puede deshacer.`)) return;
     setDeleting(true);
     setError(null);
     try {
@@ -21,15 +29,35 @@ export default function DeleteButton({ resource, id, name, onDeleted, size = 'md
   };
 
   return (
-    <div>
-      <Button variant="danger" size={size} disabled={deleting} onClick={handleDelete}
-        aria-label={`Eliminar a ${name}`}
-        icon={<svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-        </svg>}>
-        {deleting ? 'Eliminando…' : 'Eliminar'}
+    <div className="relative inline-flex">
+      <Button
+        variant="danger"
+        size={size}
+        disabled={deleting}
+        onClick={handleDelete}
+        title={`Eliminar ${name}`}
+        aria-label={`Eliminar ${name}`}
+        className={iconOnly ? `p-2 ${className}` : className}
+        icon={
+          deleting ? (
+            <svg className="w-4 h-4 animate-spin text-red-500" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+            </svg>
+          ) : (
+            <svg aria-hidden="true" className="w-4 h-4 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          )
+        }
+      >
+        {!iconOnly && (deleting ? 'Eliminando…' : 'Eliminar')}
       </Button>
-      {error && <p role="alert" className="text-xs text-red-600 mt-2 max-w-56">{error}</p>}
+      {error && (
+        <div role="alert" className="absolute top-full left-0 mt-1 z-20 text-xs text-red-600 bg-white border border-red-200 rounded-lg p-2 shadow-md max-w-56">
+          {error}
+        </div>
+      )}
     </div>
   );
 }
