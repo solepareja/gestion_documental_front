@@ -5,7 +5,9 @@ import api from '../../services/api';
 import Button from '../../components/Button';
 import CreateFormLayout from '../../components/CreateFormLayout';
 import CarnetFotoUploader from '../../components/CarnetFotoUploader';
+import TablaPermisosCarnet from '../../components/TablaPermisosCarnet';
 import { validarDniNie, normalizarDni } from '../../utils/dniValidator';
+import { formatearFechaParaBack } from '../../utils/carnetCategorias';
 
 export default function FormConductor() {
   const navigate = useNavigate();
@@ -19,6 +21,7 @@ export default function FormConductor() {
     telefono: '',
     tipoCarnet: '',
     cadCarnet: '',
+    permisos: [],
     fotoCarnetAnverso: '',
     fotoCarnetReverso: '',
     vehiculoId: ''
@@ -76,17 +79,6 @@ export default function FormConductor() {
     }
   };
 
-  // El backend espera la fecha en formato dd/MM/yyyy
-  const formatearFechaParaBack = (fechaISO) => {
-    if (!fechaISO) return '';
-    const partes = fechaISO.split('-');
-    if (partes.length === 3) {
-      const [year, month, day] = partes;
-      return `${day}/${month}/${year}`;
-    }
-    return fechaISO;
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (loading || loadError) return;
@@ -101,20 +93,42 @@ export default function FormConductor() {
     }
     setDniError(null);
 
+    // Validar que tenga al menos un permiso registrado
+    if (!formData.permisos || formData.permisos.length === 0) {
+      setError('Debes añadir al menos un permiso de conducir en la tabla (por ejemplo, carnet B).');
+      return;
+    }
+
     setCargando(true);
     try {
       // Obtenemos el ID numérico del vehículo seleccionado
       const idVehiculo = formData.vehiculoId ? Number(formData.vehiculoId) : null;
 
-      // El vehículo es opcional: enviamos null cuando no hay ninguno seleccionado.
+      // Mapear los permisos detallados
+      const permisosParaBack = (formData.permisos || []).map((p) => ({
+        id: p.id || null,
+        tipo: (p.tipo || '').trim().toUpperCase(),
+        fechaEmision: formatearFechaParaBack(p.fechaEmision),
+        fechaCaducidad: formatearFechaParaBack(p.fechaCaducidad),
+        observaciones: p.observaciones ? p.observaciones.trim() : null
+      }));
+
+      // Calcular resumen para retrocompatibilidad
+      const tiposUnidos = permisosParaBack.map((p) => p.tipo).filter(Boolean).join(', ');
+      const cadProxima = permisosParaBack
+        .map((p) => p.fechaCaducidad)
+        .filter(Boolean)
+        .sort()[0] || null;
+
       const datosAEnviar = {
         nombre: formData.nombre.trim(),
         apellidos: (formData.apellidos || '').trim(),
         dni: normalizarDni(formData.dni),
         correo: formData.correo.trim(),
         telefono: formData.telefono.trim(),
-        tipoCarnet: formData.tipoCarnet.trim(),
-        cadCarnet: formatearFechaParaBack(formData.cadCarnet),
+        tipoCarnet: tiposUnidos || formData.tipoCarnet || 'B',
+        cadCarnet: cadProxima || formatearFechaParaBack(formData.cadCarnet),
+        permisos: permisosParaBack,
         fotoCarnetAnverso: formData.fotoCarnetAnverso || null,
         fotoCarnetReverso: formData.fotoCarnetReverso || null,
         vehiculoId: idVehiculo
@@ -138,7 +152,7 @@ export default function FormConductor() {
       title={id ? "Editar conductor" : "Añadir conductor"}
       category="Conductores"
       backTo={id ? "/conductores/" + id : "/conductores"}
-      description="Crea su ficha de contacto y permiso de conducir. Puedes adjuntar fotos del carnet por ambas caras."
+      description="Crea su ficha de contacto, permisos de conducción y adjunta fotos del carnet físico."
     >
       {(error || loadError) && <p role="alert" className="create-error">{error || loadError}</p>}
 
@@ -176,9 +190,12 @@ export default function FormConductor() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="dni">
-              DNI / NIE *
-            </label>
+            <div className="flex justify-between items-baseline mb-1">
+              <label className="block text-sm font-medium text-gray-700" htmlFor="dni">
+                DNI / NIE *
+              </label>
+              <span className="text-xs text-gray-400">Ej: 12345678Z o X1234567L</span>
+            </div>
             <input
               type="text"
               id="dni"
@@ -186,12 +203,18 @@ export default function FormConductor() {
               value={formData.dni}
               onChange={handleChange}
               onBlur={handleDniBlur}
-              placeholder="Ej: 12345678Z o X1234567L"
+              placeholder="12345678Z"
+              maxLength={9}
               required
-              className={dniError ? 'border-red-400 focus:border-red-500' : ''}
+              className={dniError ? 'border-red-500 focus:ring-red-500' : ''}
             />
             {dniError && (
-              <p className="mt-1.5 text-xs text-red-600 font-semibold">{dniError}</p>
+              <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
+                <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                {dniError}
+              </p>
             )}
           </div>
 
@@ -205,7 +228,7 @@ export default function FormConductor() {
               name="correo"
               value={formData.correo}
               onChange={handleChange}
-              placeholder="ejemplo@sofavalencia.com"
+              placeholder="Ej: conductor@sofavalencia.com"
               required
             />
           </div>
@@ -215,7 +238,7 @@ export default function FormConductor() {
               Teléfono *
             </label>
             <input
-              type="text"
+              type="tel"
               id="telefono"
               name="telefono"
               value={formData.telefono}
@@ -225,36 +248,7 @@ export default function FormConductor() {
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="tipoCarnet">
-              Tipo de carnet *
-            </label>
-            <input
-              type="text"
-              id="tipoCarnet"
-              name="tipoCarnet"
-              value={formData.tipoCarnet}
-              onChange={handleChange}
-              placeholder="Ej: B, C1, C+E…"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="cadCarnet">
-              Fecha de caducidad del carnet *
-            </label>
-            <input
-              type="date"
-              id="cadCarnet"
-              name="cadCarnet"
-              value={formData.cadCarnet}
-              onChange={handleChange}
-              required
-            />
-          </div>
-
-          {/* SELECT DE VEHÍCULOS: ahora envía el ID numérico del vehículo */}
+          {/* SELECT DE VEHÍCULOS: envía el ID numérico del vehículo */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="vehiculoId">
               Vehículo asignado (opcional)
@@ -272,6 +266,17 @@ export default function FormConductor() {
                 </option>
               ))}
             </select>
+          </div>
+
+          {/* TABLA DE PERMISOS DE CONDUCIR (Categorías DGT - Reverso carnet físico) */}
+          <div className="col-span-full pt-3">
+            <TablaPermisosCarnet
+              permisos={formData.permisos || []}
+              onChange={(nuevosPermisos) =>
+                setFormData((prev) => ({ ...prev, permisos: nuevosPermisos }))
+              }
+              disabled={cargando}
+            />
           </div>
 
           {/* Fotos del Carnet de Conducir (Ambas Caras) */}

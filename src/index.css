@@ -27,9 +27,14 @@
 .create-content { padding: 30px 36px 0; }
 .create-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
 .create-form label { display: block; margin-bottom: 8px; color: #444953; font-size: 12px; font-weight: 700; }
-.create-form input, .create-form select { width: 100%; min-height: 46px; margin: 0; padding: 11px 14px; border: 1px solid #dde0e5; border-radius: 10px; background: #fcfcfd; font-size: 14px; color: #292d34; box-shadow: 0 1px 2px #00000003; transition: border-color .15s, box-shadow .15s, background .15s; }
-.create-form input:hover, .create-form select:hover { border-color: #b9bdc5; }
-.create-form input:focus, .create-form select:focus { outline: none; border-color: var(--color-brand-600); background: white; box-shadow: 0 0 0 3px var(--color-brand-100); }
+.create-form input:not([type="checkbox"]):not([type="radio"]), .create-form select { width: 100%; min-height: 46px; margin: 0; padding: 11px 14px; border: 1px solid #dde0e5; border-radius: 10px; background: #fcfcfd; font-size: 14px; color: #292d34; box-shadow: 0 1px 2px #00000003; transition: border-color .15s, box-shadow .15s, background .15s; }
+.create-form input[type="checkbox"], .create-form input[type="radio"] { width: 18px !important; height: 18px !important; min-height: 18px !important; margin: 0; padding: 0; cursor: pointer; accent-color: var(--color-brand-600); }
+.create-form .tabla-carnet label { display: inline-flex !important; margin-bottom: 0 !important; align-items: center !important; }
+.create-form .tabla-carnet input:not([type="checkbox"]):not([type="radio"]) { min-height: 32px !important; height: 32px !important; padding: 4px 8px !important; font-size: 12px !important; line-height: 1.2 !important; border-radius: 8px !important; background: #ffffff !important; }
+.create-form .tabla-carnet input:not([type="checkbox"]):not([type="radio"]):hover { border-color: #9ca3af !important; }
+.create-form .tabla-carnet input:not([type="checkbox"]):not([type="radio"]):focus { border-color: var(--color-brand-600) !important; box-shadow: 0 0 0 2px var(--color-brand-100) !important; }
+.create-form input:not([type="checkbox"]):not([type="radio"]):hover, .create-form select:hover { border-color: #b9bdc5; }
+.create-form input:not([type="checkbox"]):not([type="radio"]):focus, .create-form select:focus { outline: none; border-color: var(--color-brand-600); background: white; box-shadow: 0 0 0 3px var(--color-brand-100); }
 .create-error { padding: 14px 16px; border: 1px solid #fecaca; border-radius: 12px; background: #fef2f2; color: #b91c1c; font-size: 13px; margin-bottom: 24px; }
 .create-actions { grid-column: 1 / -1; display: flex; justify-content: flex-end; align-items: center; flex-wrap: wrap; gap: 12px; margin: 8px -36px 0; padding: 22px 36px; background: #fafafa; border-top: 1px solid #eee; }
 .create-required-note { margin-right: auto; max-width: 230px; font-size: 11px; line-height: 1.7; color: #737780; }

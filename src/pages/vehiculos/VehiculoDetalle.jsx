@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import api from '../../services/api';
 import Button from '../../components/Button';
-import DocumentosTabla from '../../components/DocumentosTabla';
+import DocumentacionVehiculo from '../../components/DocumentacionVehiculo';
 
 export default function VehiculoDetalle() {
   const [vehiculo, setVehiculo] = useState(null);
@@ -354,7 +354,7 @@ export default function VehiculoDetalle() {
           <h2 className="text-base font-bold text-gray-900">Documentación del vehículo</h2>
           <Link to={`/documentos?vehiculoId=${id}`} className="text-sm font-semibold text-brand-700 hover:underline">Ver en Documentos</Link>
         </div>
-        <DocumentosTabla vehiculoId={id} enVehiculo />
+        <DocumentacionVehiculo vehiculoId={id} />
       </section>
 
       {/* Tarjeta: Conductor asignado */}

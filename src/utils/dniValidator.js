@@ -52,7 +52,7 @@ export function validarDniNie(valor) {
   if (letraActual !== letraEsperada) {
     return {
       valido: false,
-      mensaje: `La letra '${letraActual}' no coincide con el número. Para este DNI/NIE la letra correcta es '${letraEsperada}'.`,
+      mensaje: `La letra '${letraActual}' no coincide con el número.'.`,
       letraEsperada,
     };
   }

@@ -4,7 +4,7 @@ import api from '../../services/api';
 import { tiposDocumento, procesarDocumentosConHistorial } from '../../services/documentos';
 import { useAuth } from '../../context/useAuth';
 import CalendarioVencimientos from '../../components/CalendarioVencimientos';
-import DocumentoEstado from '../../components/DocumentoEstado';
+
 
 function normalizarFechaAClave(fecha) {
   if (!fecha) return null;
@@ -82,21 +82,26 @@ export default function Dashboard() {
       const esSeguro = doc.tipo === 'SEGURO';
 
       let categoria = 'DOCUMENTO';
-      let estiloClase = 'bg-purple-50 text-purple-800 border-purple-200';
+      const estiloClase = 'bg-red-100 text-red-800 border-red-300';
       if (esITV) {
         categoria = 'ITV';
-        estiloClase = 'bg-amber-50 text-amber-800 border-amber-200';
+
       } else if (esSeguro) {
         categoria = 'SEGURO';
-        estiloClase = 'bg-blue-50 text-blue-800 border-blue-200';
+
       }
+
+      const subtituloPartes = [];
+      if (doc.companiaAseguradora) subtituloPartes.push(doc.companiaAseguradora);
+      if (doc.numeroReferencia) subtituloPartes.push(esSeguro ? `Póliza: ${doc.numeroReferencia}` : `Ref: ${doc.numeroReferencia}`);
+      const subtitulo = subtituloPartes.length > 0 ? subtituloPartes.join(' · ') : `Vehículo ${doc.vehiculoMatricula || ''}`;
 
       lista.push({
         id: `doc-${doc.id}`,
         tipo: 'documento',
         categoria,
         titulo: `${esITV ? 'ITV' : esSeguro ? 'Seguro' : tiposDocumento[doc.tipo] || doc.tipo} · ${doc.vehiculoMatricula || 'Vehículo'}`,
-        subtitulo: doc.numeroReferencia ? `Ref: ${doc.numeroReferencia}` : `Vehículo ${doc.vehiculoMatricula || ''}`,
+        subtitulo,
         fecha: clave,
         rawFecha: doc.fechaCaducidad,
         enlace: doc.vehiculoId ? `/vehiculos/${doc.vehiculoId}` : `/documentos`,
@@ -122,7 +127,7 @@ export default function Dashboard() {
         fecha: clave,
         rawFecha: cond.cadCarnet,
         enlace: `/conductores/${cond.id}`,
-        estiloClase: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+        estiloClase: 'bg-red-100 text-red-800 border-red-300',
         estado: 'VIGENTE',
       });
     }
@@ -135,7 +140,7 @@ export default function Dashboard() {
         const clave = normalizarFechaAClave(linea.fechaRenovacion);
         if (!clave) continue;
 
-        const esEPI = linea.materialTipo === 'EPI';
+
         lista.push({
           id: `linea-${linea.id}`,
           tipo: 'material',
@@ -145,9 +150,7 @@ export default function Dashboard() {
           fecha: clave,
           rawFecha: linea.fechaRenovacion,
           enlace: `/entregas/${ent.id}`,
-          estiloClase: esEPI
-            ? 'bg-amber-50 text-amber-900 border-amber-300'
-            : 'bg-blue-50 text-blue-900 border-blue-300',
+          estiloClase: 'bg-red-100 text-red-800 border-red-300',
           estado: 'VIGENTE',
         });
       }
@@ -318,7 +321,7 @@ export default function Dashboard() {
                   <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${ev.estiloClase}`}>
                     {ev.categoria}
                   </span>
-                  <DocumentoEstado estado={ev.estado} fechaCaducidad={ev.rawFecha} />
+                  <span className="text-[11px] font-bold text-red-700">{ev.tipo === 'material' ? 'Renovación' : 'Caducidad'}</span>
                 </div>
 
                 <div>

@@ -3,6 +3,7 @@ export const tiposDocumento = {
   SEGURO: 'Seguro',
   PERMISO_CIRCULACION: 'Permiso de circulación',
   FICHA_TECNICA: 'Ficha técnica',
+  TARJETA_TRANSPORTE: 'Tarjeta de transporte',
   OTRO: 'Otro',
 };
 
@@ -107,6 +108,15 @@ export function procesarDocumentosConHistorial(documentos) {
       esHistorico,
       tieneHistorial: tieneVarios,
     };
+  });
+}
+
+export function resumirDocumentosPorTipo(documentos) {
+  const procesados = procesarDocumentosConHistorial(documentos);
+  return Object.entries(tiposDocumento).map(([tipo, nombre]) => {
+    const historial = procesados.filter(documento => documento.tipo === tipo).sort((a, b) =>
+      Number(b.esUltimo) - Number(a.esUltimo) || normalizarFechaValor(b.fechaEmision) - normalizarFechaValor(a.fechaEmision) || b.id - a.id);
+    return { tipo, nombre, ultimo: historial[0] || null, total: historial.length };
   });
 }
 

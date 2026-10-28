@@ -48,7 +48,7 @@ export default function Navbar() {
           
           {/* Logo y Enlaces de navegación */}
           <div className="flex items-center gap-2 sm:gap-4 lg:gap-8 h-full min-w-0">
-            <Link to="/" className="text-lg sm:text-xl font-black text-brand-600 tracking-tight shrink-0">
+            <Link to="/" className="text-lg sm:text-xl font-black text-brand-700 tracking-tight shrink-0">
               SofásValencia
             </Link>
 
@@ -153,8 +153,7 @@ export default function Navbar() {
                         isRouteActive('/vehiculos') ? 'bg-brand-100 text-brand-700' : 'bg-gray-100 text-gray-500 group-hover:bg-brand-50 group-hover:text-brand-600'
                       }`}>
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 17a2 2 0 100-4 2 2 0 000 4zm8 0a2 2 0 100-4 2 2 0 000 4z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 13h18l-1.5-6H4.5L3 13zm0 0v4a1 1 0 001 1h1m12 0h1a1 1 0 001-1v-4m-16 0h18" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M3 13h18l-1.5-6H4.5L3 13zm0 0v5h3m15-5v5h-3M6 18h12M7 13v5m10-5v5" />
                         </svg>
                       </div>
                       <div className="flex flex-col">

@@ -17,6 +17,7 @@ import PersonaDetalle from './pages/PersonaDetalle';
 import FormUsuario from './pages/usuarios/FormUsuario';
 import Documentos from './pages/documentos/Documentos';
 import FormDocumento from './pages/documentos/FormDocumento';
+import HistorialDocumentoVehiculo from './pages/documentos/HistorialDocumentoVehiculo';
 import Materiales from './pages/materiales/Materiales';
 import FormMaterial from './pages/materiales/FormMaterial';
 import Entregas from './pages/entregas/Entregas';
@@ -44,6 +45,7 @@ export default function App() {
               <Route path="/documentos/:id/editar" element={<FormDocumento key="editar-documento" />} />
               <Route path="/vehiculos" element={<Vehiculos />} />
               <Route path="/vehiculos/:id" element={<VehiculoDetalle />} />
+              <Route path="/vehiculos/:vehiculoId/documentos/:tipo" element={<HistorialDocumentoVehiculo />} />
               <Route path="/conductores" element={<Conductores />} />
               <Route path="/trabajadores" element={<Trabajadores />} />
               <Route path="/vehiculos/nuevo" element={<FormVehiculo />} />

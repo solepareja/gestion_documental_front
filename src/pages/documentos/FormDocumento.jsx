@@ -13,10 +13,18 @@ export default function FormDocumento() {
   const navigate = useNavigate();
   const vehiculoOrigen = params.get('vehiculoId') || '';
   const desdeVehiculo = params.get('origen') === 'vehiculo' && /^[1-9]\d*$/.test(vehiculoOrigen);
-  const volver = desdeVehiculo ? `/vehiculos/${vehiculoOrigen}` : `/documentos${vehiculoOrigen ? `?vehiculoId=${encodeURIComponent(vehiculoOrigen)}` : ''}`;
+  const desdeHistorial = params.get('origen') === 'historial' && /^[1-9]\d*$/.test(vehiculoOrigen) && Object.hasOwn(tiposDocumento, params.get('tipo'));
+  const volver = desdeHistorial ? `/vehiculos/${vehiculoOrigen}/documentos/${encodeURIComponent(params.get('tipo'))}` : desdeVehiculo ? `/vehiculos/${vehiculoOrigen}` : `/documentos${vehiculoOrigen ? `?vehiculoId=${encodeURIComponent(vehiculoOrigen)}` : ''}`;
   const [formData, setFormData] = useState({
-    tipo: 'ITV', fechaEmision: '', fechaCaducidad: '', vehiculoId: vehiculoOrigen, numeroReferencia: '', estado: 'VIGENTE',
-    archivo: '', archivoNombre: '',
+    tipo: Object.hasOwn(tiposDocumento, params.get('tipo')) ? params.get('tipo') : 'ITV',
+    fechaEmision: '',
+    fechaCaducidad: '',
+    vehiculoId: vehiculoOrigen,
+    numeroReferencia: '',
+    companiaAseguradora: '',
+    estado: 'VIGENTE',
+    archivo: '',
+    archivoNombre: '',
   });
   const [vehiculos, setVehiculos] = useState(null);
   const [vehiculosError, setVehiculosError] = useState(null);
@@ -49,11 +57,19 @@ export default function FormDocumento() {
     });
   };
 
+  const esSeguro = formData.tipo === 'SEGURO';
+  const esItv = formData.tipo === 'ITV';
+  const esCaducidadObligatoria = esItv || esSeguro;
+
   const handleSubmit = async event => {
     event.preventDefault();
     if (saving || loading || loadError || !vehiculos) return;
     if (!vehiculos.some(vehiculo => String(vehiculo.id) === String(formData.vehiculoId))) {
       setError('Selecciona un vehículo disponible.');
+      return;
+    }
+    if (esCaducidadObligatoria && !formData.fechaCaducidad) {
+      setError(`La fecha de caducidad es obligatoria para ${esItv ? 'la ITV' : 'el Seguro'}.`);
       return;
     }
     if (formData.fechaCaducidad && formData.fechaCaducidad < formData.fechaEmision) {
@@ -74,6 +90,7 @@ export default function FormDocumento() {
         fechaEmision: fechaDocumentoParaBack(formData.fechaEmision),
         fechaCaducidad: fechaDocumentoParaBack(formData.fechaCaducidad),
         numeroReferencia: formData.numeroReferencia.trim() || null,
+        companiaAseguradora: esSeguro && formData.companiaAseguradora ? formData.companiaAseguradora.trim() : null,
         archivo: formData.archivo || null,
         archivoNombre: formData.archivoNombre ? formData.archivoNombre.trim() : null,
       };
@@ -90,7 +107,7 @@ export default function FormDocumento() {
   const vehiculoNoDisponible = vehiculos && formData.vehiculoId && !vehiculos.some(vehiculo => String(vehiculo.id) === String(formData.vehiculoId));
 
   return <CreateFormLayout title={id ? 'Editar documento' : 'Añadir documento'} category="Documentos" editing={Boolean(id)}
-    backTo={volver} backLabel={desdeVehiculo ? 'la ficha del vehículo' : 'documentos'}
+    backTo={volver} backLabel={desdeHistorial ? 'el historial' : desdeVehiculo ? 'la ficha del vehículo' : 'documentos'}
     description="Registra la documentación del vehículo y sus fechas de emisión y caducidad.">
     {(error || loadError) && <p role="alert" className="create-error">{error || loadError}</p>}
     {vehiculosError && <div role="alert" className="create-error">
@@ -120,14 +137,46 @@ export default function FormDocumento() {
           <input id="fechaEmision" name="fechaEmision" type="date" value={formData.fechaEmision} onChange={handleChange} required />
         </div>
         <div>
-          <label htmlFor="fechaCaducidad">Fecha de caducidad (opcional)</label>
-          <input id="fechaCaducidad" name="fechaCaducidad" type="date" min={formData.fechaEmision || undefined}
-            value={formData.fechaCaducidad} onChange={handleChange} aria-describedby="caducidad-help" />
-          <p id="caducidad-help" className="mt-2 text-xs text-gray-500">Déjala vacía si el documento no caduca.</p>
+          <label htmlFor="fechaCaducidad">
+            {esCaducidadObligatoria ? 'Fecha de caducidad' : 'Fecha de caducidad'}
+            {esCaducidadObligatoria && <span className="text-red-500 font-bold ml-1">*</span>}
+          </label>
+          <input
+            id="fechaCaducidad"
+            name="fechaCaducidad"
+            type="date"
+            min={formData.fechaEmision || undefined}
+            value={formData.fechaCaducidad}
+            onChange={handleChange}
+            required={esCaducidadObligatoria}
+            aria-describedby="caducidad-help"
+          />
         </div>
+        {esSeguro && (
+          <div>
+            <label htmlFor="companiaAseguradora">Compañía aseguradora</label>
+            <input
+              id="companiaAseguradora"
+              name="companiaAseguradora"
+              maxLength={255}
+              placeholder="Ej. Mapfre, Allianz, AXA, Mutua Madrileña..."
+              value={formData.companiaAseguradora}
+              onChange={handleChange}
+            />
+          </div>
+        )}
         <div>
-          <label htmlFor="numeroReferencia">Número de referencia (opcional)</label>
-          <input id="numeroReferencia" name="numeroReferencia" maxLength={255} value={formData.numeroReferencia} onChange={handleChange} />
+          <label htmlFor="numeroReferencia">
+            {esSeguro ? 'Número de póliza o referencia (opcional)' : 'Número de referencia (opcional)'}
+          </label>
+          <input
+            id="numeroReferencia"
+            name="numeroReferencia"
+            maxLength={255}
+            placeholder={esSeguro ? 'Ej. POL-12345678' : esItv ? 'Ej. N° informe ITV' : ''}
+            value={formData.numeroReferencia}
+            onChange={handleChange}
+          />
         </div>
         <div>
           <label htmlFor="estado">Estado</label>
@@ -155,7 +204,11 @@ export default function FormDocumento() {
           />
         </div>
         <div className="create-actions">
-          <span className="create-required-note">La referencia y la caducidad son opcionales.</span>
+          <span className="create-required-note">
+            {esCaducidadObligatoria
+              ? `Para ${esItv ? 'la ITV' : 'el Seguro'}, la fecha de caducidad es obligatoria.`
+              : 'La referencia y la caducidad son opcionales.'}
+          </span>
           <Button variant="secondary" onClick={() => navigate(volver)}>Cancelar</Button>
           <Button type="submit" disabled={saving}>{saving ? 'Guardando…' : id ? 'Guardar cambios' : 'Guardar documento'}</Button>
         </div>

@@ -14,6 +14,21 @@ export default function useEditRecord(resource, id, setFormData) {
         if (key === 'activo') {
           value = data[key] !== undefined && data[key] !== null ? Boolean(data[key]) : true;
         }
+        if (key === 'permisos') {
+          if (Array.isArray(data[key]) && data[key].length > 0) {
+            value = data[key];
+          } else if (data['tipoCarnet']) {
+            const tipos = String(data['tipoCarnet']).split(',').map(s => s.trim()).filter(Boolean);
+            value = tipos.map(tipo => ({
+              tipo,
+              fechaEmision: '',
+              fechaCaducidad: data['cadCarnet'] || '',
+              observaciones: ''
+            }));
+          } else {
+            value = [];
+          }
+        }
         if (['cadCarnet', 'fechaEmision', 'fechaCaducidad'].includes(key) && value) {
           value = Array.isArray(value)
             ? value.map((part, index) => index === 0 ? part : String(part).padStart(2, '0')).join('-')

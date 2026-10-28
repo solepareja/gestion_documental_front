@@ -78,11 +78,16 @@ export default function NotificationBell() {
             else if (dias === 1) estadoTexto = 'Vence mañana (1 día)';
             else estadoTexto = `Vence en ${dias} días`;
 
+            const descPartes = [];
+            if (doc.companiaAseguradora) descPartes.push(doc.companiaAseguradora);
+            if (doc.numeroReferencia) descPartes.push(doc.tipo === 'SEGURO' ? `Póliza: ${doc.numeroReferencia}` : `Ref: ${doc.numeroReferencia}`);
+            const descripcion = descPartes.length > 0 ? descPartes.join(' · ') : `Vehículo ${matricula}`;
+
             items.push({
               id: `doc-${doc.id}`,
               categoria: doc.tipo === 'ITV' ? 'ITV' : doc.tipo === 'SEGURO' ? 'Seguro' : 'Documento',
               titulo: `${nombreTipo} · ${matricula}`,
-              descripcion: doc.numeroReferencia ? `Ref: ${doc.numeroReferencia}` : `Vehículo ${matricula}`,
+              descripcion,
               fechaLimite: fechaDocumentoVisible(doc.fechaCaducidad),
               dias,
               esCaducado,

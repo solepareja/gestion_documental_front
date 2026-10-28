@@ -4,6 +4,8 @@ import api from '../services/api';
 import { obtenerEntregas } from '../services/materiales';
 import Button from '../components/Button';
 import DeleteButton from '../components/DeleteButton';
+import IconoVehiculoCarnet from '../components/IconosCarnetDGT';
+import { MAPA_CATEGORIAS, calcularEstadoPermiso } from '../utils/carnetCategorias';
 
 function fechaVisible(value) {
   if (!value) return 'Sin indicar';
@@ -140,10 +142,12 @@ export default function PersonaDetalle({ tipo }) {
             <InfoCard title={conductor ? 'Datos del conductor' : 'Datos del trabajador'} fields={personales} />
             {conductor ? (
               <InfoCard
-                title="Permiso de conducir"
+                title="Resumen del carnet"
                 fields={[
-                  ['Tipo de carnet', persona.tipoCarnet],
-                  ['Caducidad', fechaVisible(persona.cadCarnet)],
+                  ['Categorías en vigor', persona.tipoCarnet || 'Sin indicar'],
+                  ['Próxima caducidad', fechaVisible(persona.cadCarnet)],
+                  ['Vehículo asignado', persona.vehiculoMatricula ? `${persona.vehiculoMatricula}` : 'Sin vehículo asignado'],
+                  ['Total permisos registrados', String(persona.permisos?.length || 0)],
                 ]}
               />
             ) : (
@@ -156,6 +160,102 @@ export default function PersonaDetalle({ tipo }) {
               />
             )}
           </div>
+
+          {/* Tabla detallada de permisos de conducir según reverso del carnet físico */}
+          {conductor && (
+            <section className="bg-white rounded-2xl border border-gray-100 shadow-xs p-6 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-4">
+                <div>
+                  <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
+                    <svg className="w-5 h-5 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Permisos de conducción (Categorías DGT)
+                  </h2>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Categorías autorizadas según el reverso del carnet de conducir con sus fechas individuales de expedición y expiración.
+                  </p>
+                </div>
+
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => navigate(`/${tipo}/${id}/editar`)}
+                >
+                  Modificar permisos
+                </Button>
+              </div>
+
+              {persona.permisos && persona.permisos.length > 0 ? (
+                <div className="overflow-x-auto rounded-xl border border-gray-200/80">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="bg-gray-50 text-gray-700 font-bold uppercase text-[11px] border-b border-gray-200">
+                        <th className="py-2.5 px-3">9. Categoría</th>
+                        <th className="py-2.5 px-3">10. Expedición</th>
+                        <th className="py-2.5 px-3">11. Expiración / Caducidad</th>
+                        {/* <th className="py-2.5 px-3">12. Códigos</th> */}
+                        <th className="py-2.5 px-3 text-center">Estado</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {persona.permisos.map((p, idx) => {
+                        const cat = MAPA_CATEGORIAS[p.tipo?.toUpperCase()] || {
+                          codigo: p.tipo,
+                          nombre: p.tipo,
+                          icono: '🚗',
+                          tipoVehiculo: 'Permiso habilitado'
+                        };
+                        const est = calcularEstadoPermiso(p.fechaCaducidad);
+                        return (
+                          <tr key={idx} className="hover:bg-gray-50/60 transition-colors">
+                            <td className="py-2.5 px-3">
+                              <div className="flex items-center gap-2">
+                                <span className="w-8 text-center font-black bg-gray-900 text-white py-0.5 rounded text-xs shadow-2xs shrink-0">
+                                  {p.tipo}
+                                </span>
+                                <div className="w-10 h-5 flex items-center justify-center shrink-0">
+                                  <IconoVehiculoCarnet codigo={p.tipo} className="h-4.5 w-auto max-w-[40px] text-gray-800" />
+                                </div>
+                                <span className="text-xs font-semibold text-gray-700">
+                                  {cat.nombre}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="py-2.5 px-3 font-semibold text-gray-700">
+                              {fechaVisible(p.fechaEmision)}
+                            </td>
+                            <td className="py-2.5 px-3 font-semibold text-gray-900">
+                              {fechaVisible(p.fechaCaducidad)}
+                            </td>
+                            {/* <td className="py-2.5 px-3 text-gray-500 font-mono">
+                              {p.observaciones || '—'}
+                            </td> */}
+                            <td className="py-2.5 px-3 text-center">
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${est.clase}`}>
+                                {est.label}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="p-5 rounded-xl bg-gray-50 text-center text-xs text-gray-500">
+                  Este conductor no tiene permisos detallados registrados.{' '}
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/${tipo}/${id}/editar`)}
+                    className="text-brand-600 font-bold hover:underline cursor-pointer"
+                  >
+                    Editar conductor para añadirlos
+                  </button>
+                </div>
+              )}
+            </section>
+          )}
 
           {/* Fotografías del Carnet (Anverso y Reverso) para Conductores */}
           {conductor && (

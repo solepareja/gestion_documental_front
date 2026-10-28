@@ -1,14 +1,14 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../services/api';
-import { tiposDocumento, fechaDocumentoVisible, procesarDocumentosConHistorial } from '../services/documentos';
+import { tiposDocumento, fechaDocumentoVisible, procesarDocumentosConHistorial, normalizarFechaValor } from '../services/documentos';
 import Button from './Button';
 import Table from './Table';
 import DocumentoEstado from './DocumentoEstado';
 import DeleteButton from './DeleteButton';
 import ModalVisorDocumento from './ModalVisorDocumento';
 
-export default function DocumentosTabla({ vehiculoId, enVehiculo = false }) {
+export default function DocumentosTabla({ vehiculoId, enVehiculo = false, tipo, onChanged, desdeHistorial = false }) {
   const navigate = useNavigate();
   const [state, setState] = useState(null);
   const [retry, setRetry] = useState(0);
@@ -26,47 +26,63 @@ export default function DocumentosTabla({ vehiculoId, enVehiculo = false }) {
   }, [filtro, retry]);
 
   const current = state?.filtro === filtro && state?.retry === retry ? state : null;
-  const listaProcesada = useMemo(() => procesarDocumentosConHistorial(current?.data || []), [current?.data]);
-  const contexto = filtro ? `?vehiculoId=${encodeURIComponent(filtro)}${enVehiculo ? '&origen=vehiculo' : ''}` : '';
+  const listaProcesada = useMemo(() => {
+    const lista = procesarDocumentosConHistorial(current?.data || []);
+    return tipo ? lista.filter(documento => documento.tipo === tipo).sort((a, b) =>
+      Number(b.esUltimo) - Number(a.esUltimo) || normalizarFechaValor(b.fechaEmision) - normalizarFechaValor(a.fechaEmision) || b.id - a.id) : lista;
+  }, [current?.data, tipo]);
+  const contexto = filtro ? `?vehiculoId=${encodeURIComponent(filtro)}${desdeHistorial ? `&origen=historial&tipo=${encodeURIComponent(tipo)}` : enVehiculo ? '&origen=vehiculo' : ''}` : '';
   const columns = [
     {
       header: 'Tipo',
       render: documento => {
         const esPdf = documento.archivo?.startsWith('data:application/pdf') || documento.archivoNombre?.toLowerCase().endsWith('.pdf');
+        const detallesExtra = [
+          documento.companiaAseguradora,
+          documento.numeroReferencia ? (documento.tipo === 'SEGURO' ? `Póliza: ${documento.numeroReferencia}` : `Ref: ${documento.numeroReferencia}`) : null,
+        ].filter(Boolean).join(' · ');
+
         return (
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-medium text-gray-800">{tiposDocumento[documento.tipo] || documento.tipo}</span>
-            {documento.archivo && (
-              <button
-                type="button"
-                onClick={() => setModalDoc({
-                  abierto: true,
-                  archivo: documento.archivo,
-                  archivoNombre: documento.archivoNombre,
-                  titulo: `${tiposDocumento[documento.tipo] || documento.tipo} — ${documento.vehiculoMatricula || ''}`
-                })}
-                className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md border transition-colors cursor-pointer ${
-                  esPdf
-                    ? 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'
-                    : 'bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100'
-                }`}
-                title={`Ver ${esPdf ? 'PDF' : 'imagen'} adjunto`}
-              >
-                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                </svg>
-                {esPdf ? 'PDF' : 'IMG'}
-              </button>
+          <div className="flex flex-col gap-0.5">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-medium text-gray-800">{tiposDocumento[documento.tipo] || documento.tipo}</span>
+              {documento.archivo && (
+                <button
+                  type="button"
+                  onClick={() => setModalDoc({
+                    abierto: true,
+                    archivo: documento.archivo,
+                    archivoNombre: documento.archivoNombre,
+                    titulo: `${tiposDocumento[documento.tipo] || documento.tipo} — ${documento.vehiculoMatricula || ''}`
+                  })}
+                  className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md border transition-colors cursor-pointer ${
+                    esPdf
+                      ? 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'
+                      : 'bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100'
+                  }`}
+                  title={`Ver ${esPdf ? 'PDF' : 'imagen'} adjunto`}
+                >
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                  </svg>
+                  {esPdf ? 'PDF' : 'IMG'}
+                </button>
+              )}
+              {documento.esHistorico ? (
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 border border-gray-200" title="Existe una versión renovada más reciente">
+                  Histórico
+                </span>
+              ) : (documento.tieneHistorial ? (
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-brand-50 text-brand-700 border border-brand-200" title="Última versión registrada">
+                  Última versión
+                </span>
+              ) : null)}
+            </div>
+            {detallesExtra && (
+              <span className="text-xs text-gray-500 font-normal">
+                {detallesExtra}
+              </span>
             )}
-            {documento.esHistorico ? (
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 border border-gray-200" title="Existe una versión renovada más reciente">
-                Histórico
-              </span>
-            ) : (documento.tieneHistorial ? (
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200" title="Documento actual en vigor">
-                En vigor
-              </span>
-            ) : null)}
           </div>
         );
       },
@@ -131,7 +147,10 @@ export default function DocumentosTabla({ vehiculoId, enVehiculo = false }) {
             name={`documento ${tiposDocumento[documento.tipo]} de ${documento.vehiculoMatricula}`}
             size="sm"
             iconOnly={true}
-            onDeleted={() => setState((previous) => (previous ? { ...previous, data: previous.data?.filter((item) => item.id !== documento.id) } : previous))}
+            onDeleted={() => {
+              setState((previous) => (previous ? { ...previous, data: previous.data?.filter((item) => item.id !== documento.id) } : previous));
+              onChanged?.();
+            }}
           />
         </div>
       ),
@@ -150,7 +169,7 @@ export default function DocumentosTabla({ vehiculoId, enVehiculo = false }) {
         data={listaProcesada}
         isLoading={!current}
         minWidth={enVehiculo ? 1000 : 1160}
-        emptyMessage={filtro ? 'Este vehículo todavía no tiene documentos registrados' : 'No hay documentos registrados'}
+        emptyMessage={tipo ? `No hay documentos de ${tiposDocumento[tipo] || tipo} registrados para este vehículo` : filtro ? 'Este vehículo todavía no tiene documentos registrados' : 'No hay documentos registrados'}
       />
       <ModalVisorDocumento
         abierto={modalDoc.abierto}

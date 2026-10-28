@@ -236,7 +236,7 @@ export default function CalendarioVencimientos({ eventos = [], cargando = false 
                       </span>
 
                       {tieneEventos && (
-                        <span className="text-[10px] font-bold text-gray-400">
+                        <span className="text-[10px] font-bold text-red-700">
                           {celda.eventos.length} {celda.eventos.length === 1 ? 'aviso' : 'avisos'}
                         </span>
                       )}
@@ -256,7 +256,7 @@ export default function CalendarioVencimientos({ eventos = [], cargando = false 
                       ))}
 
                       {celda.eventos.length > 3 && (
-                        <div className="text-[10px] font-bold text-gray-500 pl-1">
+                        <div className="text-[10px] font-bold text-red-700 pl-1">
                           +{celda.eventos.length - 3} más…
                         </div>
                       )}
@@ -271,24 +271,10 @@ export default function CalendarioVencimientos({ eventos = [], cargando = false 
 
       {/* Pie de leyenda */}
       <div className="p-4 border-t border-gray-100 bg-gray-50/50 flex flex-wrap items-center justify-between gap-3 text-xs text-gray-600">
-        <div className="flex items-center gap-4 flex-wrap">
-          <span className="inline-flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-amber-500" /> ITV Vehículo
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-blue-500" /> Seguro
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Carnet de Conducir
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-orange-600" /> EPIS / Vestuario
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-purple-500" /> Otros documentos
-          </span>
-        </div>
-
+        <span className="inline-flex items-center gap-1.5 font-semibold text-red-800">
+          <span className="w-2.5 h-2.5 rounded-full bg-red-600" aria-hidden="true" />
+          Avisos de caducidad y renovación
+        </span>
         <span className="text-gray-400 text-[11px]">
           Haz clic en cualquier casilla para ver los detalles y acceder al registro
         </span>

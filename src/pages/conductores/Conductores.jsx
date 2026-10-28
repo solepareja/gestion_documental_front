@@ -35,6 +35,33 @@ export default function Conductores() {
         { header: 'Nombre', render: (persona) => <Link to={"/conductores/" + persona.id} className="text-brand-600 hover:text-brand-800 hover:underline font-bold">{persona.nombre}</Link> },
         { header: 'Apellidos', render: (persona) => persona.apellidos || '—' },
         { header: 'DNI', accessor: 'dni' },
+        {
+            header: 'Permisos',
+            render: (persona) => {
+                if (persona.permisos && persona.permisos.length > 0) {
+                    return (
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                            {persona.permisos.map((p, idx) => (
+                                <span
+                                    key={idx}
+                                    title={p.fechaCaducidad ? `Válido hasta: ${p.fechaCaducidad}` : undefined}
+                                >
+                                    {p.tipo} ·
+                                </span>
+                            ))}
+                        </div>
+                    );
+                }
+                if (persona.tipoCarnet) {
+                    return (
+                        <span className="px-2 py-0.5 rounded-md text-[11px] font-black bg-gray-900 text-white shadow-2xs">
+                            {persona.tipoCarnet}
+                        </span>
+                    );
+                }
+                return <span className="text-gray-400 italic text-xs">Sin permisos</span>;
+            }
+        },
         { header: 'Correo', accessor: 'correo' },
         {
             header: 'Vehículo', width: '180px',
