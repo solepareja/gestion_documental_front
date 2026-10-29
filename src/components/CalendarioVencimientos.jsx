@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import api from '../services/api';
 
 const DIAS_SEMANA = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 const DIAS_SEMANA_CORTO = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
@@ -8,12 +9,27 @@ const MESES = [
   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
 ];
 
-export default function CalendarioVencimientos({ eventos = [], cargando = false }) {
+export default function CalendarioVencimientos({
+  eventos = [],
+  cargando = false,
+  onAvisoCreado,
+  onAvisoEliminado
+}) {
   const hoy = useMemo(() => new Date(), []);
   const [fechaActual, setFechaActual] = useState(() => new Date(hoy.getFullYear(), hoy.getMonth(), 1));
   const [filtroTipo, setFiltroTipo] = useState('TODOS');
   const [diaSeleccionado, setDiaSeleccionado] = useState(null);
   const [modalAbierto, setModalAbierto] = useState(false);
+
+  // Estados del formulario para añadir avisos / notas
+  const [mostrarFormulario, setMostrarFormulario] = useState(false);
+  const [formTitulo, setFormTitulo] = useState('');
+  const [formTipo, setFormTipo] = useState('NOTA');
+  const [formPrioridad, setFormPrioridad] = useState('NORMAL');
+  const [formDescripcion, setFormDescripcion] = useState('');
+  const [guardando, setGuardando] = useState(false);
+  const [errorFormulario, setErrorFormulario] = useState(null);
+  const [eliminandoId, setEliminandoId] = useState(null);
 
   const anyo = fechaActual.getFullYear();
   const mes = fechaActual.getMonth();
@@ -21,6 +37,9 @@ export default function CalendarioVencimientos({ eventos = [], cargando = false 
   // Filtrar eventos por tipo
   const eventosFiltrados = useMemo(() => {
     if (filtroTipo === 'TODOS') return eventos;
+    if (filtroTipo === 'AVISO') {
+      return eventos.filter((ev) => ['AVISO', 'NOTA', 'EVENTO', 'RECORDATORIO'].includes(ev.categoria));
+    }
     return eventos.filter((ev) => ev.categoria === filtroTipo);
   }, [eventos, filtroTipo]);
 
@@ -34,6 +53,12 @@ export default function CalendarioVencimientos({ eventos = [], cargando = false 
     }
     return mapa;
   }, [eventosFiltrados]);
+
+  // Eventos específicos del día seleccionado (reactivos al estado actual)
+  const eventosDelDia = useMemo(() => {
+    if (!diaSeleccionado) return [];
+    return eventosPorDia[diaSeleccionado.clave] || [];
+  }, [diaSeleccionado, eventosPorDia]);
 
   // Generación de la cuadrícula mensual
   const celdasCalendario = useMemo(() => {
@@ -102,9 +127,13 @@ export default function CalendarioVencimientos({ eventos = [], cargando = false 
 
   const manejarClickDia = (celda) => {
     setDiaSeleccionado(celda);
-    if (celda.eventos.length > 0) {
-      setModalAbierto(true);
-    }
+    setModalAbierto(true);
+    setMostrarFormulario(false);
+    setErrorFormulario(null);
+    setFormTitulo('');
+    setFormDescripcion('');
+    setFormTipo('NOTA');
+    setFormPrioridad('NORMAL');
   };
 
   const formatearFechaCabecera = (clave) => {
@@ -115,6 +144,57 @@ export default function CalendarioVencimientos({ eventos = [], cargando = false 
       return d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
     }
     return clave;
+  };
+
+  const manejarGuardarAviso = async (e) => {
+    e.preventDefault();
+    if (!formTitulo.trim()) {
+      setErrorFormulario('El título es obligatorio.');
+      return;
+    }
+
+    setGuardando(true);
+    setErrorFormulario(null);
+
+    try {
+      const payload = {
+        titulo: formTitulo.trim(),
+        tipo: formTipo,
+        prioridad: formPrioridad,
+        descripcion: formDescripcion.trim() || null,
+        fecha: diaSeleccionado.clave,
+      };
+
+      const res = await api.post('/avisos', payload);
+      if (onAvisoCreado) {
+        onAvisoCreado(res.data);
+      }
+      setFormTitulo('');
+      setFormDescripcion('');
+      setFormTipo('NOTA');
+      setFormPrioridad('NORMAL');
+      setMostrarFormulario(false);
+    } catch (err) {
+      console.error('Error al guardar aviso:', err);
+      setErrorFormulario('No se pudo guardar la nota o aviso. Inténtalo de nuevo.');
+    } finally {
+      setGuardando(false);
+    }
+  };
+
+  const manejarEliminarAviso = async (avisoId) => {
+    setEliminandoId(avisoId);
+    try {
+      await api.delete(`/avisos/${avisoId}`);
+      if (onAvisoEliminado) {
+        onAvisoEliminado(avisoId);
+      }
+    } catch (err) {
+      console.error('Error al eliminar aviso:', err);
+      alert('No se pudo eliminar el aviso.');
+    } finally {
+      setEliminandoId(null);
+    }
   };
 
   return (
@@ -146,6 +226,7 @@ export default function CalendarioVencimientos({ eventos = [], cargando = false 
               { id: 'SEGURO', label: 'Seguros' },
               { id: 'CARNET', label: 'Carnets' },
               { id: 'MATERIAL', label: 'EPIS / Vestuario' },
+              { id: 'AVISO', label: 'Notas / Avisos' },
             ].map((f) => (
               <button
                 key={f.id}
@@ -188,7 +269,7 @@ export default function CalendarioVencimientos({ eventos = [], cargando = false 
         </div>
       </div>
 
-      {/* Rejilla y cabecera del calendario con contenedor con scroll horizontal en móvil si la pantalla es estrecha */}
+      {/* Rejilla y cabecera del calendario */}
       <div className="overflow-x-auto">
         <div className="min-w-[620px] lg:min-w-0">
           {/* Cabecera de días de la semana */}
@@ -217,11 +298,11 @@ export default function CalendarioVencimientos({ eventos = [], cargando = false 
                   <div
                     key={celda.clave}
                     onClick={() => manejarClickDia(celda)}
-                    className={`min-h-[110px] sm:min-h-[125px] p-2 sm:p-2.5 transition-colors relative flex flex-col justify-between cursor-pointer ${
-                      esActual ? 'bg-white hover:bg-orange-50/30' : 'bg-gray-50/60 text-gray-300'
+                    className={`min-h-[110px] sm:min-h-[125px] p-2 sm:p-2.5 transition-colors relative flex flex-col justify-between cursor-pointer group hover:bg-orange-50/30 ${
+                      esActual ? 'bg-white' : 'bg-gray-50/60 text-gray-400'
                     } ${esSeleccionado ? 'ring-2 ring-inset ring-brand-500 z-10' : ''}`}
                   >
-                    {/* Cabecera de la casilla (Número de día e indicador hoy) */}
+                    {/* Cabecera de la casilla */}
                     <div className="flex items-center justify-between mb-1.5">
                       <span
                         className={`inline-flex items-center justify-center text-xs font-bold rounded-lg w-6 h-6 ${
@@ -235,11 +316,16 @@ export default function CalendarioVencimientos({ eventos = [], cargando = false 
                         {celda.dia}
                       </span>
 
-                      {tieneEventos && (
-                        <span className="text-[10px] font-bold text-red-700">
-                          {celda.eventos.length} {celda.eventos.length === 1 ? 'aviso' : 'avisos'}
+                      <div className="flex items-center gap-1">
+                        {tieneEventos && (
+                          <span className="text-[10px] font-bold text-brand-700 bg-brand-50 border border-brand-200/60 px-1.5 py-0.5 rounded-full">
+                            {celda.eventos.length}
+                          </span>
+                        )}
+                        <span className="opacity-0 group-hover:opacity-100 text-brand-600 font-bold text-xs p-0.5 rounded transition-opacity" title="Añadir nota o aviso">
+                          +
                         </span>
-                      )}
+                      </div>
                     </div>
 
                     {/* Lista de eventos del día */}
@@ -256,7 +342,7 @@ export default function CalendarioVencimientos({ eventos = [], cargando = false 
                       ))}
 
                       {celda.eventos.length > 3 && (
-                        <div className="text-[10px] font-bold text-red-700 pl-1">
+                        <div className="text-[10px] font-bold text-brand-700 pl-1">
                           +{celda.eventos.length - 3} más…
                         </div>
                       )}
@@ -271,23 +357,19 @@ export default function CalendarioVencimientos({ eventos = [], cargando = false 
 
       {/* Pie de leyenda */}
       <div className="p-4 border-t border-gray-100 bg-gray-50/50 flex flex-wrap items-center justify-between gap-3 text-xs text-gray-600">
-        <span className="inline-flex items-center gap-1.5 font-semibold text-red-800">
-          <span className="w-2.5 h-2.5 rounded-full bg-red-600" aria-hidden="true" />
-          Avisos de caducidad y renovación
-        </span>
         <span className="text-gray-400 text-[11px]">
-          Haz clic en cualquier casilla para ver los detalles y acceder al registro
+          Haz clic en cualquier día para añadir una nota, aviso o evento, o consultar los existentes
         </span>
       </div>
 
-      {/* Modal / Drawer interactivo de eventos del día */}
       {modalAbierto && diaSeleccionado && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="bg-white rounded-3xl border border-gray-100 shadow-2xl max-w-lg w-full p-6 animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between pb-4 border-b border-gray-100 mb-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs">
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-2xl max-w-lg w-full p-6 animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[90vh]">
+            
+            <div className="flex items-center justify-between pb-4 border-b border-gray-100 shrink-0">
               <div>
                 <span className="text-xs font-semibold text-brand-700 uppercase tracking-wider">
-                  Vencimientos del día
+                  Día seleccionado
                 </span>
                 <h3 className="text-lg font-bold text-gray-900 capitalize">
                   {formatearFechaCabecera(diaSeleccionado.clave)}
@@ -305,55 +387,223 @@ export default function CalendarioVencimientos({ eventos = [], cargando = false 
               </button>
             </div>
 
-            {diaSeleccionado.eventos.length === 0 ? (
-              <p className="text-sm text-gray-500 py-6 text-center">
-                No hay vencimientos programados para este día.
-              </p>
-            ) : (
-              <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
-                {diaSeleccionado.eventos.map((ev) => (
-                  <div
-                    key={ev.id}
-                    className="p-4 rounded-2xl border border-gray-100 bg-gray-50/70 hover:bg-white hover:shadow-xs transition-all flex items-center justify-between gap-4"
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className={`p-2.5 rounded-xl border ${ev.estiloClase} shrink-0`}>
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${ev.estiloClase}`}>
-                            {ev.categoria}
-                          </span>
-                          <h4 className="text-sm font-bold text-gray-900">{ev.titulo}</h4>
-                        </div>
-                        {ev.subtitulo && (
-                          <p className="text-xs text-gray-500 mt-1">{ev.subtitulo}</p>
-                        )}
-                      </div>
+            <div className="overflow-y-auto pr-1 py-4 space-y-4">
+
+              {!mostrarFormulario ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMostrarFormulario(true);
+                    setErrorFormulario(null);
+                  }}
+                  className="w-full py-2.5 px-4 rounded-2xl bg-brand-50 hover:bg-brand-100 text-brand-700 font-bold text-sm border border-brand-200/80 flex items-center justify-center gap-2 transition-all cursor-pointer shadow-2xs"
+                >
+                  <svg className="w-5 h-5 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  <span>Añadir nota, evento o aviso</span>
+                </button>
+              ) : (
+                <form onSubmit={manejarGuardarAviso} className="bg-orange-50/30 border border-brand-200/80 rounded-2xl p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-bold text-brand-900 flex items-center gap-1.5">
+                      <svg className="w-4 h-4 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                      Nueva entrada
+                    </h4>
+                    <button
+                      type="button"
+                      onClick={() => setMostrarFormulario(false)}
+                      className="text-xs text-gray-500 hover:text-gray-800 font-semibold cursor-pointer"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+
+                  {errorFormulario && (
+                    <div className="p-2.5 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 font-medium">
+                      {errorFormulario}
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      Título *
+                    </label>
+                    <input
+                      type="text"
+                      value={formTitulo}
+                      onChange={(e) => setFormTitulo(e.target.value)}
+                      className="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                      required
+                      autoFocus
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 mb-1">
+                        Tipo
+                      </label>
+                      <select
+                        value={formTipo}
+                        onChange={(e) => setFormTipo(e.target.value)}
+                        className="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                      >
+                        <option value="NOTA">Nota</option>
+                        <option value="RECORDATORIO">Recordatorio</option>
+                        <option value="EVENTO">Evento</option>
+                        <option value="AVISO">Aviso</option>
+                      </select>
                     </div>
 
-                    {ev.enlace && (
-                      <Link
-                        to={ev.enlace}
-                        onClick={() => setModalAbierto(false)}
-                        className="inline-flex items-center gap-1 text-xs font-semibold text-brand-700 bg-brand-50 hover:bg-brand-100 border border-brand-200/80 px-3 py-1.5 rounded-xl transition-colors shrink-0"
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 mb-1">
+                        Prioridad
+                      </label>
+                      <select
+                        value={formPrioridad}
+                        onChange={(e) => setFormPrioridad(e.target.value)}
+                        className="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                       >
-                        <span>Ver ficha</span>
-                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </Link>
-                    )}
+                        <option value="NORMAL">Normal</option>
+                        <option value="IMPORTANTE">Importante</option>
+                        <option value="URGENTE">Urgente</option>
+                      </select>
+                    </div>
                   </div>
-                ))}
-              </div>
-            )}
 
-            <div className="mt-5 pt-3 border-t border-gray-100 flex justify-end">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      Descripción (opcional)
+                    </label>
+                    <textarea
+                      value={formDescripcion}
+                      onChange={(e) => setFormDescripcion(e.target.value)}
+                      rows={2}
+                      className="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent resize-none"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setMostrarFormulario(false)}
+                      className="px-3 py-1.5 text-xs font-semibold text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                    >
+                      Descartar
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={guardando}
+                      className="px-4 py-2 text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 disabled:opacity-50 rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
+                    >
+                      {guardando ? (
+                        <>
+                          <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                          <span>Guardando…</span>
+                        </>
+                      ) : (
+                        <span>Guardar</span>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              <div className="space-y-2">
+                <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                  Eventos y avisos del día ({eventosDelDia.length})
+                </h4>
+
+                {eventosDelDia.length === 0 ? (
+                  <p className="text-sm text-gray-400 py-6 text-center italic bg-gray-50/50 rounded-2xl border border-dashed border-gray-200">
+                    No hay eventos ni notas programadas para este día.
+                  </p>
+                ) : (
+                  <div className="space-y-2.5">
+                    {eventosDelDia.map((ev) => (
+                      <div
+                        key={ev.id}
+                        className="p-3.5 rounded-2xl border border-gray-100 bg-gray-50/70 hover:bg-white hover:shadow-xs transition-all flex items-start justify-between gap-3"
+                      >
+                        <div className="flex items-start gap-3 min-w-0">
+                          <div className={`p-2 rounded-xl border ${ev.estiloClase} shrink-0 mt-0.5`}>
+                            {ev.esAvisoPersonalizado ? (
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                              </svg>
+                            ) : (
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                              </svg>
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-1.5 mb-0.5">
+                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${ev.estiloClase}`}>
+                                {ev.categoria}
+                              </span>
+                              {ev.prioridad && ev.prioridad !== 'NORMAL' && (
+                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-100 text-red-700">
+                                  {ev.prioridad}
+                                </span>
+                              )}
+                            </div>
+                            <h5 className="text-sm font-bold text-gray-900 break-words">{ev.titulo}</h5>
+                            {ev.subtitulo && (
+                              <p className="text-xs text-gray-500 mt-0.5 break-words">{ev.subtitulo}</p>
+                            )}
+                            {ev.descripcion && ev.descripcion !== ev.subtitulo && (
+                              <p className="text-xs text-gray-600 mt-1 italic break-words bg-white/70 p-2 rounded-lg border border-gray-100">
+                                {ev.descripcion}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="shrink-0 flex items-center gap-2">
+                          {ev.enlace && (
+                            <Link
+                              to={ev.enlace}
+                              onClick={() => setModalAbierto(false)}
+                              className="inline-flex items-center gap-1 text-xs font-semibold text-brand-700 bg-brand-50 hover:bg-brand-100 border border-brand-200/80 px-2.5 py-1.5 rounded-xl transition-colors shrink-0"
+                            >
+                              <span>Ver</span>
+                              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                              </svg>
+                            </Link>
+                          )}
+
+                          {ev.esAvisoPersonalizado && (
+                            <button
+                              type="button"
+                              onClick={() => manejarEliminarAviso(ev.avisoId)}
+                              disabled={eliminandoId === ev.avisoId}
+                              title="Eliminar aviso o nota"
+                              className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                            >
+                              {eliminandoId === ev.avisoId ? (
+                                <span className="w-4 h-4 border-2 border-red-500/40 border-t-red-500 rounded-full animate-spin block" />
+                              ) : (
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                              )}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Pie del modal */}
+            <div className="pt-3 border-t border-gray-100 flex justify-end shrink-0">
               <button
                 type="button"
                 onClick={() => setModalAbierto(false)}

@@ -3,12 +3,18 @@ import api from '../../services/api';
 import { Link, useNavigate } from 'react-router-dom';
 import Button from '../../components/Button';
 import Table from '../../components/Table';
+import ListFilters from '../../components/ListFilters';
+import { filtrarTrabajadores } from '../../services/filtros';
 
 export default function Trabajadores() {
   const [trabajadores, setTrabajadores] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+
+  const [filtros, setFiltros] = useState({ busqueda: '' });
+  const filtrados = filtrarTrabajadores(trabajadores, filtros);
+  const hayFiltros = Boolean(filtros.busqueda.trim());
 
   useEffect(() => {
     const cargarTrabajadores = async () => {
@@ -96,11 +102,29 @@ export default function Trabajadores() {
 
       {error && <p className="text-red-500 mb-4">{error}</p>}
 
+      <ListFilters
+        id="trabajadores"
+        busqueda={filtros.busqueda}
+        onSearch={value => setFiltros({ busqueda: value })}
+        placeholder="Buscar por nombre, apellidos, DNI, teléfono o correo…"
+        active={hayFiltros}
+        count={filtrados.length}
+        total={trabajadores.length}
+        loading={cargando}
+        error={error}
+        onClear={() => setFiltros({ busqueda: '' })}
+        filters={[]}
+      />
+
       <Table
         columns={columns}
-        data={trabajadores}
+        data={filtrados}
         isLoading={cargando}
-        emptyMessage="No hay trabajadores disponibles"
+        emptyMessage={
+          hayFiltros
+            ? 'No hay trabajadores que coincidan con la búsqueda'
+            : 'No hay trabajadores disponibles'
+        }
       />
     </div>
   );

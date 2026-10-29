@@ -66,9 +66,6 @@ export default function TablaPermisosCarnet({
             <h3 className="text-sm sm:text-base font-bold text-gray-900 tracking-tight">
               Permisos de conducir (Categorías DGT)
             </h3>
-            <p className="text-xs text-gray-500 mt-0.5">
-              Expedición (10) y caducidad (11) según el reverso del carnet físico de conducir.
-            </p>
           </div>
         </div>
 
@@ -101,34 +98,6 @@ export default function TablaPermisosCarnet({
 
       {/* Barra de añadir permisos rápidos con siluetas vectoriales DGT */}
       <div className="p-3.5 bg-gray-50/70 border-b border-gray-200 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs font-semibold text-gray-500">Añadir rápido:</span>
-          {['B', 'C', 'CE', 'C1', 'BE'].map((cat) => {
-            const yaAgregado = codigosActivos.has(cat);
-            return (
-              <button
-                key={cat}
-                type="button"
-                disabled={disabled || yaAgregado}
-                onClick={() => handleAgregarPermiso(cat)}
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  yaAgregado
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200/60 opacity-60'
-                    : 'bg-white hover:bg-gray-100 text-gray-800 border border-gray-200 shadow-2xs hover:border-gray-300'
-                }`}
-              >
-                <div className="w-6 h-4 flex items-center justify-center shrink-0">
-                  <IconoVehiculoCarnet
-                    codigo={cat}
-                    className={`h-3.5 w-auto max-w-[24px] ${yaAgregado ? 'text-gray-400' : 'text-gray-800'}`}
-                  />
-                </div>
-                <span>+ {cat}</span>
-              </button>
-            );
-          })}
-        </div>
-
         {/* Selector de todas las categorías disponibles */}
         {categoriasDisponiblesParaAgregar.length > 0 && (
           <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -140,7 +109,7 @@ export default function TablaPermisosCarnet({
               disabled={disabled}
               className="text-xs rounded-xl border border-gray-300 bg-white px-2.5 py-1.5 font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer"
             >
-              <option value="">+ Seleccionar otra categoría…</option>
+              <option value="">+ Seleccionar categoría…</option>
               {categoriasDisponiblesParaAgregar.map((c) => (
                 <option key={c.codigo} value={c.codigo}>
                   {c.codigo} — {c.nombre} ({c.tipoVehiculo})

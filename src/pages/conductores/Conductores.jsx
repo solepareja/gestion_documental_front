@@ -4,7 +4,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import Button from '../../components/Button';
 import Table from '../../components/Table';
 import ListFilters from '../../components/ListFilters';
-import { filtrarConductores, opcionesFiltro } from '../../services/filtros';
+import { filtrarConductores } from '../../services/filtros';
+import { CATEGORIAS_CARNET } from '../../utils/carnetCategorias';
 
 export default function Conductores() {
     const [conductores, setConductores] = useState([]);
@@ -46,7 +47,7 @@ export default function Conductores() {
                                     key={idx}
                                     title={p.fechaCaducidad ? `Válido hasta: ${p.fechaCaducidad}` : undefined}
                                 >
-                                    {p.tipo} ·
+                                    {p.tipo}
                                 </span>
                             ))}
                         </div>
@@ -102,7 +103,7 @@ export default function Conductores() {
                         ] },
                     { key: 'tipoCarnet', label: 'Tipo de carnet', allLabel: 'Todos los carnets', value: filtros.tipoCarnet,
                         onChange: value => cambiarFiltro('tipoCarnet', value),
-                        options: opcionesFiltro(conductores, 'tipoCarnet').map(value => ({ value, label: value })) },
+                        options: CATEGORIAS_CARNET.map(categoria => ({ value: categoria.codigo, label: categoria.codigo })) },
                 ]} />
 
             <Table

@@ -31,6 +31,7 @@ export default function Dashboard() {
   const [conductores, setConductores] = useState([]);
   const [vehiculos, setVehiculos] = useState([]);
   const [entregas, setEntregas] = useState([]);
+  const [avisos, setAvisos] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
 
@@ -40,11 +41,12 @@ export default function Dashboard() {
     const cargarDatos = async () => {
       setCargando(true);
       try {
-        const [resDocs, resCond, resVeh, resEnt] = await Promise.all([
+        const [resDocs, resCond, resVeh, resEnt, resAvisos] = await Promise.all([
           api.get('/documentos').catch(() => ({ data: [] })),
           api.get('/conductores').catch(() => ({ data: [] })),
           api.get('/vehiculos').catch(() => ({ data: [] })),
           api.get('/entregas').catch(() => ({ data: [] })),
+          api.get('/avisos').catch(() => ({ data: [] })),
         ]);
 
         if (activo) {
@@ -52,6 +54,7 @@ export default function Dashboard() {
           setConductores(resCond.data || []);
           setVehiculos(resVeh.data || []);
           setEntregas(resEnt.data || []);
+          setAvisos(resAvisos.data || []);
           setError(null);
         }
       } catch {
@@ -94,17 +97,31 @@ export default function Dashboard() {
       const subtituloPartes = [];
       if (doc.companiaAseguradora) subtituloPartes.push(doc.companiaAseguradora);
       if (doc.numeroReferencia) subtituloPartes.push(esSeguro ? `Póliza: ${doc.numeroReferencia}` : `Ref: ${doc.numeroReferencia}`);
-      const subtitulo = subtituloPartes.length > 0 ? subtituloPartes.join(' · ') : `Vehículo ${doc.vehiculoMatricula || ''}`;
+
+      let nombreEntidad = 'Vehículo';
+      let enlace = '/documentos';
+      if (doc.vehiculoId) {
+        nombreEntidad = doc.vehiculoMatricula || 'Vehículo';
+        enlace = `/vehiculos/${doc.vehiculoId}`;
+      } else if (doc.conductorId) {
+        nombreEntidad = doc.conductorNombre || 'Conductor';
+        enlace = `/conductores/${doc.conductorId}`;
+      } else if (doc.trabajadorId) {
+        nombreEntidad = doc.trabajadorNombre || 'Trabajador';
+        enlace = `/trabajadores/${doc.trabajadorId}`;
+      }
+
+      const subtitulo = subtituloPartes.length > 0 ? subtituloPartes.join(' · ') : nombreEntidad;
 
       lista.push({
         id: `doc-${doc.id}`,
         tipo: 'documento',
         categoria,
-        titulo: `${esITV ? 'ITV' : esSeguro ? 'Seguro' : tiposDocumento[doc.tipo] || doc.tipo} · ${doc.vehiculoMatricula || 'Vehículo'}`,
+        titulo: `${esITV ? 'ITV' : esSeguro ? 'Seguro' : tiposDocumento[doc.tipo] || doc.tipo} · ${nombreEntidad}`,
         subtitulo,
         fecha: clave,
         rawFecha: doc.fechaCaducidad,
-        enlace: doc.vehiculoId ? `/vehiculos/${doc.vehiculoId}` : `/documentos`,
+        enlace,
         estiloClase,
         estado: doc.estado,
       });
@@ -112,24 +129,57 @@ export default function Dashboard() {
 
     // 2. Carnets de conductores con fecha de caducidad
     for (const cond of conductores) {
-      if (!cond.cadCarnet) continue;
-      const clave = normalizarFechaAClave(cond.cadCarnet);
-      if (!clave) continue;
+      const nombreConductor = [cond.nombre, cond.apellidos].filter(Boolean).join(' ');
 
-      lista.push({
-        id: `cond-${cond.id}`,
-        tipo: 'carnet',
-        categoria: 'CARNET',
-        titulo: `Carnet · ${[cond.nombre, cond.apellidos].filter(Boolean).join(' ')}`,
-        subtitulo: cond.vehiculoMatricula
-          ? `Asignado a: ${cond.vehiculoMatricula}`
-          : (cond.tipoCarnet ? `Tipo ${cond.tipoCarnet}` : 'Conductor'),
-        fecha: clave,
-        rawFecha: cond.cadCarnet,
-        enlace: `/conductores/${cond.id}`,
-        estiloClase: 'bg-red-100 text-red-800 border-red-300',
-        estado: 'VIGENTE',
-      });
+      let listaPermisos = [];
+      if (Array.isArray(cond.permisos) && cond.permisos.length > 0) {
+        for (const p of cond.permisos) {
+          if (!p.fechaCaducidad) continue;
+          const tipos = String(p.tipo || '').split(/[,;/]+/).map(s => s.trim()).filter(Boolean);
+          for (const t of tipos) {
+            listaPermisos.push({
+              id: p.id ? `${p.id}-${t}` : t,
+              tipo: t,
+              fechaCaducidad: p.fechaCaducidad,
+            });
+          }
+        }
+      } else if (cond.cadCarnet) {
+        const tipos = String(cond.tipoCarnet || '').split(/[,;/]+/).map(s => s.trim()).filter(Boolean);
+        if (tipos.length > 0) {
+          for (const t of tipos) {
+            listaPermisos.push({
+              id: t,
+              tipo: t,
+              fechaCaducidad: cond.cadCarnet,
+            });
+          }
+        } else {
+          listaPermisos.push({
+            id: 'carnet',
+            tipo: '',
+            fechaCaducidad: cond.cadCarnet,
+          });
+        }
+      }
+
+      for (const p of listaPermisos) {
+        const clave = normalizarFechaAClave(p.fechaCaducidad);
+        if (!clave) continue;
+
+        lista.push({
+          id: `cond-${cond.id}-p-${p.id}-${clave}`,
+          tipo: 'carnet',
+          categoria: 'CARNET',
+          titulo: `Carnet · ${nombreConductor}`,
+          subtitulo: p.tipo ? `Tipo ${p.tipo}` : 'Carnet de conducir',
+          fecha: clave,
+          rawFecha: p.fechaCaducidad,
+          enlace: `/conductores/${cond.id}`,
+          estiloClase: 'bg-red-100 text-red-800 border-red-300',
+          estado: 'VIGENTE',
+        });
+      }
     }
 
     // 3. Renovaciones de EPIS y Vestuario de trabajadores
@@ -156,8 +206,51 @@ export default function Dashboard() {
       }
     }
 
+    // 4. Notas, eventos y avisos personalizados creados manualmente
+    for (const av of avisos) {
+      if (!av.fecha) continue;
+      const clave = normalizarFechaAClave(av.fecha);
+      if (!clave) continue;
+
+      let estiloClase = 'bg-blue-100 text-blue-800 border-blue-300';
+      if (av.prioridad === 'URGENTE') {
+        estiloClase = 'bg-rose-100 text-rose-800 border-rose-300';
+      } else if (av.prioridad === 'IMPORTANTE') {
+        estiloClase = 'bg-amber-100 text-amber-800 border-amber-300';
+      } else if (av.tipo === 'RECORDATORIO') {
+        estiloClase = 'bg-purple-100 text-purple-800 border-purple-300';
+      } else if (av.tipo === 'EVENTO') {
+        estiloClase = 'bg-teal-100 text-teal-800 border-teal-300';
+      }
+
+      lista.push({
+        id: `aviso-${av.id}`,
+        avisoId: av.id,
+        tipo: 'aviso',
+        categoria: av.tipo || 'AVISO',
+        titulo: av.titulo,
+        subtitulo: av.descripcion || (av.prioridad ? `Prioridad: ${av.prioridad}` : ''),
+        descripcion: av.descripcion,
+        fecha: clave,
+        rawFecha: av.fecha,
+        prioridad: av.prioridad || 'NORMAL',
+        estiloClase,
+        estado: 'ACTIVO',
+        esAvisoPersonalizado: true,
+        rawAviso: av,
+      });
+    }
+
     return lista;
-  }, [documentos, conductores, entregas]);
+  }, [documentos, conductores, entregas, avisos]);
+
+  const handleAvisoCreado = (nuevoAviso) => {
+    setAvisos((prev) => [...prev, nuevoAviso]);
+  };
+
+  const handleAvisoEliminado = (idAviso) => {
+    setAvisos((prev) => prev.filter((a) => a.id !== idAviso));
+  };
 
   // Próximos vencimientos ordenados cronológicamente
   const proximosVencimientos = useMemo(() => {
@@ -284,15 +377,19 @@ export default function Dashboard() {
 
       {/* Sección principal: Calendario de Vencimientos */}
       <section className="space-y-4">
-        <CalendarioVencimientos eventos={eventos} cargando={cargando} />
+        <CalendarioVencimientos
+          eventos={eventos}
+          cargando={cargando}
+          onAvisoCreado={handleAvisoCreado}
+          onAvisoEliminado={handleAvisoEliminado}
+        />
       </section>
 
-      {/* Lista de Próximos Vencimientos Inminentes */}
       <section className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="text-base font-bold text-gray-900">
-              Próximos vencimientos inminentes
+              Próximos vencimientos
             </h2>
             <p className="text-xs text-gray-500 mt-0.5">
               Documentos y carnets que requieren atención en las próximas semanas

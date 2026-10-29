@@ -5,6 +5,7 @@ import { obtenerEntregas } from '../services/materiales';
 import Button from '../components/Button';
 import DeleteButton from '../components/DeleteButton';
 import IconoVehiculoCarnet from '../components/IconosCarnetDGT';
+import DocumentacionEntidad from '../components/DocumentacionEntidad';
 import { MAPA_CATEGORIAS, calcularEstadoPermiso } from '../utils/carnetCategorias';
 
 function fechaVisible(value) {
@@ -417,6 +418,46 @@ export default function PersonaDetalle({ tipo }) {
                   {persona.vehiculoId ? 'Cambiar vehículo' : 'Asignar vehículo'}
                 </Button>
               </div>
+            </section>
+          )}
+
+          {/* Documentación del Conductor */}
+          {conductor && (
+            <section className="space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-base font-bold text-gray-900">
+                    Documentación del conductor
+                  </h2>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Contrato firmado, alta de trabajador/es, alta de autónomo (RETA), seguro de responsabilidad civil, certificados AEAT y Seguridad Social, y modelo 036/037.
+                  </p>
+                </div>
+                <Link to={`/documentos?conductorId=${id}`} className="text-sm font-semibold text-brand-700 hover:underline">
+                  Ver en Documentos →
+                </Link>
+              </div>
+              <DocumentacionEntidad entidadTipo="conductor" entidadId={id} />
+            </section>
+          )}
+
+          {/* Documentación del Trabajador */}
+          {!conductor && (
+            <section className="space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-base font-bold text-gray-900">
+                    Documentación del trabajador
+                  </h2>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Contrato firmado, alta de trabajador/es, certificados de Seguridad Social y AEAT, modelo 036/037, alta de autónomo (RETA) y seguro de responsabilidad civil.
+                  </p>
+                </div>
+                <Link to={`/documentos?trabajadorId=${id}`} className="text-sm font-semibold text-brand-700 hover:underline">
+                  Ver en Documentos →
+                </Link>
+              </div>
+              <DocumentacionEntidad entidadTipo="trabajador" entidadId={id} />
             </section>
           )}
 

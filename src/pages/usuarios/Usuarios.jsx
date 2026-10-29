@@ -4,6 +4,8 @@ import Table from '../../components/Table';
 import { useNavigate } from 'react-router-dom';
 import Button from '../../components/Button';
 import DeleteButton from '../../components/DeleteButton';
+import ListFilters from '../../components/ListFilters';
+import { filtrarUsuarios } from '../../services/filtros';
 
 export default function Usuarios() {
     const navigate = useNavigate();
@@ -11,11 +13,16 @@ export default function Usuarios() {
     const [cargando, setCargando] = useState(true);
     const [error, setError] = useState(null);
 
+    const [filtros, setFiltros] = useState({ busqueda: '', rol: '' });
+    const cambiarFiltro = (key, value) => setFiltros(current => ({ ...current, [key]: value }));
+    const filtrados = filtrarUsuarios(usuarios, filtros);
+    const hayFiltros = Object.values(filtros).some(value => value.trim());
+
     useEffect(() => {
         const cargarUsuarios = async () => {
             try {
                 const response = await api.get("/usuarios");
-                setUsuarios(response.data);
+                setUsuarios(response.data || []);
             } catch (err) {
                 console.error("Error al cargar los usuarios", err);
                 setError("Error al cargar los usuarios");
@@ -86,12 +93,42 @@ export default function Usuarios() {
 
             {error && <p className="text-red-500 mb-4">{error}</p>}
 
+            <ListFilters
+                id="usuarios"
+                busqueda={filtros.busqueda}
+                onSearch={value => cambiarFiltro('busqueda', value)}
+                placeholder="Buscar por nombre o correo electrónico…"
+                active={hayFiltros}
+                count={filtrados.length}
+                total={usuarios.length}
+                loading={cargando}
+                error={error}
+                onClear={() => setFiltros({ busqueda: '', rol: '' })}
+                filters={[
+                    {
+                        key: 'rol',
+                        label: 'Rol de usuario',
+                        allLabel: 'Todos los roles',
+                        value: filtros.rol,
+                        onChange: value => cambiarFiltro('rol', value),
+                        options: [
+                            { value: 'admin', label: 'Administrador' },
+                            { value: 'usuario', label: 'Usuario estándar' },
+                        ],
+                    },
+                ]}
+            />
+
             <Table
                 minWidth={880}
                 columns={columns}
-                data={usuarios}
+                data={filtrados}
                 isLoading={cargando}
-                emptyMessage="No hay usuarios disponibles"
+                emptyMessage={
+                    hayFiltros
+                        ? 'No hay usuarios que coincidan con la búsqueda'
+                        : 'No hay usuarios disponibles'
+                }
             />
         </div>
     );

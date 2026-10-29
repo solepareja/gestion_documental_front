@@ -18,6 +18,7 @@ import FormUsuario from './pages/usuarios/FormUsuario';
 import Documentos from './pages/documentos/Documentos';
 import FormDocumento from './pages/documentos/FormDocumento';
 import HistorialDocumentoVehiculo from './pages/documentos/HistorialDocumentoVehiculo';
+import HistorialDocumento from './pages/documentos/HistorialDocumento';
 import Materiales from './pages/materiales/Materiales';
 import FormMaterial from './pages/materiales/FormMaterial';
 import Entregas from './pages/entregas/Entregas';
@@ -46,6 +47,8 @@ export default function App() {
               <Route path="/vehiculos" element={<Vehiculos />} />
               <Route path="/vehiculos/:id" element={<VehiculoDetalle />} />
               <Route path="/vehiculos/:vehiculoId/documentos/:tipo" element={<HistorialDocumentoVehiculo />} />
+              <Route path="/conductores/:conductorId/documentos/:tipo" element={<HistorialDocumento entidadTipo="conductor" />} />
+              <Route path="/trabajadores/:trabajadorId/documentos/:tipo" element={<HistorialDocumento entidadTipo="trabajador" />} />
               <Route path="/conductores" element={<Conductores />} />
               <Route path="/trabajadores" element={<Trabajadores />} />
               <Route path="/vehiculos/nuevo" element={<FormVehiculo />} />

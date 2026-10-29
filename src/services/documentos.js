@@ -1,9 +1,40 @@
-export const tiposDocumento = {
-  ITV: 'ITV',
-  SEGURO: 'Seguro',
+// Tipos de documentación organizados por entidad:
+// - Vehículos: Documentación del vehículo, Póliza del vehículo, Permiso de circulación, ITV, Tarjeta de transporte.
+// - Conductores: Contrato firmado, Alta de trabajador/es, Alta de autónomo (RETA), Seguro de responsabilidad civil, Modelo 036/037, Certificado corriente AEAT, Certificado corriente Seg. Social.
+// - Trabajadores: Contrato firmado, Alta de trabajador/es, Certificado corriente Seg. Social, Certificado corriente AEAT, Modelo 036/037, Alta de autónomo (RETA), Seguro de responsabilidad civil.
+
+export const tiposDocumentoVehiculo = {
+  DOCUMENTACION_VEHICULO: 'Documentación del vehículo',
+  SEGURO: 'Póliza del vehículo',
   PERMISO_CIRCULACION: 'Permiso de circulación',
-  FICHA_TECNICA: 'Ficha técnica',
+  ITV: 'ITV',
   TARJETA_TRANSPORTE: 'Tarjeta de transporte',
+};
+
+export const tiposDocumentoConductor = {
+  CONTRATO_FIRMADO: 'Contrato firmado',
+  ALTA_TRABAJADOR: 'Alta de trabajador/es',
+  RETA: 'Alta de autónomo (RETA)',
+  SEGURO_RESPONSABILIDAD_CIVIL: 'Seguro de responsabilidad civil',
+  MODELO_036_037: 'Modelo 036/037',
+  CERTIFICADO_SEG_SOCIAL: 'Certificado corriente de pago en la Seguridad Social',
+  AEAT: 'Certificado corriente de pago AEAT',
+};
+
+export const tiposDocumentoTrabajador = {
+  CONTRATO_FIRMADO: 'Contrato firmado',
+  ALTA_TRABAJADOR: 'Alta de trabajador/es',
+  CERTIFICADO_SEG_SOCIAL: 'Certificado corriente de pago en la Seguridad Social',
+  AEAT: 'Certificado corriente de pago AEAT',
+  MODELO_036_037: 'Modelo 036/037',
+  SEGURO_RESPONSABILIDAD_CIVIL: 'Seguro de responsabilidad civil',
+};
+
+export const tiposDocumento = {
+  ...tiposDocumentoVehiculo,
+  ...tiposDocumentoConductor,
+  ...tiposDocumentoTrabajador,
+  ALTA_AUTONOMO: 'Alta de autónomo',
   OTRO: 'Otro',
 };
 
@@ -21,7 +52,22 @@ export function fechaDocumentoVisible(fecha) {
 }
 
 export function fechaDocumentoParaBack(fecha) {
-  return fecha ? fecha.split('-').reverse().join('/') : null;
+  if (!fecha) return null;
+  if (Array.isArray(fecha)) {
+    const [y, m, d] = fecha;
+    return `${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}/${y}`;
+  }
+  if (typeof fecha === 'string') {
+    const trimmed = fecha.trim();
+    if (trimmed.includes('-')) {
+      const partes = trimmed.slice(0, 10).split('-');
+      if (partes.length === 3) {
+        return `${partes[2]}/${partes[1]}/${partes[0]}`;
+      }
+    }
+    return trimmed;
+  }
+  return null;
 }
 
 export function parsearFechaCaducidad(fecha) {
@@ -64,12 +110,18 @@ export function normalizarFechaValor(fecha) {
 export function procesarDocumentosConHistorial(documentos) {
   if (!Array.isArray(documentos)) return [];
 
-  // Agrupamos por vehículo y tipo para encontrar cuál es el documento más reciente (activo)
   const grupos = new Map();
 
   for (const doc of documentos) {
     if (doc.estado === 'ANULADO') continue;
-    const key = `${doc.vehiculoId || 0}_${doc.tipo}`;
+    const entidadId = doc.vehiculoId
+      ? `v_${doc.vehiculoId}`
+      : doc.conductorId
+      ? `c_${doc.conductorId}`
+      : doc.trabajadorId
+      ? `t_${doc.trabajadorId}`
+      : `d_${doc.id || 0}`;
+    const key = `${entidadId}_${doc.tipo}`;
     const fechaVal = normalizarFechaValor(doc.fechaCaducidad) || normalizarFechaValor(doc.fechaEmision);
 
     if (!grupos.has(key)) {
@@ -78,7 +130,6 @@ export function procesarDocumentosConHistorial(documentos) {
     grupos.get(key).push({ doc, fechaVal });
   }
 
-  // Mapa con el ID del documento activo/más reciente de cada par (vehículo, tipo)
   const idActivoPorGrupo = new Map();
   const gruposConHistorial = new Set();
 
@@ -86,7 +137,6 @@ export function procesarDocumentosConHistorial(documentos) {
     if (items.length > 1) {
       gruposConHistorial.add(key);
     }
-    // Orden descendente por fechaVal y luego por ID
     items.sort((a, b) => b.fechaVal - a.fechaVal || (b.doc.id || 0) - (a.doc.id || 0));
     idActivoPorGrupo.set(key, items[0].doc.id);
   });
@@ -96,7 +146,14 @@ export function procesarDocumentosConHistorial(documentos) {
       return { ...doc, esUltimo: false, esHistorico: false, tieneHistorial: false };
     }
 
-    const key = `${doc.vehiculoId || 0}_${doc.tipo}`;
+    const entidadId = doc.vehiculoId
+      ? `v_${doc.vehiculoId}`
+      : doc.conductorId
+      ? `c_${doc.conductorId}`
+      : doc.trabajadorId
+      ? `t_${doc.trabajadorId}`
+      : `d_${doc.id || 0}`;
+    const key = `${entidadId}_${doc.tipo}`;
     const idActivo = idActivoPorGrupo.get(key);
     const tieneVarios = gruposConHistorial.has(key);
     const esUltimo = idActivo === doc.id;
@@ -111,13 +168,19 @@ export function procesarDocumentosConHistorial(documentos) {
   });
 }
 
-export function resumirDocumentosPorTipo(documentos) {
+export function resumirDocumentosPorTipo(documentos, tiposMap = tiposDocumentoVehiculo) {
   const procesados = procesarDocumentosConHistorial(documentos);
-  return Object.entries(tiposDocumento).map(([tipo, nombre]) => {
+  return Object.entries(tiposMap).map(([tipo, nombre]) => {
     const historial = procesados.filter(documento => documento.tipo === tipo).sort((a, b) =>
       Number(b.esUltimo) - Number(a.esUltimo) || normalizarFechaValor(b.fechaEmision) - normalizarFechaValor(a.fechaEmision) || b.id - a.id);
     return { tipo, nombre, ultimo: historial[0] || null, total: historial.length };
   });
+}
+
+export function esDocumentoVigente(documento) {
+  if (documento.esHistorico || documento.estado !== 'VIGENTE') return false;
+  const { clave } = obtenerInfoEstadoDocumento(documento.estado, documento.fechaCaducidad);
+  return clave === 'VIGENTE' || clave === 'POR_CADUCAR';
 }
 
 export function obtenerInfoEstadoDocumento(estado, fechaCaducidad, esHistorico = false) {

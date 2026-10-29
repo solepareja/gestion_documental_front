@@ -194,7 +194,6 @@ export default function FormConductor() {
               <label className="block text-sm font-medium text-gray-700" htmlFor="dni">
                 DNI / NIE *
               </label>
-              <span className="text-xs text-gray-400">Ej: 12345678Z o X1234567L</span>
             </div>
             <input
               type="text"
@@ -251,7 +250,7 @@ export default function FormConductor() {
           {/* SELECT DE VEHÍCULOS: envía el ID numérico del vehículo */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="vehiculoId">
-              Vehículo asignado (opcional)
+              Vehículo asignado
             </label>
             <select
               id="vehiculoId"
@@ -286,7 +285,7 @@ export default function FormConductor() {
                 <svg className="w-5 h-5 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
-                Fotografías del carnet de conducir (opcional)
+                Fotografías del carnet de conducir
               </h3>
               <p className="text-xs text-gray-500 mt-0.5">
                 Adjunta o toma una foto nítida de ambas caras del carnet físico para disponer del documento digitalizado.

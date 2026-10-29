@@ -99,14 +99,45 @@ export default function NotificationBell() {
 
         // 2. Notificaciones de Carnets de Conductores
         for (const cond of conds) {
-          if (!cond.cadCarnet) continue;
+          const nombreConductor = [cond.nombre, cond.apellidos].filter(Boolean).join(' ');
 
-          const dias = calcularDiasParaCaducidad(cond.cadCarnet);
-          if (dias === null) continue;
+          let listaPermisos = [];
+          if (Array.isArray(cond.permisos) && cond.permisos.length > 0) {
+            for (const p of cond.permisos) {
+              if (!p.fechaCaducidad) continue;
+              const tipos = String(p.tipo || '').split(/[,;/]+/).map(s => s.trim()).filter(Boolean);
+              for (const t of tipos) {
+                listaPermisos.push({
+                  id: p.id ? `${p.id}-${t}` : t,
+                  tipo: t,
+                  fechaCaducidad: p.fechaCaducidad,
+                });
+              }
+            }
+          } else if (cond.cadCarnet) {
+            const tipos = String(cond.tipoCarnet || '').split(/[,;/]+/).map(s => s.trim()).filter(Boolean);
+            if (tipos.length > 0) {
+              for (const t of tipos) {
+                listaPermisos.push({
+                  id: t,
+                  tipo: t,
+                  fechaCaducidad: cond.cadCarnet,
+                });
+              }
+            } else {
+              listaPermisos.push({
+                id: 'carnet',
+                tipo: '',
+                fechaCaducidad: cond.cadCarnet,
+              });
+            }
+          }
 
-          if (dias <= 30) {
+          for (const p of listaPermisos) {
+            const dias = calcularDiasParaCaducidad(p.fechaCaducidad);
+            if (dias === null || dias > 30) continue;
+
             const esCaducado = dias < 0;
-
             let estadoTexto = '';
             if (dias < -1) estadoTexto = `Caducado hace ${Math.abs(dias)} días`;
             else if (dias === -1) estadoTexto = 'Caducó ayer';
@@ -115,13 +146,11 @@ export default function NotificationBell() {
             else estadoTexto = `Vence en ${dias} días`;
 
             items.push({
-              id: `cond-${cond.id}`,
+              id: `cond-${cond.id}-p-${p.id}`,
               categoria: 'Carnet',
-              titulo: `Carnet · ${[cond.nombre, cond.apellidos].filter(Boolean).join(' ')}`,
-              descripcion: cond.vehiculoMatricula
-                ? `Asignado a: ${cond.vehiculoMatricula}`
-                : (cond.tipoCarnet ? `Tipo ${cond.tipoCarnet}` : 'Conductor'),
-              fechaLimite: fechaDocumentoVisible(cond.cadCarnet),
+              titulo: `Carnet · ${nombreConductor}`,
+              descripcion: p.tipo ? `Tipo ${p.tipo}` : 'Carnet de conducir',
+              fechaLimite: fechaDocumentoVisible(p.fechaCaducidad),
               dias,
               esCaducado,
               estadoTexto,

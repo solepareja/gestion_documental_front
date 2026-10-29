@@ -242,18 +242,6 @@ export default function VehiculoDetalle() {
         <div className="flex items-center gap-2 flex-wrap">
           <Button
             variant="secondary"
-            onClick={() => navigate(`/documentos/nuevo?vehiculoId=${id}&origen=vehiculo`)}
-            icon={
-              <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            }
-          >
-            Añadir documento
-          </Button>
-
-          <Button
-            variant="secondary"
             onClick={() => navigate(`/vehiculos/${id}/editar`)}
             icon={
               <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -372,20 +360,34 @@ export default function VehiculoDetalle() {
 
         {conductorAsignado ? (
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-3 pt-1">
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-2xl bg-brand-100 text-brand-700 flex items-center justify-center font-bold text-base shadow-xs">
+            <Link
+              to={`/conductores/${conductorAsignado.id}`}
+              title="Ver detalle del conductor"
+              className="flex items-center gap-3 group p-1 -m-1 rounded-2xl hover:bg-orange-50/50 transition-all cursor-pointer"
+            >
+              <div className="w-11 h-11 rounded-2xl bg-brand-100 text-brand-700 flex items-center justify-center font-bold text-base shadow-xs group-hover:bg-brand-600 group-hover:text-white transition-colors shrink-0">
                 {(conductorAsignado.nombre || 'C').charAt(0).toUpperCase()}
               </div>
               <div>
-                <p className="text-sm font-bold text-gray-900">
-                  {conductorAsignado.nombre} {conductorAsignado.apellidos || ''}
-                </p>
+                <div className="flex items-center gap-1.5">
+                  <p className="text-sm font-bold text-gray-900 group-hover:text-brand-600 group-hover:underline transition-colors">
+                    {conductorAsignado.nombre} {conductorAsignado.apellidos || ''}
+                  </p>
+                  <svg
+                    className="w-4 h-4 text-gray-400 group-hover:text-brand-600 group-hover:translate-x-0.5 transition-all"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </div>
                 <p className="text-xs text-gray-500 mt-0.5">
                   DNI: <span className="font-medium text-gray-700">{conductorAsignado.dni || 'Sin DNI'}</span>
                   {conductorAsignado.correo && <span className="text-gray-400"> • {conductorAsignado.correo}</span>}
                 </p>
               </div>
-            </div>
+            </Link>
 
             <div className="flex items-center gap-2">
               <Button

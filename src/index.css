@@ -64,3 +64,29 @@ html {
   overflow-y: scroll;
   scrollbar-gutter: stable;
 }
+
+@media print {
+  nav,
+  header,
+  .print\:hidden {
+    display: none !important;
+  }
+
+  body,
+  html,
+  #root,
+  .min-h-screen {
+    background: white !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    min-height: auto !important;
+    overflow: visible !important;
+  }
+
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+}

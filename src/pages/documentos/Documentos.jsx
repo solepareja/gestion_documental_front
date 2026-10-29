@@ -3,38 +3,101 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../../services/api';
 import Button from '../../components/Button';
 import DocumentosTabla from '../../components/DocumentosTabla';
+import ListFilters from '../../components/ListFilters';
+
+const GRUPOS = [
+  { id: 'todos', label: 'Todos los documentos' },
+  { id: 'vehiculos', label: 'Vehículos', campo: 'vehiculoId', singular: 'Vehículo', todos: 'Todos los vehículos', origen: 'vehiculo' },
+  { id: 'conductores', label: 'Conductores', campo: 'conductorId', singular: 'Conductor', todos: 'Todos los conductores', origen: 'conductor' },
+  { id: 'trabajadores', label: 'Trabajadores', campo: 'trabajadorId', singular: 'Trabajador', todos: 'Todos los trabajadores', origen: 'trabajador' },
+];
 
 export default function Documentos() {
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
-  const vehiculoId = params.get('vehiculoId') || '';
-  const [vehiculos, setVehiculos] = useState([]);
+  const [busqueda, setBusqueda] = useState('');
+  const [soloVigentes, setSoloVigentes] = useState(true);
+  const [datos, setDatos] = useState({ vehiculos: [], conductores: [], trabajadores: [] });
+  const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
+  const [retry, setRetry] = useState(0);
+
+  // La categoría y la selección se derivan de la URL, también al volver atrás.
+  const grupo = GRUPOS.find(item => item.campo && params.get(item.campo))
+    || GRUPOS.find(item => item.id === params.get('grupo')) || GRUPOS[0];
+  const entidadId = grupo.campo ? params.get(grupo.campo) || '' : '';
+  const opciones = datos[grupo.id] || [];
 
   useEffect(() => {
     let active = true;
-    api.get('/vehiculos').then(({ data }) => { if (active) setVehiculos(data); })
-      .catch(() => { if (active) setError('No se pudo cargar el filtro de vehículos.'); });
+    Promise.allSettled(['vehiculos', 'conductores', 'trabajadores'].map(recurso => api.get('/' + recurso)))
+      .then(results => {
+        if (!active) return;
+        setDatos(Object.fromEntries(['vehiculos', 'conductores', 'trabajadores'].map((key, index) =>
+          [key, results[index].status === 'fulfilled' ? results[index].value.data || [] : []])));
+        setError(results.some(result => result.status === 'rejected') ? 'No se han podido cargar todos los selectores. Puedes seguir buscando por categoría.' : null);
+        setCargando(false);
+      });
     return () => { active = false; };
-  }, []);
+  }, [retry]);
+
+  const cambiarGrupo = id => setParams(id === 'todos' ? {} : { grupo: id });
+  const cambiarEntidad = id => setParams({ grupo: grupo.id, ...(id ? { [grupo.campo]: id } : {}) });
+  const quitarFiltros = () => { setBusqueda(''); setSoloVigentes(false); setParams({}); };
+  const queryNuevo = grupo.campo
+    ? '?' + new URLSearchParams({ origen: grupo.origen, ...(entidadId ? { [grupo.campo]: entidadId } : {}) }).toString() : '';
+  const nombreEntidad = item => grupo.id === 'vehiculos'
+    ? [item.matricula, [item.marca, item.modelo].filter(Boolean).join(' ')].filter(Boolean).join(' — ')
+    : [item.nombre, item.apellidos, item.dni ? '(' + item.dni + ')' : ''].filter(Boolean).join(' ');
 
   return <div>
     <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
-      <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">
-        Documentos
-      </h1>
-      <Button onClick={() => navigate(`/documentos/nuevo${vehiculoId ? `?vehiculoId=${encodeURIComponent(vehiculoId)}` : ''}`)}>+ Añadir documento</Button>
+      <div>
+        <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">Documentos</h1>
+
+      </div>
+      <Button onClick={() => navigate('/documentos/nuevo' + queryNuevo)}>+ Añadir documento</Button>
     </div>
-    <div className="mb-6 max-w-sm">
-      <label htmlFor="filtro-vehiculo" className="block text-xs font-semibold text-gray-600 mb-2">Filtrar por vehículo</label>
-      <select id="filtro-vehiculo" value={vehiculoId} onChange={event => setParams(event.target.value ? { vehiculoId: event.target.value } : {})}
-        className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
-        <option value="">Todos los vehículos</option>
-        {vehiculoId && !vehiculos.some(vehiculo => String(vehiculo.id) === vehiculoId) && <option value={vehiculoId}>Vehículo seleccionado</option>}
-        {vehiculos.map(vehiculo => <option key={vehiculo.id} value={vehiculo.id}>{vehiculo.matricula} — {vehiculo.marca} {vehiculo.modelo}</option>)}
-      </select>
-      {error && <p role="alert" className="text-xs text-red-600 mt-2">{error}</p>}
-    </div>
-    <DocumentosTabla vehiculoId={vehiculoId} />
+
+    
+
+    <ListFilters
+      id="documentos"
+      busqueda={busqueda}
+      onSearch={setBusqueda}
+      placeholder="Tipo, referencia, matrícula, nombre o archivo…"
+      active={Boolean(busqueda || soloVigentes || grupo.id !== 'todos')}
+      onClear={quitarFiltros}
+      filters={[
+        {
+          key: 'categoria', label: 'Categoría', allLabel: 'Todos los documentos',
+          value: grupo.id === 'todos' ? '' : grupo.id,
+          onChange: value => cambiarGrupo(value || 'todos'),
+          options: GRUPOS.slice(1).map(item => ({ value: item.id, label: item.label })),
+        },
+        ...(grupo.campo ? [{
+          key: 'entidad', label: grupo.singular, allLabel: grupo.todos, value: entidadId,
+          disabled: cargando, onChange: cambiarEntidad,
+          options: [
+            ...(entidadId && !opciones.some(item => String(item.id) === entidadId)
+              ? [{ value: entidadId, label: 'Selección actual' }] : []),
+            ...opciones.map(item => ({ value: String(item.id), label: nombreEntidad(item) })),
+          ],
+        }] : []),
+        {
+          key: 'vigencia', label: 'Vigencia', allLabel: 'Cualquier estado',
+          value: soloVigentes ? 'vigentes' : '',
+          onChange: value => setSoloVigentes(value === 'vigentes'),
+          options: [{ value: 'vigentes', label: 'Solo vigentes' }],
+        },
+      ]}
+    />
+    {error && <div role="alert" className="mb-4 text-xs text-red-700 flex flex-wrap items-center gap-3">
+      <span>{error}</span>
+      <Button variant="secondary" size="sm" onClick={() => setRetry(value => value + 1)}>Reintentar</Button>
+    </div>}    <DocumentosTabla busqueda={busqueda} soloVigentes={soloVigentes} grupoEntidad={grupo.id}
+      vehiculoId={grupo.id === 'vehiculos' ? entidadId : ''}
+      conductorId={grupo.id === 'conductores' ? entidadId : ''}
+      trabajadorId={grupo.id === 'trabajadores' ? entidadId : ''} enEntidad={false} />
   </div>;
 }
