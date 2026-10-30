@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
+import ModalConfirmacion from './ModalConfirmacion';
 
 const DIAS_SEMANA = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 const DIAS_SEMANA_CORTO = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
@@ -30,6 +31,8 @@ export default function CalendarioVencimientos({
   const [guardando, setGuardando] = useState(false);
   const [errorFormulario, setErrorFormulario] = useState(null);
   const [eliminandoId, setEliminandoId] = useState(null);
+  const [avisoAEliminar, setAvisoAEliminar] = useState(null);
+  const [errorEliminarAviso, setErrorEliminarAviso] = useState(null);
 
   const anyo = fechaActual.getFullYear();
   const mes = fechaActual.getMonth();
@@ -182,25 +185,28 @@ export default function CalendarioVencimientos({
     }
   };
 
-  const manejarEliminarAviso = async (avisoId) => {
-    setEliminandoId(avisoId);
+  const manejarConfirmarEliminarAviso = async () => {
+    if (!avisoAEliminar) return;
+    setEliminandoId(avisoAEliminar.avisoId);
+    setErrorEliminarAviso(null);
     try {
-      await api.delete(`/avisos/${avisoId}`);
+      await api.delete(`/avisos/${avisoAEliminar.avisoId}`);
       if (onAvisoEliminado) {
-        onAvisoEliminado(avisoId);
+        onAvisoEliminado(avisoAEliminar.avisoId);
       }
+      setAvisoAEliminar(null);
     } catch (err) {
       console.error('Error al eliminar aviso:', err);
-      alert('No se pudo eliminar el aviso.');
+      setErrorEliminarAviso('No se pudo eliminar el aviso. Inténtalo de nuevo.');
     } finally {
       setEliminandoId(null);
     }
   };
 
   return (
-    <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+    <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
       {/* Barra superior de controles del calendario */}
-      <div className="p-6 border-b border-gray-100 bg-gradient-to-r from-orange-50/40 via-white to-white flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="p-6 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-3">
             <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight">
@@ -273,7 +279,7 @@ export default function CalendarioVencimientos({
       <div className="overflow-x-auto">
         <div className="min-w-[620px] lg:min-w-0">
           {/* Cabecera de días de la semana */}
-          <div className="grid grid-cols-7 border-b border-gray-100 bg-gray-50/70 text-center text-xs font-bold uppercase tracking-wider text-gray-500 py-3">
+          <div className="grid grid-cols-7 border-b-2 border-gray-200 dark:border-gray-700 bg-gray-50/90 dark:bg-gray-950 text-center text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300 py-3.5">
             {DIAS_SEMANA.map((dia, idx) => (
               <div key={dia}>
                 <span className="hidden md:inline">{dia}</span>
@@ -288,7 +294,7 @@ export default function CalendarioVencimientos({
               Cargando calendario de vencimientos…
             </div>
           ) : (
-            <div className="grid grid-cols-7 auto-rows-fr divide-x divide-y divide-gray-100 bg-gray-100/40">
+            <div className="grid grid-cols-7 auto-rows-fr divide-x divide-y divide-gray-200 dark:divide-gray-700 bg-gray-200/50 dark:bg-gray-700">
               {celdasCalendario.map((celda) => {
                 const esActual = celda.mesRel === 'actual';
                 const tieneEventos = celda.eventos.length > 0;
@@ -316,16 +322,7 @@ export default function CalendarioVencimientos({
                         {celda.dia}
                       </span>
 
-                      <div className="flex items-center gap-1">
-                        {tieneEventos && (
-                          <span className="text-[10px] font-bold text-brand-700 bg-brand-50 border border-brand-200/60 px-1.5 py-0.5 rounded-full">
-                            {celda.eventos.length}
-                          </span>
-                        )}
-                        <span className="opacity-0 group-hover:opacity-100 text-brand-600 font-bold text-xs p-0.5 rounded transition-opacity" title="Añadir nota o aviso">
-                          +
-                        </span>
-                      </div>
+              
                     </div>
 
                     {/* Lista de eventos del día */}
@@ -580,10 +577,13 @@ export default function CalendarioVencimientos({
                           {ev.esAvisoPersonalizado && (
                             <button
                               type="button"
-                              onClick={() => manejarEliminarAviso(ev.avisoId)}
+                              onClick={() => {
+                                setErrorEliminarAviso(null);
+                                setAvisoAEliminar(ev);
+                              }}
                               disabled={eliminandoId === ev.avisoId}
                               title="Eliminar aviso o nota"
-                              className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                              className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors cursor-pointer"
                             >
                               {eliminandoId === ev.avisoId ? (
                                 <span className="w-4 h-4 border-2 border-red-500/40 border-t-red-500 rounded-full animate-spin block" />
@@ -615,6 +615,19 @@ export default function CalendarioVencimientos({
           </div>
         </div>
       )}
+
+      {/* Modal de confirmación para eliminar aviso */}
+      <ModalConfirmacion
+        abierto={Boolean(avisoAEliminar)}
+        onCerrar={() => !eliminandoId && setAvisoAEliminar(null)}
+        onConfirmar={manejarConfirmarEliminarAviso}
+        titulo="¿Eliminar aviso?"
+        nombreElemento={avisoAEliminar?.titulo}
+        cargando={Boolean(eliminandoId)}
+        error={errorEliminarAviso}
+        textoConfirmar="Sí, eliminar"
+        textoCancelar="Cancelar"
+      />
     </div>
   );
 }

@@ -197,8 +197,8 @@ export default function NotificationBell() {
         aria-expanded={abierto}
         className={`relative p-2 rounded-full transition-colors focus:outline-none cursor-pointer ${
           abierto
-            ? 'bg-brand-50 text-brand-700 ring-2 ring-brand-300'
-            : 'text-gray-500 hover:text-brand-700 hover:bg-gray-100'
+            ? 'bg-brand-50 text-brand-700 ring-2 ring-brand-300 dark:bg-brand-950 dark:text-brand-300 dark:ring-brand-700'
+            : 'text-gray-500 hover:text-brand-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-brand-400 dark:hover:bg-gray-800'
         }`}
       >
         <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -224,14 +224,14 @@ export default function NotificationBell() {
 
       {/* Menú desplegable flotante */}
       {abierto && (
-        <div className="fixed inset-x-3 top-18 sm:absolute sm:top-full sm:right-0 sm:inset-x-auto sm:mt-2 sm:w-96 rounded-3xl bg-white shadow-2xl border border-gray-100 z-50 overflow-hidden max-h-[calc(100vh-80px)] flex flex-col animate-in fade-in zoom-in-95 duration-150">
+        <div className="fixed inset-x-3 top-18 sm:absolute sm:top-full sm:right-0 sm:inset-x-auto sm:mt-2 sm:w-96 rounded-3xl bg-white dark:bg-gray-900 shadow-2xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden max-h-[calc(100vh-80px)] flex flex-col animate-in fade-in zoom-in-95 duration-150">
           {/* Cabecera del desplegable */}
-          <div className="p-4 bg-gradient-to-r from-orange-50/70 via-white to-white border-b border-gray-100">
+          <div className="p-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <h3 className="text-sm font-bold text-gray-900">Notificaciones</h3>
+                <h3 className="text-sm font-bold text-gray-900 dark:text-white">Notificaciones</h3>
                 {total > 0 && (
-                  <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-brand-100 text-brand-800">
+                  <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-brand-100 dark:bg-brand-950 text-brand-800 dark:text-brand-300">
                     {total}
                   </span>
                 )}
@@ -243,14 +243,14 @@ export default function NotificationBell() {
 
             {/* Selector de pestañas / filtro */}
             {total > 0 && (
-              <div className="flex items-center gap-1 mt-3 bg-gray-100/80 p-1 rounded-xl text-xs font-semibold">
+              <div className="flex items-center gap-1 mt-3 bg-gray-100/80 dark:bg-gray-800 p-1 rounded-xl text-xs font-semibold">
                 <button
                   type="button"
                   onClick={() => setFiltro('TODAS')}
                   className={`flex-1 py-1 text-center rounded-lg transition-all cursor-pointer ${
                     filtro === 'TODAS'
-                      ? 'bg-white text-gray-900 shadow-xs font-bold'
-                      : 'text-gray-500 hover:text-gray-800'
+                      ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-xs font-bold'
+                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
                   }`}
                 >
                   Todas ({total})
@@ -260,8 +260,8 @@ export default function NotificationBell() {
                   onClick={() => setFiltro('CADUCADAS')}
                   className={`flex-1 py-1 text-center rounded-lg transition-all cursor-pointer ${
                     filtro === 'CADUCADAS'
-                      ? 'bg-white text-red-700 shadow-xs font-bold'
-                      : 'text-gray-500 hover:text-gray-800'
+                      ? 'bg-white dark:bg-gray-700 text-red-700 dark:text-red-400 shadow-xs font-bold'
+                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
                   }`}
                 >
                   Caducadas ({caducadas.length})
@@ -271,8 +271,8 @@ export default function NotificationBell() {
                   onClick={() => setFiltro('POR_VENCER')}
                   className={`flex-1 py-1 text-center rounded-lg transition-all cursor-pointer ${
                     filtro === 'POR_VENCER'
-                      ? 'bg-white text-amber-700 shadow-xs font-bold'
-                      : 'text-gray-500 hover:text-gray-800'
+                      ? 'bg-white dark:bg-gray-700 text-amber-700 dark:text-amber-400 shadow-xs font-bold'
+                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
                   }`}
                 >
                   Próximas ({porVencer.length})
@@ -282,16 +282,16 @@ export default function NotificationBell() {
           </div>
 
           {/* Lista de Notificaciones */}
-          <div className="max-h-88 overflow-y-auto divide-y divide-gray-100">
+          <div className="max-h-88 overflow-y-auto divide-y divide-gray-200 dark:divide-gray-700">
             {notificacionesFiltradas.length === 0 ? (
               <div className="p-8 text-center">
-                <div className="w-12 h-12 mx-auto rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-2.5">
+                <div className="w-12 h-12 mx-auto rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-2.5">
                   <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <p className="text-sm font-bold text-gray-800">¡Todo al día!</p>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-sm font-bold text-gray-800 dark:text-gray-200">¡Todo al día!</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                   {filtro === 'CADUCADAS'
                     ? 'No hay ningún documento ni carnet caducado.'
                     : filtro === 'POR_VENCER'
@@ -307,16 +307,16 @@ export default function NotificationBell() {
                   onClick={() => setAbierto(false)}
                   className={`group p-3.5 flex items-start gap-3 transition-colors ${
                     item.esCaducado
-                      ? 'hover:bg-red-50/40 bg-red-50/10'
-                      : 'hover:bg-amber-50/40 bg-white'
+                      ? 'hover:bg-red-50/40 dark:hover:bg-red-950/30 bg-red-50/10'
+                      : 'hover:bg-amber-50/40 dark:hover:bg-gray-800/60 bg-white dark:bg-gray-900'
                   }`}
                 >
                   {/* Icono de tipo / severidad */}
                   <div
                     className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border mt-0.5 ${
                       item.esCaducado
-                        ? 'bg-red-50 text-red-600 border-red-200'
-                        : 'bg-amber-50 text-amber-700 border-amber-200'
+                        ? 'bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800'
+                        : 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800'
                     }`}
                   >
                     {item.esCaducado ? (
@@ -338,20 +338,20 @@ export default function NotificationBell() {
                       <span
                         className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${
                           item.esCaducado
-                            ? 'bg-red-50 text-red-700 border-red-200'
-                            : 'bg-amber-50 text-amber-800 border-amber-200'
+                            ? 'bg-red-50 dark:bg-red-950/60 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800'
+                            : 'bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-400 border-amber-200 dark:border-amber-800'
                         }`}
                       >
                         {item.estadoTexto}
                       </span>
                     </div>
 
-                    <h4 className="text-xs font-bold text-gray-900 group-hover:text-brand-700 truncate">
+                    <h4 className="text-xs font-bold text-gray-900 dark:text-gray-100 group-hover:text-brand-700 dark:group-hover:text-brand-400 truncate">
                       {item.titulo}
                     </h4>
-                    <p className="text-[11px] text-gray-500 truncate mt-0.5">{item.descripcion}</p>
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate mt-0.5">{item.descripcion}</p>
                     <p className="text-[11px] text-gray-400 mt-1">
-                      Fecha límite: <span className="font-semibold text-gray-600">{item.fechaLimite}</span>
+                      Fecha límite: <span className="font-semibold text-gray-600 dark:text-gray-300">{item.fechaLimite}</span>
                     </p>
                   </div>
                 </Link>
@@ -360,18 +360,18 @@ export default function NotificationBell() {
           </div>
 
           {/* Pie de navegación rápida */}
-          <div className="p-3 bg-gray-50/80 border-t border-gray-100 flex items-center justify-between text-xs">
+          <div className="p-3 bg-gray-50/80 dark:bg-gray-950 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between text-xs">
             <Link
               to="/"
               onClick={() => setAbierto(false)}
-              className="text-brand-700 hover:text-brand-800 font-semibold hover:underline"
+              className="text-brand-700 dark:text-brand-400 hover:text-brand-800 font-semibold hover:underline"
             >
               Ver en el calendario →
             </Link>
             <Link
               to="/documentos"
               onClick={() => setAbierto(false)}
-              className="text-gray-500 hover:text-gray-800 font-medium"
+              className="text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 font-medium"
             >
               Documentación
             </Link>

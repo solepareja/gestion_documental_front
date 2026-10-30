@@ -22,7 +22,6 @@ export default function Documentos() {
   const [error, setError] = useState(null);
   const [retry, setRetry] = useState(0);
 
-  // La categoría y la selección se derivan de la URL, también al volver atrás.
   const grupo = GRUPOS.find(item => item.campo && params.get(item.campo))
     || GRUPOS.find(item => item.id === params.get('grupo')) || GRUPOS[0];
   const entidadId = grupo.campo ? params.get(grupo.campo) || '' : '';
@@ -58,8 +57,6 @@ export default function Documentos() {
       </div>
       <Button onClick={() => navigate('/documentos/nuevo' + queryNuevo)}>+ Añadir documento</Button>
     </div>
-
-    
 
     <ListFilters
       id="documentos"

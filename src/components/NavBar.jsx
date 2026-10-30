@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
 import NotificationBell from './NotificationBell';
+import ThemeToggle from './ThemeToggle';
 
 export default function Navbar() {
   const location = useLocation();
@@ -38,11 +39,11 @@ export default function Navbar() {
   }, []);
 
   const linkBaseClass = "items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors duration-200 h-full select-none";
-  const linkActiveClass = "border-brand-600 text-brand-700";
-  const linkInactiveClass = "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-800";
+  const linkActiveClass = "border-brand-600 text-brand-700 dark:text-brand-400 dark:border-brand-500";
+  const linkInactiveClass = "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-800 dark:text-gray-400 dark:hover:border-gray-700 dark:hover:text-gray-200";
 
   return (
-    <nav className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50 print:hidden">
+    <nav className="bg-white dark:bg-gray-900 shadow-sm border-b border-gray-200 dark:border-gray-800 sticky top-0 z-50 print:hidden transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16 gap-2">
           
@@ -331,18 +332,19 @@ export default function Navbar() {
             </div>
           </div>
 
-          {/* Iconos de la derecha: Campana, Avatar, Cerrar sesión */}
-          <div className="flex items-center gap-1.5 sm:gap-4 shrink-0">
+          {/* Iconos de la derecha: Modo noche/día, Campana, Avatar, Cerrar sesión */}
+          <div className="flex items-center gap-1 sm:gap-2.5 shrink-0">
+            <ThemeToggle />
             <NotificationBell />
             
-            <div className="h-6 w-px bg-gray-200 hidden sm:block"></div>
+            <div className="h-6 w-px bg-gray-200 dark:bg-gray-800 hidden sm:block mx-1"></div>
             
             <div className="flex items-center gap-2">
-              <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-full bg-brand-100 flex items-center justify-center text-brand-700 font-bold text-xs sm:text-sm border border-brand-200 shrink-0">
+              <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-full bg-brand-100 dark:bg-brand-950 flex items-center justify-center text-brand-700 dark:text-brand-300 font-bold text-xs sm:text-sm border border-brand-200 dark:border-brand-800 shrink-0">
                 {(usuario?.nombre || 'U').charAt(0).toUpperCase()}
               </div>
               <div className="hidden md:flex flex-col text-left">
-                <span className="text-sm font-semibold text-gray-800 leading-tight truncate max-w-[120px]">
+                <span className="text-sm font-semibold text-gray-800 dark:text-gray-100 leading-tight truncate max-w-[120px]">
                   {usuario?.nombre || 'Usuario'}
                 </span>
                 <span className="text-[11px] text-gray-400 truncate max-w-[120px]">
@@ -358,7 +360,7 @@ export default function Navbar() {
                 navigate('/login');
               }}
               title="Cerrar sesión"
-              className="p-1.5 rounded-xl text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer shrink-0"
+              className="p-1.5 rounded-xl text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 dark:hover:text-red-400 transition-colors cursor-pointer shrink-0"
               aria-label="Cerrar sesión"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

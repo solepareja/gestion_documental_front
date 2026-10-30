@@ -18,12 +18,82 @@ function formatearFecha(fechaStr) {
   return String(fechaStr);
 }
 
+function normalizarFecha(fecha) {
+  if (!fecha) return 0;
+  if (Array.isArray(fecha)) {
+    const [y, m, d, h = 0, min = 0, s = 0] = fecha;
+    return new Date(y, m - 1, d, h, min, s).getTime();
+  }
+  if (typeof fecha === 'string') {
+    if (fecha.includes('-')) {
+      const partes = fecha.slice(0, 10).split('-');
+      if (partes.length === 3) {
+        return new Date(Number(partes[0]), Number(partes[1]) - 1, Number(partes[2])).getTime();
+      }
+    }
+    const t = new Date(fecha).getTime();
+    if (!isNaN(t)) return t;
+  }
+  if (fecha instanceof Date) {
+    return fecha.getTime();
+  }
+  return 0;
+}
+
+function HeaderOrdenable({ label, direccion, onAlternar }) {
+  return (
+    <button
+      type="button"
+      onClick={onAlternar}
+      className="inline-flex items-center gap-1.5 font-bold text-xs uppercase tracking-wider text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white group cursor-pointer select-none transition-colors"
+      title={`Ordenar por ${label} (${
+        direccion === 'asc'
+          ? 'ascendente: más antiguo a más reciente'
+          : direccion === 'desc'
+          ? 'descendente: más reciente a más antiguo'
+          : 'clic para ordenar'
+      })`}
+    >
+      <span className={direccion ? 'text-brand-600 dark:text-brand-400 font-bold' : ''}>{label}</span>
+      <span className="inline-flex flex-col -space-y-1">
+        {/* Flecha hacia arriba */}
+        <svg
+          className={`w-3 h-3 transition-colors ${
+            direccion === 'asc'
+              ? 'text-brand-600 dark:text-brand-400 stroke-[3]'
+              : 'text-gray-300 dark:text-gray-600 group-hover:text-gray-400 stroke-2'
+          }`}
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
+        </svg>
+        {/* Flecha hacia abajo */}
+        <svg
+          className={`w-3 h-3 transition-colors ${
+            direccion === 'desc'
+              ? 'text-brand-600 dark:text-brand-400 stroke-[3]'
+              : 'text-gray-300 dark:text-gray-600 group-hover:text-gray-400 stroke-2'
+          }`}
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </span>
+    </button>
+  );
+}
+
 export default function Entregas() {
   const [entregas, setEntregas] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
   const [busqueda, setBusqueda] = useState('');
   const [recargaTick, setRecargaTick] = useState(0);
+  const [ordenFecha, setOrdenFecha] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -53,6 +123,14 @@ export default function Entregas() {
     setRecargaTick((t) => t + 1);
   };
 
+  const alternarOrdenFecha = () => {
+    setOrdenFecha((prev) => {
+      if (!prev) return 'desc';
+      if (prev === 'desc') return 'asc';
+      return null;
+    });
+  };
+
   const filtradas = useMemo(() => {
     if (!busqueda.trim()) return entregas;
     const q = busqueda.toLowerCase();
@@ -63,6 +141,25 @@ export default function Entregas() {
       return nombreCompleto.includes(q) || dni.includes(q) || materiales.includes(q);
     });
   }, [entregas, busqueda]);
+
+  const entregasOrdenadas = useMemo(() => {
+    if (!ordenFecha) return filtradas;
+
+    return [...filtradas].sort((a, b) => {
+      const valA = normalizarFecha(a.fechaEntrega);
+      const valB = normalizarFecha(b.fechaEntrega);
+
+      if (valA === 0 && valB === 0) return 0;
+      if (valA === 0) return 1;
+      if (valB === 0) return -1;
+
+      if (ordenFecha === 'asc') {
+        return valA - valB || ((a.id || 0) - (b.id || 0));
+      } else {
+        return valB - valA || ((b.id || 0) - (a.id || 0));
+      }
+    });
+  }, [filtradas, ordenFecha]);
 
   const columns = [
     {
@@ -80,7 +177,13 @@ export default function Entregas() {
       ),
     },
     {
-      header: 'Fecha de entrega',
+      header: (
+        <HeaderOrdenable
+          label="Fecha de entrega"
+          direccion={ordenFecha}
+          onAlternar={alternarOrdenFecha}
+        />
+      ),
       render: (e) => (
         <div className="flex items-center gap-1.5 text-sm font-semibold text-gray-800">
           <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -238,7 +341,7 @@ export default function Entregas() {
       {/* Tabla de entregas */}
       <Table
         columns={columns}
-        data={filtradas}
+        data={entregasOrdenadas}
         isLoading={cargando}
         emptyMessage={
           busqueda

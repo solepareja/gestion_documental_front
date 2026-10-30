@@ -178,6 +178,7 @@ export default function DocumentosTabla({
   const columns = [
     {
       header: 'Tipo',
+      width: ocultarColumnaEntidad ? '24%' : '19%',
       render: documento => {
         const esPdf = documento.archivo?.startsWith('data:application/pdf') || documento.archivoNombre?.toLowerCase().endsWith('.pdf');
 
@@ -217,6 +218,7 @@ export default function DocumentosTabla({
     },
     ...(!ocultarColumnaEntidad ? [{
       header: 'Asignado a',
+      width: '19%',
       render: documento => {
         if (documento.vehiculoId) {
           return (
@@ -260,7 +262,7 @@ export default function DocumentosTabla({
           onAlternar={alternarOrden}
         />
       ),
-      width: '140px',
+      width: ocultarColumnaEntidad ? '19%' : '16%',
       render: documento => fechaDocumentoVisible(documento.fechaEmision)
     },
     {
@@ -272,11 +274,12 @@ export default function DocumentosTabla({
           onAlternar={alternarOrden}
         />
       ),
-      width: '150px',
+      width: ocultarColumnaEntidad ? '19%' : '16%',
       render: documento => documento.fechaCaducidad ? fechaDocumentoVisible(documento.fechaCaducidad) : 'Sin caducidad'
     },
     {
       header: 'Estado',
+      width: ocultarColumnaEntidad ? '19%' : '15%',
       render: documento => (
         <DocumentoEstado
           estado={documento.estado}
@@ -287,7 +290,7 @@ export default function DocumentosTabla({
     },
     {
       header: 'Acciones',
-      width: '170px',
+      width: ocultarColumnaEntidad ? '19%' : '15%',
       render: (documento) => {
         const nombreTipo = tiposDocumento[documento.tipo] || 'documento';
         const nombreAsignado = documento.vehiculoMatricula || documento.conductorNombre || documento.trabajadorNombre || '';

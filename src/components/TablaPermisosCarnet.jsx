@@ -53,9 +53,9 @@ export default function TablaPermisosCarnet({
   );
 
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-xs">
+    <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden shadow-xs">
       {/* Cabecera sobria y elegante integrada con el diseño de la aplicación */}
-      <div className="bg-white p-4 sm:p-5 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="bg-white dark:bg-gray-900 p-4 sm:p-5 border-b border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-start sm:items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-gray-100 border border-gray-200/80 flex items-center justify-center text-gray-700 shrink-0">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -124,7 +124,7 @@ export default function TablaPermisosCarnet({
       <div className="overflow-x-auto tabla-carnet">
         <table className="w-full text-left border-collapse text-xs">
           <thead>
-            <tr className="bg-gray-50 border-b border-gray-200 text-gray-600 font-bold uppercase text-[11px] tracking-wider select-none">
+            <tr className="bg-gray-50 dark:bg-gray-950 border-b-2 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 font-bold uppercase text-[11px] tracking-wider select-none">
               <th className="py-3 px-3 w-64 min-w-[240px]">9. Categoría y tipo</th>
               <th className="py-3 px-3 w-40 min-w-[150px]">10. Expedición</th>
               <th className="py-3 px-3 w-40 min-w-[150px]">11. Caducidad</th>
@@ -132,7 +132,7 @@ export default function TablaPermisosCarnet({
               <th className="py-3 px-3 w-28 min-w-[110px] text-center">Estado</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100 font-medium">
+          <tbody className="divide-y divide-gray-100 dark:divide-gray-700 font-medium">
             {modoCompleto ? (
               // Vista carnet completo (muestra las 15 categorías como la tarjeta física de la DGT)
               CATEGORIAS_CARNET.map((cat) => {

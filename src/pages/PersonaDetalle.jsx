@@ -188,10 +188,10 @@ export default function PersonaDetalle({ tipo }) {
               </div>
 
               {persona.permisos && persona.permisos.length > 0 ? (
-                <div className="overflow-x-auto rounded-xl border border-gray-200/80">
+                <div className="overflow-x-auto rounded-xl border border-gray-200/80 dark:border-gray-700">
                   <table className="w-full text-left border-collapse text-xs">
                     <thead>
-                      <tr className="bg-gray-50 text-gray-700 font-bold uppercase text-[11px] border-b border-gray-200">
+                      <tr className="bg-gray-50 dark:bg-gray-950 text-gray-700 dark:text-gray-300 font-bold uppercase text-[11px] border-b-2 border-gray-200 dark:border-gray-700">
                         <th className="py-2.5 px-3">9. Categoría</th>
                         <th className="py-2.5 px-3">10. Expedición</th>
                         <th className="py-2.5 px-3">11. Expiración / Caducidad</th>
@@ -199,7 +199,7 @@ export default function PersonaDetalle({ tipo }) {
                         <th className="py-2.5 px-3 text-center">Estado</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100">
+                    <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                       {persona.permisos.map((p, idx) => {
                         const cat = MAPA_CATEGORIAS[p.tipo?.toUpperCase()] || {
                           codigo: p.tipo,

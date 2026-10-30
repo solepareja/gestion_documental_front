@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import api from '../../services/api';
 import Button from '../../components/Button';
+import DeleteButton from '../../components/DeleteButton';
+import ModalConfirmacion from '../../components/ModalConfirmacion';
 import DocumentacionVehiculo from '../../components/DocumentacionVehiculo';
 
 export default function VehiculoDetalle() {
@@ -13,8 +15,10 @@ export default function VehiculoDetalle() {
 
   // Estados para el modal de asignación de conductor
   const [modalAsignar, setModalAsignar] = useState(false);
+  const [modalDesasignar, setModalDesasignar] = useState(false);
   const [conductorSeleccionadoId, setConductorSeleccionadoId] = useState('');
   const [guardandoAsignacion, setGuardandoAsignacion] = useState(false);
+  const [errorDesasignar, setErrorDesasignar] = useState(null);
 
   const { id } = useParams();
   const navigate = useNavigate();
@@ -111,11 +115,17 @@ export default function VehiculoDetalle() {
   };
 
   // Desasignar conductor
-  const handleDesasignarConductor = async () => {
+  const handleDesasignarConductor = () => {
     if (!conductorAsignado) return;
-    if (!window.confirm(`¿Deseas desvincular a ${conductorAsignado.nombre} de este vehículo?`)) return;
+    setErrorDesasignar(null);
+    setModalDesasignar(true);
+  };
+
+  const ejecutarDesasignarConductor = async () => {
+    if (!conductorAsignado) return;
 
     setGuardandoAsignacion(true);
+    setErrorDesasignar(null);
     try {
       await api.put(`/conductores/${conductorAsignado.id}`, {
         ...conductorAsignado,
@@ -124,23 +134,12 @@ export default function VehiculoDetalle() {
         vehiculoId: null
       });
       setConductorAsignado(null);
+      setModalDesasignar(false);
     } catch (err) {
       console.error('Error al desasignar conductor', err);
-      alert('No se pudo desasignar el conductor.');
+      setErrorDesasignar('No se pudo desasignar el conductor. Por favor, inténtalo de nuevo.');
     } finally {
       setGuardandoAsignacion(false);
-    }
-  };
-
-  const handleEliminar = async () => {
-    if (window.confirm('¿Estás seguro de que deseas eliminar este vehículo?')) {
-      try {
-        await api.delete(`/vehiculos/${id}`);
-        navigate('/vehiculos');
-      } catch (err) {
-        console.error('Error al eliminar vehículo', err);
-        alert('No se pudo eliminar el vehículo.');
-      }
     }
   };
 
@@ -252,17 +251,12 @@ export default function VehiculoDetalle() {
             Editar
           </Button>
 
-          <Button
-            variant="danger"
-            onClick={handleEliminar}
-            icon={
-              <svg className="w-4 h-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-            }
-          >
-            Eliminar
-          </Button>
+          <DeleteButton
+            resource="vehiculos"
+            id={id}
+            name={`vehículo con matrícula ${vehiculo.matricula || ''}`}
+            onDeleted={() => navigate('/vehiculos')}
+          />
         </div>
       </div>
 
@@ -501,6 +495,30 @@ export default function VehiculoDetalle() {
           </div>
         </div>
       )}
+
+      {/* Modal de confirmación para desvincular conductor */}
+      <ModalConfirmacion
+        abierto={modalDesasignar}
+        onCerrar={() => !guardandoAsignacion && setModalDesasignar(false)}
+        onConfirmar={ejecutarDesasignarConductor}
+        titulo="¿Desvincular conductor?"
+        mensaje={
+          conductorAsignado ? (
+            <>
+              ¿Deseas desvincular al conductor{' '}
+              <span className="font-semibold text-gray-800 dark:text-gray-200">
+                «{conductorAsignado.nombre} {conductorAsignado.apellidos || ''}»
+              </span>{' '}
+              de este vehículo?
+            </>
+          ) : null
+        }
+        cargando={guardandoAsignacion}
+        error={errorDesasignar}
+        textoConfirmar="Desvincular"
+        textoCancelar="Cancelar"
+        variante="warning"
+      />
     </div>
   );
 }
