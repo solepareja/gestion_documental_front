@@ -27,27 +27,27 @@ export default function Button({
   };
 
   const variants = {
-    // Botón principal (Naranja corporativo)
+    // Botón principal (Naranja pastel corporativo)
     primary:
-      'bg-brand-600 hover:bg-brand-700 text-white border border-brand-600 shadow-xs focus:ring-brand-500',
+      'bg-brand-500 hover:bg-brand-600 active:scale-[0.98] text-white border-0 shadow-xs hover:shadow-sm focus:ring-brand-300',
 
-    // Botón secundario / acción (Blanco con borde gris suave)
+    // Botón secundario / acción (Superficie suave por contraste sin bordes)
     secondary:
-      'bg-white text-gray-700 hover:text-gray-900 hover:bg-gray-50 border border-gray-200 shadow-xs focus:ring-gray-300',
+      'bg-gray-100 hover:bg-gray-200/80 active:scale-[0.98] text-gray-700 dark:text-gray-200 dark:bg-gray-800 dark:hover:bg-gray-750 border-0 shadow-none focus:ring-gray-300',
     outline:
-      'bg-white text-gray-700 hover:text-gray-900 hover:bg-gray-50 border border-gray-200 shadow-xs focus:ring-gray-300',
+      'bg-gray-100 hover:bg-gray-200/80 active:scale-[0.98] text-gray-700 dark:text-gray-200 dark:bg-gray-800 dark:hover:bg-gray-750 border-0 shadow-none focus:ring-gray-300',
 
-    // Botón de peligro (Blanco con borde y texto rojo)
+    // Botón de peligro (Suave por contraste sin bordes)
     danger:
-      'bg-white text-red-600 hover:bg-red-50 border border-red-200 shadow-xs focus:ring-red-300',
+      'bg-red-500/10 text-red-600 hover:bg-red-500/20 active:scale-[0.98] border-0 dark:bg-red-950/40 dark:text-red-300 shadow-none focus:ring-red-300',
 
     // Peligro sólido
     'danger-solid':
-      'bg-red-600 hover:bg-red-700 text-white border border-red-600 shadow-xs focus:ring-red-500',
+      'bg-red-500 hover:bg-red-600 active:scale-[0.98] text-white border-0 shadow-xs hover:shadow-sm focus:ring-red-300',
 
     // Botón fantasma
     ghost:
-      'bg-transparent text-gray-600 hover:bg-gray-100 hover:text-gray-900 border border-transparent focus:ring-gray-300',
+      'bg-transparent text-gray-600 hover:bg-gray-100/70 hover:text-gray-900 border-0 focus:ring-gray-300',
   };
 
   const chosenVariant = variants[variant] || variants.primary;

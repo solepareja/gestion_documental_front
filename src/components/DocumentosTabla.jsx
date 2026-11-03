@@ -67,6 +67,7 @@ function HeaderOrdenable({ label, campo, ordenActual, onAlternar }) {
 
 export default function DocumentosTabla({
   vehiculoId,
+  transportistaId,
   conductorId,
   trabajadorId,
   entidadTipo,
@@ -100,16 +101,16 @@ export default function DocumentosTabla({
 
   // Normalizar parámetros de filtro
   const effectiveVehiculoId = vehiculoId || (entidadTipo === 'vehiculo' ? entidadId : null);
-  const effectiveConductorId = conductorId || (entidadTipo === 'conductor' ? entidadId : null);
+  const effectiveTransportistaId = transportistaId || conductorId || (entidadTipo === 'transportista' || entidadTipo === 'conductor' ? entidadId : null);
   const effectiveTrabajadorId = trabajadorId || (entidadTipo === 'trabajador' ? entidadId : null);
 
-  const ocultarColumnaEntidad = enEntidad || enVehiculo || Boolean(effectiveVehiculoId || effectiveConductorId || effectiveTrabajadorId);
+  const ocultarColumnaEntidad = enEntidad || enVehiculo || Boolean(effectiveVehiculoId || effectiveTransportistaId || effectiveTrabajadorId);
 
   useEffect(() => {
     let active = true;
     const params = {};
     if (effectiveVehiculoId) params.vehiculoId = effectiveVehiculoId;
-    if (effectiveConductorId) params.conductorId = effectiveConductorId;
+    if (effectiveTransportistaId) params.transportistaId = effectiveTransportistaId;
     if (effectiveTrabajadorId) params.trabajadorId = effectiveTrabajadorId;
 
     api.get('/documentos', { params })
@@ -120,11 +121,11 @@ export default function DocumentosTabla({
         if (active) setState({ key: JSON.stringify(params), retry, error: 'No se pudo cargar la documentación.' });
       });
     return () => { active = false; };
-  }, [effectiveVehiculoId, effectiveConductorId, effectiveTrabajadorId, retry]);
+  }, [effectiveVehiculoId, effectiveTransportistaId, effectiveTrabajadorId, retry]);
 
   const keyActual = JSON.stringify({
     ...(effectiveVehiculoId ? { vehiculoId: effectiveVehiculoId } : {}),
-    ...(effectiveConductorId ? { conductorId: effectiveConductorId } : {}),
+    ...(effectiveTransportistaId ? { transportistaId: effectiveTransportistaId } : {}),
     ...(effectiveTrabajadorId ? { trabajadorId: effectiveTrabajadorId } : {}),
   });
   const current = state?.key === keyActual && state?.retry === retry ? state : null;
@@ -169,8 +170,8 @@ export default function DocumentosTabla({
   let contexto = '';
   if (effectiveVehiculoId) {
     contexto = `?vehiculoId=${encodeURIComponent(effectiveVehiculoId)}${desdeHistorial ? `&origen=historial&tipo=${encodeURIComponent(tipo)}` : '&origen=vehiculo'}`;
-  } else if (effectiveConductorId) {
-    contexto = `?conductorId=${encodeURIComponent(effectiveConductorId)}${desdeHistorial ? `&origen=historial&tipo=${encodeURIComponent(tipo)}` : '&origen=conductor'}`;
+  } else if (effectiveTransportistaId) {
+    contexto = `?transportistaId=${encodeURIComponent(effectiveTransportistaId)}${desdeHistorial ? `&origen=historial&tipo=${encodeURIComponent(tipo)}` : '&origen=transportista'}`;
   } else if (effectiveTrabajadorId) {
     contexto = `?trabajadorId=${encodeURIComponent(effectiveTrabajadorId)}${desdeHistorial ? `&origen=historial&tipo=${encodeURIComponent(tipo)}` : '&origen=trabajador'}`;
   }
@@ -183,12 +184,24 @@ export default function DocumentosTabla({
         const esPdf = documento.archivo?.startsWith('data:application/pdf') || documento.archivoNombre?.toLowerCase().endsWith('.pdf');
 
         const nombreTipo = tiposDocumento[documento.tipo] || documento.tipo;
-        const nombreAsignado = documento.vehiculoMatricula || documento.conductorNombre || documento.trabajadorNombre || '';
+        const nombreAsignado = documento.vehiculoMatricula || documento.transportistaNombre || documento.conductorNombre || documento.trabajadorNombre || '';
 
         return (
           <div className="flex flex-col gap-0.5">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="font-medium text-gray-800">{nombreTipo}</span>
+              {documento.avisos === false && (
+                <span
+                  className="inline-flex items-center gap-1 text-[11px] font-semibold px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 border-0"
+                  title="Avisos desactivados para este documento"
+                >
+                  <svg className="w-3 h-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+                  </svg>
+                  Sin avisos
+                </span>
+              )}
               {documento.archivo && (
                 <button
                   type="button"
@@ -230,13 +243,14 @@ export default function DocumentosTabla({
             </Link>
           );
         }
-        if (documento.conductorId) {
+        const idTransportista = documento.transportistaId || documento.conductorId;
+        if (idTransportista) {
           return (
             <Link
               className="inline-flex items-center gap-1.5 text-brand-600 hover:text-brand-800 hover:underline font-bold text-xs"
-              to={`/conductores/${documento.conductorId}`}
+              to={`/transportistas/${idTransportista}`}
             >
-              <span>{documento.conductorNombre || 'Conductor'}</span>
+              <span>{documento.transportistaNombre || documento.conductorNombre || 'Transportista'}</span>
             </Link>
           );
         }
@@ -293,7 +307,7 @@ export default function DocumentosTabla({
       width: ocultarColumnaEntidad ? '19%' : '15%',
       render: (documento) => {
         const nombreTipo = tiposDocumento[documento.tipo] || 'documento';
-        const nombreAsignado = documento.vehiculoMatricula || documento.conductorNombre || documento.trabajadorNombre || '';
+        const nombreAsignado = documento.vehiculoMatricula || documento.transportistaNombre || documento.conductorNombre || documento.trabajadorNombre || '';
 
         return (
           <div className="flex items-center gap-1.5">
@@ -301,7 +315,7 @@ export default function DocumentosTabla({
               <Button
                 size="sm"
                 variant="secondary"
-                className="p-2 text-brand-700 bg-brand-50 hover:bg-brand-100 border-brand-200"
+                className="p-2 text-brand-700 bg-brand-500/15 hover:bg-brand-500/25 border-0"
                 title={`Ver ${documento.archivo.startsWith('data:application/pdf') || documento.archivoNombre?.toLowerCase().endsWith('.pdf') ? 'PDF' : 'imagen'} del documento`}
                 aria-label={`Ver archivo adjunto de ${nombreTipo} de ${nombreAsignado}`}
                 onClick={() => setModalDoc({

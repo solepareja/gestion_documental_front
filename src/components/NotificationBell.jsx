@@ -46,7 +46,7 @@ export default function NotificationBell() {
       try {
         const [resDocs, resCond] = await Promise.all([
           api.get('/documentos').catch(() => ({ data: [] })),
-          api.get('/conductores').catch(() => ({ data: [] })),
+          api.get('/transportistas').catch(() => api.get('/conductores')).catch(() => ({ data: [] })),
         ]);
 
         if (!activo) return;
@@ -61,6 +61,7 @@ export default function NotificationBell() {
         // 1. Notificaciones de Documentos de Vehículos (solo documentos activos / en vigor)
         for (const doc of docsProcesados) {
           if (doc.esHistorico || !doc.fechaCaducidad || doc.estado === 'ANULADO') continue;
+          if (doc.avisos === false) continue;
 
           const dias = calcularDiasParaCaducidad(doc.fechaCaducidad);
           if (dias === null) continue;
@@ -154,7 +155,7 @@ export default function NotificationBell() {
               dias,
               esCaducado,
               estadoTexto,
-              enlace: `/conductores/${cond.id}`,
+              enlace: `/transportistas/${cond.id}`,
             });
           }
         }
@@ -195,10 +196,10 @@ export default function NotificationBell() {
         onClick={() => setAbierto((prev) => !prev)}
         aria-label={`Notificaciones (${total} pendientes)`}
         aria-expanded={abierto}
-        className={`relative p-2 rounded-full transition-colors focus:outline-none cursor-pointer ${
+        className={`relative p-2 rounded-xl transition-all focus:outline-none cursor-pointer ${
           abierto
-            ? 'bg-brand-50 text-brand-700 ring-2 ring-brand-300 dark:bg-brand-950 dark:text-brand-300 dark:ring-brand-700'
-            : 'text-gray-500 hover:text-brand-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-brand-400 dark:hover:bg-gray-800'
+            ? 'bg-brand-50 text-brand-600 ring-2 ring-brand-200 dark:bg-brand-950 dark:text-brand-300 dark:ring-brand-700'
+            : 'text-gray-500 hover:text-brand-600 hover:bg-brand-50/60 dark:text-gray-400 dark:hover:text-brand-400 dark:hover:bg-gray-800'
         }`}
       >
         <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -214,7 +215,7 @@ export default function NotificationBell() {
         {total > 0 && (
           <span
             className={`absolute -top-0.5 -right-0.5 flex h-4 min-w-4 px-1 items-center justify-center rounded-full text-[10px] font-extrabold text-white ring-2 ring-white shadow-xs ${
-              caducadas.length > 0 ? 'bg-red-600 animate-pulse' : 'bg-amber-500'
+              caducadas.length > 0 ? 'bg-red-500' : 'bg-brand-500'
             }`}
           >
             {total > 9 ? '9+' : total}
@@ -224,7 +225,7 @@ export default function NotificationBell() {
 
       {/* Menú desplegable flotante */}
       {abierto && (
-        <div className="fixed inset-x-3 top-18 sm:absolute sm:top-full sm:right-0 sm:inset-x-auto sm:mt-2 sm:w-96 rounded-3xl bg-white dark:bg-gray-900 shadow-2xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden max-h-[calc(100vh-80px)] flex flex-col animate-in fade-in zoom-in-95 duration-150">
+        <div className="fixed inset-x-3 top-18 sm:absolute sm:top-full sm:right-0 sm:inset-x-auto sm:mt-2 sm:w-96 rounded-3xl bg-white dark:bg-gray-900 shadow-2xl border-0 z-50 overflow-hidden max-h-[calc(100vh-80px)] flex flex-col animate-in fade-in zoom-in-95 duration-150">
           {/* Cabecera del desplegable */}
           <div className="p-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
@@ -313,10 +314,10 @@ export default function NotificationBell() {
                 >
                   {/* Icono de tipo / severidad */}
                   <div
-                    className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border mt-0.5 ${
+                    className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border-0 mt-0.5 ${
                       item.esCaducado
-                        ? 'bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800'
-                        : 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800'
+                        ? 'bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-400'
+                        : 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400'
                     }`}
                   >
                     {item.esCaducado ? (
@@ -336,10 +337,10 @@ export default function NotificationBell() {
                         {item.categoria}
                       </span>
                       <span
-                        className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${
+                        className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border-0 ${
                           item.esCaducado
-                            ? 'bg-red-50 dark:bg-red-950/60 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800'
-                            : 'bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-400 border-amber-200 dark:border-amber-800'
+                            ? 'bg-red-50 dark:bg-red-950/60 text-red-700 dark:text-red-400'
+                            : 'bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-400'
                         }`}
                       >
                         {item.estadoTexto}

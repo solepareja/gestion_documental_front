@@ -3,12 +3,13 @@ import { useNavigate, useParams } from 'react-router-dom';
 import api from '../../services/api';
 import Button from '../../components/Button';
 import CreateFormLayout from '../../components/CreateFormLayout';
+import CustomSelect from '../../components/CustomSelect';
 import useEditRecord from '../../components/useEditRecord';
 
 export default function FormUsuario() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({ nombre: '', correo: '', admin: false });
+  const [formData, setFormData] = useState({ nombre: '', correo: '', rol: 'USUARIO', admin: false });
   const [contrasenya, setContrasenya] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -24,7 +25,13 @@ export default function FormUsuario() {
     setSaving(true);
     setError(null);
     try {
-      const payload = { ...formData, ...(contrasenya.trim() ? { contrasenya } : {}) };
+      const rolSeleccionado = formData.rol || (formData.admin ? 'ADMIN' : 'USUARIO');
+      const payload = {
+        ...formData,
+        rol: rolSeleccionado,
+        admin: rolSeleccionado === 'ADMIN',
+        ...(contrasenya.trim() ? { contrasenya } : {})
+      };
       if (id) await api.put(`/usuarios/${id}`, payload);
       else await api.post('/usuarios', payload);
       navigate('/usuarios');
@@ -37,7 +44,7 @@ export default function FormUsuario() {
 
   return (
     <CreateFormLayout title={id ? 'Editar usuario' : 'Añadir usuario'} category="Usuarios" backTo="/usuarios"
-      editing={Boolean(id)} backLabel="usuarios" description="Crea una cuenta y configura sus datos de acceso.">
+      editing={Boolean(id)} backLabel="usuarios" description="Crea una cuenta y configura sus datos de acceso y permisos.">
       {(error || loadError) && <p role="alert" className="create-error">{error || loadError}</p>}
       {loading && <p role="status" className="pb-6 text-sm text-gray-500">Cargando datos…</p>}
       <form onSubmit={handleSubmit}>
@@ -59,12 +66,27 @@ export default function FormUsuario() {
             {id && <p id="password-help" className="mt-2 text-xs text-gray-500">Déjala vacía para mantener la contraseña actual.</p>}
           </div>
           <div>
-            <label htmlFor="admin">Rol</label>
-            <select id="admin" name="admin" value={String(formData.admin)}
-              onChange={e => setFormData({ ...formData, admin: e.target.value === 'true' })}>
-              <option value="false">Usuario</option>
-              <option value="true">Administrador</option>
-            </select>
+            <label htmlFor="rol">Rol de acceso</label>
+            <CustomSelect
+              id="rol"
+              name="rol"
+              value={formData.rol || (formData.admin ? 'ADMIN' : 'USUARIO')}
+              onChange={e => {
+                const nuevoRol = e.target.value;
+                setFormData({
+                  ...formData,
+                  rol: nuevoRol,
+                  admin: nuevoRol === 'ADMIN',
+                });
+              }}
+            >
+              <option value="USUARIO">Usuario general</option>
+              <option value="ADMIN">Administrador</option>
+              <option value="KIOSKO">Kiosko</option>
+            </CustomSelect>
+            <p className="mt-1.5 text-xs text-gray-500">
+              Los usuarios con rol <strong>Kiosko</strong> solo verán la pantalla táctil de entrega de material y no podrán navegar por el resto del sistema.
+            </p>
           </div>
           <div className="create-actions">
             <span className="create-required-note">{id ? 'Revisa los datos antes de guardar.' : 'Completa los campos para crear la cuenta.'}</span>

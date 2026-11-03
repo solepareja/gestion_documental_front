@@ -4,6 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import api from '../../services/api';
 import Button from '../../components/Button';
 import CreateFormLayout from '../../components/CreateFormLayout';
+import CustomSelect from '../../components/CustomSelect';
 
 export default function FormVehiculo() {
     const navigate = useNavigate();
@@ -133,7 +134,7 @@ export default function FormVehiculo() {
 
                     <div>
                         <label className="block text-sm font-medium text-gray-700" htmlFor="combustible">Combustible *</label>
-                        <select
+                        <CustomSelect
                             id="combustible"
                             name="combustible"
                             value={formData.combustible || 'Sin especificar'}
@@ -146,12 +147,12 @@ export default function FormVehiculo() {
                             <option value="Híbrido enchufable">Híbrido enchufable</option>
                             <option value="Eléctrico">Eléctrico</option>
                             <option value="GLP / GNC">GLP / GNC</option>
-                        </select>
+                        </CustomSelect>
                     </div>
 
                     <div>
                         <label className="block text-sm font-medium text-gray-700" htmlFor="activo">Estado del vehículo *</label>
-                        <select
+                        <CustomSelect
                             id="activo"
                             name="activo"
                             value={String(formData.activo !== false)}
@@ -160,7 +161,7 @@ export default function FormVehiculo() {
                         >
                             <option value="true">Activo (en servicio)</option>
                             <option value="false">Inactivo (baja o taller)</option>
-                        </select>
+                        </CustomSelect>
                     </div>
 
                     <div>

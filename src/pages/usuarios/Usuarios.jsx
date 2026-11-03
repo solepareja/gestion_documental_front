@@ -39,17 +39,25 @@ export default function Usuarios() {
         { header: 'Correo', accessor: 'correo', },
         {
             header: 'Rol',
-            render: (usuario) => (
-                <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        usuario.admin
-                            ? 'bg-brand-100 text-brand-800'
-                            : 'bg-gray-100 text-gray-700'
-                    }`}
-                >
-                    {usuario.admin ? 'Administrador' : 'Usuario'}
-                </span>
-            )
+            render: (usuario) => {
+                const rol = String(usuario.rol || (usuario.admin ? 'ADMIN' : 'USUARIO')).toUpperCase();
+                let badgeClass = 'bg-gray-100 text-gray-700';
+                let label = 'Usuario';
+
+                if (rol === 'ADMIN') {
+                    badgeClass = 'bg-brand-100 text-brand-800 font-semibold';
+                    label = 'Administrador';
+                } else if (rol === 'KIOSKO') {
+                    badgeClass = 'bg-amber-100 text-amber-800 font-semibold';
+                    label = 'Kiosko (Tablet)';
+                }
+
+                return (
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs ${badgeClass}`}>
+                        {label}
+                    </span>
+                );
+            }
         },
         {
             header: 'Acciones',
@@ -112,8 +120,9 @@ export default function Usuarios() {
                         value: filtros.rol,
                         onChange: value => cambiarFiltro('rol', value),
                         options: [
-                            { value: 'admin', label: 'Administrador' },
-                            { value: 'usuario', label: 'Usuario estándar' },
+                            { value: 'ADMIN', label: 'Administrador' },
+                            { value: 'USUARIO', label: 'Usuario estándar' },
+                            { value: 'KIOSKO', label: 'Kiosko (Tablet Almacén)' },
                         ],
                     },
                 ]}

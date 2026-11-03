@@ -3,21 +3,21 @@
  * según aparecen en el reverso del carnet físico (Columnas 9, 10, 11 y 12).
  */
 export const CATEGORIAS_CARNET = [
-  { codigo: 'AM', nombre: 'Ciclomotor', desc: 'Ciclomotores de 2 o 3 ruedas y cuadriciclos ligeros', icono: '🛵', tipoVehiculo: 'Ciclomotor' },
-  { codigo: 'A1', nombre: 'Moto 125 cc', desc: 'Motocicletas hasta 125 cc (máx. 11 kW)', icono: '🏍️', tipoVehiculo: 'Motocicleta ligera' },
-  { codigo: 'A2', nombre: 'Moto media', desc: 'Motocicletas hasta 35 kW (~47 CV)', icono: '🏍️', tipoVehiculo: 'Motocicleta media' },
-  { codigo: 'A', nombre: 'Moto grande', desc: 'Motocicletas de cualquier cilindrada y potencia', icono: '🏍️', tipoVehiculo: 'Motocicleta grande' },
-  { codigo: 'B1', nombre: 'Cuadriciclo', desc: 'Cuadriciclos pesados hasta 15 kW y 400/550 kg', icono: '🚙', tipoVehiculo: 'Microcoche' },
-  { codigo: 'B', nombre: 'Turismo / Furgoneta', desc: 'Turismos y furgonetas hasta 3.500 kg y 9 plazas', icono: '🚗', tipoVehiculo: 'Turismo / Furgoneta' },
-  { codigo: 'C1', nombre: 'Camión ligero', desc: 'Camiones entre 3.500 kg y 7.500 kg', icono: '🚚', tipoVehiculo: 'Camión ligero' },
-  { codigo: 'C', nombre: 'Camión pesado', desc: 'Camiones de más de 3.500 kg sin límite', icono: '🚛', tipoVehiculo: 'Camión pesado' },
-  { codigo: 'D1', nombre: 'Minibús', desc: 'Autobuses pequeños hasta 16 pasajeros + conductor', icono: '🚐', tipoVehiculo: 'Minibús' },
-  { codigo: 'D', nombre: 'Autobús', desc: 'Autobuses de más de 8 pasajeros', icono: '🚌', tipoVehiculo: 'Autobús' },
-  { codigo: 'BE', nombre: 'Coche + Remolque', desc: 'Turismo (B) con remolque pesado (> 750 kg)', icono: '🚗', tipoVehiculo: 'Coche con remolque' },
-  { codigo: 'C1E', nombre: 'Camión ligero + Remolque', desc: 'Camión C1 con remolque pesado (> 750 kg)', icono: '🚚', tipoVehiculo: 'Camión ligero con remolque' },
-  { codigo: 'CE', nombre: 'Tráiler / Articulado', desc: 'Camión pesado C con remolque o semirremolque', icono: '🚛', tipoVehiculo: 'Tráiler / Articulado' },
-  { codigo: 'D1E', nombre: 'Minibús + Remolque', desc: 'Minibús D1 con remolque pesado (> 750 kg)', icono: '🚐', tipoVehiculo: 'Minibús con remolque' },
-  { codigo: 'DE', nombre: 'Autobús + Remolque', desc: 'Autobús D con remolque pesado (> 750 kg)', icono: '🚌', tipoVehiculo: 'Autobús con remolque' }
+  { codigo: 'AM', nombre: 'Ciclomotor', desc: 'Ciclomotores de 2 o 3 ruedas y cuadriciclos ligeros', tipoVehiculo: 'Ciclomotor' },
+  { codigo: 'A1', nombre: 'Moto 125 cc', desc: 'Motocicletas hasta 125 cc (máx. 11 kW)', tipoVehiculo: 'Motocicleta ligera' },
+  { codigo: 'A2', nombre: 'Moto media', desc: 'Motocicletas hasta 35 kW (~47 CV)', tipoVehiculo: 'Motocicleta media' },
+  { codigo: 'A', nombre: 'Moto grande', desc: 'Motocicletas de cualquier cilindrada y potencia', tipoVehiculo: 'Motocicleta grande' },
+  { codigo: 'B1', nombre: 'Cuadriciclo', desc: 'Cuadriciclos pesados hasta 15 kW y 400/550 kg', tipoVehiculo: 'Microcoche' },
+  { codigo: 'B', nombre: 'Turismo / Furgoneta', desc: 'Turismos y furgonetas hasta 3.500 kg y 9 plazas', tipoVehiculo: 'Turismo / Furgoneta' },
+  { codigo: 'C1', nombre: 'Camión ligero', desc: 'Camiones entre 3.500 kg y 7.500 kg', tipoVehiculo: 'Camión ligero' },
+  { codigo: 'C', nombre: 'Camión pesado', desc: 'Camiones de más de 3.500 kg sin límite', tipoVehiculo: 'Camión pesado' },
+  { codigo: 'D1', nombre: 'Minibús', desc: 'Autobuses pequeños hasta 16 pasajeros + conductor', tipoVehiculo: 'Minibús' },
+  { codigo: 'D', nombre: 'Autobús', desc: 'Autobuses de más de 8 pasajeros', tipoVehiculo: 'Autobús' },
+  { codigo: 'BE', nombre: 'Coche + Remolque', desc: 'Turismo (B) con remolque pesado (> 750 kg)', tipoVehiculo: 'Coche con remolque' },
+  { codigo: 'C1E', nombre: 'Camión ligero + Remolque', desc: 'Camión C1 con remolque pesado (> 750 kg)', tipoVehiculo: 'Camión ligero con remolque' },
+  { codigo: 'CE', nombre: 'Tráiler / Articulado', desc: 'Camión pesado C con remolque o semirremolque', tipoVehiculo: 'Tráiler / Articulado' },
+  { codigo: 'D1E', nombre: 'Minibús + Remolque', desc: 'Minibús D1 con remolque pesado (> 750 kg)', tipoVehiculo: 'Minibús con remolque' },
+  { codigo: 'DE', nombre: 'Autobús + Remolque', desc: 'Autobús D con remolque pesado (> 750 kg)', tipoVehiculo: 'Autobús con remolque' }
 ];
 
 export const MAPA_CATEGORIAS = Object.fromEntries(

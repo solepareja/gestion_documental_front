@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 import ModalConfirmacion from './ModalConfirmacion';
+import CustomSelect from './CustomSelect';
 
 const DIAS_SEMANA = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 const DIAS_SEMANA_CORTO = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
@@ -204,18 +205,18 @@ export default function CalendarioVencimientos({
   };
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+    <div className="bg-white dark:bg-gray-900 rounded-3xl border-0 shadow-xs overflow-hidden">
       {/* Barra superior de controles del calendario */}
-      <div className="p-6 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="p-5 sm:p-6 bg-white dark:bg-gray-900 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-3">
-            <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight">
-              {MESES[mes]} <span className="text-brand-600">{anyo}</span>
+            <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight">
+              {MESES[mes]} <span className="text-brand-500 font-black">{anyo}</span>
             </h2>
             <button
               type="button"
               onClick={irAHoy}
-              className="text-xs px-2.5 py-1 rounded-lg font-semibold bg-brand-50 text-brand-700 hover:bg-brand-100 border border-brand-200/60 transition-colors cursor-pointer"
+              className="text-xs px-3 py-1.5 rounded-xl font-bold bg-brand-500/15 text-brand-600 hover:bg-brand-500/25 border-0 transition-all cursor-pointer"
             >
               Hoy
             </button>
@@ -225,23 +226,23 @@ export default function CalendarioVencimientos({
         {/* Botones de navegación y filtros */}
         <div className="flex flex-wrap items-center gap-3">
           {/* Filtros rápidos */}
-          <div className="inline-flex rounded-xl bg-gray-100 p-1 border border-gray-200/60 text-xs font-semibold">
+          <div className="inline-flex rounded-xl bg-gray-100/90 dark:bg-gray-800 p-1 border-0 text-xs font-semibold">
             {[
               { id: 'TODOS', label: 'Todos' },
               { id: 'ITV', label: 'ITV' },
               { id: 'SEGURO', label: 'Seguros' },
               { id: 'CARNET', label: 'Carnets' },
-              { id: 'MATERIAL', label: 'EPIS / Vestuario' },
-              { id: 'AVISO', label: 'Notas / Avisos' },
+              { id: 'MATERIAL', label: 'EPIS' },
+              { id: 'AVISO', label: 'Avisos' },
             ].map((f) => (
               <button
                 key={f.id}
                 type="button"
                 onClick={() => setFiltroTipo(f.id)}
-                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer border-0 ${
                   filtroTipo === f.id
-                    ? 'bg-white text-gray-900 shadow-xs font-bold'
-                    : 'text-gray-500 hover:text-gray-800'
+                    ? 'bg-brand-500 text-white shadow-xs font-bold'
+                    : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
                 }`}
               >
                 {f.label}
@@ -250,12 +251,12 @@ export default function CalendarioVencimientos({
           </div>
 
           {/* Flechas mes */}
-          <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-xl p-1 shadow-xs">
+          <div className="flex items-center gap-1 bg-gray-100/80 dark:bg-gray-800 border-0 rounded-xl p-1">
             <button
               type="button"
               onClick={mesAnterior}
               aria-label="Mes anterior"
-              className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+              className="p-1.5 text-gray-500 hover:text-brand-500 hover:bg-brand-50/80 rounded-lg transition-all cursor-pointer border-0"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -265,7 +266,7 @@ export default function CalendarioVencimientos({
               type="button"
               onClick={mesSiguiente}
               aria-label="Mes siguiente"
-              className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+              className="p-1.5 text-gray-500 hover:text-brand-500 hover:bg-brand-50/80 rounded-lg transition-all cursor-pointer border-0"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -276,10 +277,10 @@ export default function CalendarioVencimientos({
       </div>
 
       {/* Rejilla y cabecera del calendario */}
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto px-4 sm:px-6 pb-6">
         <div className="min-w-[620px] lg:min-w-0">
           {/* Cabecera de días de la semana */}
-          <div className="grid grid-cols-7 border-b-2 border-gray-200 dark:border-gray-700 bg-gray-50/90 dark:bg-gray-950 text-center text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300 py-3.5">
+          <div className="grid grid-cols-7 gap-1 sm:gap-1.5 text-center text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 py-1.5 select-none">
             {DIAS_SEMANA.map((dia, idx) => (
               <div key={dia}>
                 <span className="hidden md:inline">{dia}</span>
@@ -294,7 +295,7 @@ export default function CalendarioVencimientos({
               Cargando calendario de vencimientos…
             </div>
           ) : (
-            <div className="grid grid-cols-7 auto-rows-fr divide-x divide-y divide-gray-200 dark:divide-gray-700 bg-gray-200/50 dark:bg-gray-700">
+            <div className="grid grid-cols-7 gap-1 sm:gap-1.5 auto-rows-fr p-1.5 sm:p-2 rounded-2xl sm:rounded-3xl bg-gray-100/70 dark:bg-gray-950/70 border-0">
               {celdasCalendario.map((celda) => {
                 const esActual = celda.mesRel === 'actual';
                 const tieneEventos = celda.eventos.length > 0;
@@ -304,25 +305,27 @@ export default function CalendarioVencimientos({
                   <div
                     key={celda.clave}
                     onClick={() => manejarClickDia(celda)}
-                    className={`min-h-[110px] sm:min-h-[125px] p-2 sm:p-2.5 transition-colors relative flex flex-col justify-between cursor-pointer group hover:bg-orange-50/30 ${
-                      esActual ? 'bg-white' : 'bg-gray-50/60 text-gray-400'
-                    } ${esSeleccionado ? 'ring-2 ring-inset ring-brand-500 z-10' : ''}`}
+                    className={`min-h-[105px] sm:min-h-[120px] p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl transition-all relative flex flex-col justify-between cursor-pointer group border-0 ${
+                      celda.esHoy
+                        ? 'bg-brand-50/70 dark:bg-brand-950/40 ring-2 ring-brand-400/60 shadow-xs'
+                        : esActual
+                        ? 'bg-white dark:bg-gray-900 shadow-2xs hover:shadow-xs hover:bg-orange-50/20 dark:hover:bg-gray-850'
+                        : 'bg-white/40 dark:bg-gray-900/30 text-gray-400/60 opacity-60 hover:opacity-100'
+                    } ${esSeleccionado ? 'ring-2 ring-brand-500 shadow-md z-10' : ''}`}
                   >
                     {/* Cabecera de la casilla */}
                     <div className="flex items-center justify-between mb-1.5">
                       <span
                         className={`inline-flex items-center justify-center text-xs font-bold rounded-lg w-6 h-6 ${
                           celda.esHoy
-                            ? 'bg-brand-600 text-white shadow-xs'
+                            ? 'bg-brand-500 text-white shadow-xs font-black'
                             : esActual
-                            ? 'text-gray-700'
-                            : 'text-gray-400'
+                            ? 'text-gray-700 dark:text-gray-200'
+                            : 'text-gray-400/60 dark:text-gray-600'
                         }`}
                       >
                         {celda.dia}
                       </span>
-
-              
                     </div>
 
                     {/* Lista de eventos del día */}
@@ -331,15 +334,21 @@ export default function CalendarioVencimientos({
                         <div
                           key={ev.id}
                           title={`${ev.titulo} — ${ev.subtitulo || ''}`}
-                          className={`text-[11px] leading-tight px-2 py-1 rounded-md border font-semibold truncate flex items-center gap-1.5 transition-transform hover:scale-[1.02] shadow-2xs ${ev.estiloClase}`}
+                          className={`text-[11px] leading-tight px-2 py-1 rounded-lg border-0 font-semibold truncate flex items-center gap-1.5 transition-transform hover:scale-[1.02] shadow-2xs ${ev.estiloClase}`}
                         >
                           <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-current opacity-80" />
                           <span className="truncate">{ev.titulo}</span>
+                          {ev.tipo === 'documento' && ev.avisos === false && (
+                            <svg title="Avisos desactivados" className="w-3 h-3 shrink-0 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+                            </svg>
+                          )}
                         </div>
                       ))}
 
                       {celda.eventos.length > 3 && (
-                        <div className="text-[10px] font-bold text-brand-700 pl-1">
+                        <div className="text-[10px] font-bold text-brand-600 pl-1">
                           +{celda.eventos.length - 3} más…
                         </div>
                       )}
@@ -353,19 +362,19 @@ export default function CalendarioVencimientos({
       </div>
 
       {/* Pie de leyenda */}
-      <div className="p-4 border-t border-gray-100 bg-gray-50/50 flex flex-wrap items-center justify-between gap-3 text-xs text-gray-600">
-        <span className="text-gray-400 text-[11px]">
+      <div className="px-6 py-3 flex flex-wrap items-center justify-between gap-3 text-xs text-gray-400">
+        <span className="text-[11px]">
           Haz clic en cualquier día para añadir una nota, aviso o evento, o consultar los existentes
         </span>
       </div>
 
       {modalAbierto && diaSeleccionado && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl border border-gray-100 shadow-2xl max-w-lg w-full p-6 animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[90vh]">
+          <div className="bg-white dark:bg-gray-900 rounded-3xl border-0 shadow-2xl max-w-lg w-full p-6 animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[90vh]">
             
-            <div className="flex items-center justify-between pb-4 border-b border-gray-100 shrink-0">
+            <div className="flex items-center justify-between pb-3 shrink-0">
               <div>
-                <span className="text-xs font-semibold text-brand-700 uppercase tracking-wider">
+                <span className="text-xs font-semibold text-brand-500 uppercase tracking-wider">
                   Día seleccionado
                 </span>
                 <h3 className="text-lg font-bold text-gray-900 capitalize">
@@ -393,7 +402,7 @@ export default function CalendarioVencimientos({
                     setMostrarFormulario(true);
                     setErrorFormulario(null);
                   }}
-                  className="w-full py-2.5 px-4 rounded-2xl bg-brand-50 hover:bg-brand-100 text-brand-700 font-bold text-sm border border-brand-200/80 flex items-center justify-center gap-2 transition-all cursor-pointer shadow-2xs"
+                  className="w-full py-2.5 px-4 rounded-2xl bg-brand-50 hover:bg-brand-100 text-brand-700 font-bold text-sm border-0 flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs"
                 >
                   <svg className="w-5 h-5 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -401,7 +410,7 @@ export default function CalendarioVencimientos({
                   <span>Añadir nota, evento o aviso</span>
                 </button>
               ) : (
-                <form onSubmit={manejarGuardarAviso} className="bg-orange-50/30 border border-brand-200/80 rounded-2xl p-4 space-y-3">
+                <form onSubmit={manejarGuardarAviso} className="bg-orange-50/50 dark:bg-orange-950/30 border-0 rounded-2xl p-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <h4 className="text-sm font-bold text-brand-900 flex items-center gap-1.5">
                       <svg className="w-4 h-4 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -432,7 +441,7 @@ export default function CalendarioVencimientos({
                       type="text"
                       value={formTitulo}
                       onChange={(e) => setFormTitulo(e.target.value)}
-                      className="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                      className="w-full px-3.5 py-2 text-sm bg-white dark:bg-gray-800 border-0 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/25 shadow-2xs transition-all"
                       required
                       autoFocus
                     />
@@ -443,31 +452,29 @@ export default function CalendarioVencimientos({
                       <label className="block text-xs font-semibold text-gray-700 mb-1">
                         Tipo
                       </label>
-                      <select
+                      <CustomSelect
                         value={formTipo}
                         onChange={(e) => setFormTipo(e.target.value)}
-                        className="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                       >
                         <option value="NOTA">Nota</option>
                         <option value="RECORDATORIO">Recordatorio</option>
                         <option value="EVENTO">Evento</option>
                         <option value="AVISO">Aviso</option>
-                      </select>
+                      </CustomSelect>
                     </div>
 
                     <div>
                       <label className="block text-xs font-semibold text-gray-700 mb-1">
                         Prioridad
                       </label>
-                      <select
+                      <CustomSelect
                         value={formPrioridad}
                         onChange={(e) => setFormPrioridad(e.target.value)}
-                        className="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                       >
                         <option value="NORMAL">Normal</option>
                         <option value="IMPORTANTE">Importante</option>
                         <option value="URGENTE">Urgente</option>
-                      </select>
+                      </CustomSelect>
                     </div>
                   </div>
 
@@ -479,7 +486,7 @@ export default function CalendarioVencimientos({
                       value={formDescripcion}
                       onChange={(e) => setFormDescripcion(e.target.value)}
                       rows={2}
-                      className="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent resize-none"
+                      className="w-full px-3.5 py-2 text-sm bg-white dark:bg-gray-800 border-0 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/25 shadow-2xs transition-all resize-none"
                     />
                   </div>
 
@@ -487,14 +494,14 @@ export default function CalendarioVencimientos({
                     <button
                       type="button"
                       onClick={() => setMostrarFormulario(false)}
-                      className="px-3 py-1.5 text-xs font-semibold text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                      className="px-3 py-1.5 text-xs font-semibold text-gray-600 hover:text-gray-900 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer"
                     >
                       Descartar
                     </button>
                     <button
                       type="submit"
                       disabled={guardando}
-                      className="px-4 py-2 text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 disabled:opacity-50 rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
+                      className="px-4 py-2 text-xs font-bold text-white bg-brand-500 hover:bg-brand-600 active:scale-[0.98] disabled:opacity-50 rounded-xl shadow-xs hover:shadow transition-all cursor-pointer flex items-center gap-1.5"
                     >
                       {guardando ? (
                         <>
@@ -515,7 +522,7 @@ export default function CalendarioVencimientos({
                 </h4>
 
                 {eventosDelDia.length === 0 ? (
-                  <p className="text-sm text-gray-400 py-6 text-center italic bg-gray-50/50 rounded-2xl border border-dashed border-gray-200">
+                  <p className="text-sm text-gray-400 py-6 text-center italic bg-gray-50/50 dark:bg-gray-800/50 rounded-2xl border-0">
                     No hay eventos ni notas programadas para este día.
                   </p>
                 ) : (
@@ -523,10 +530,10 @@ export default function CalendarioVencimientos({
                     {eventosDelDia.map((ev) => (
                       <div
                         key={ev.id}
-                        className="p-3.5 rounded-2xl border border-gray-100 bg-gray-50/70 hover:bg-white hover:shadow-xs transition-all flex items-start justify-between gap-3"
+                        className="p-3.5 rounded-2xl border-0 bg-gray-50 dark:bg-gray-800/60 hover:bg-white dark:hover:bg-gray-800 hover:shadow-xs transition-all flex items-start justify-between gap-3"
                       >
                         <div className="flex items-start gap-3 min-w-0">
-                          <div className={`p-2 rounded-xl border ${ev.estiloClase} shrink-0 mt-0.5`}>
+                          <div className={`p-2 rounded-xl border-0 ${ev.estiloClase} shrink-0 mt-0.5`}>
                             {ev.esAvisoPersonalizado ? (
                               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
@@ -539,11 +546,20 @@ export default function CalendarioVencimientos({
                           </div>
                           <div className="min-w-0">
                             <div className="flex flex-wrap items-center gap-1.5 mb-0.5">
-                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${ev.estiloClase}`}>
+                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border-0 ${ev.estiloClase}`}>
                                 {ev.categoria}
                               </span>
+                              {ev.tipo === 'documento' && ev.avisos === false && (
+                                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full border-0 bg-gray-200/60 text-gray-600 dark:bg-gray-700 dark:text-gray-300" title="Avisos desactivados para este documento">
+                                  Sin avisos
+                                </span>
+                              )}
                               {ev.prioridad && ev.prioridad !== 'NORMAL' && (
-                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-100 text-red-700">
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border-0 ${
+                                  ev.prioridad === 'URGENTE'
+                                    ? 'bg-rose-100/90 text-rose-900'
+                                    : 'bg-amber-100/90 text-amber-900'
+                                }`}>
                                   {ev.prioridad}
                                 </span>
                               )}
@@ -565,7 +581,7 @@ export default function CalendarioVencimientos({
                             <Link
                               to={ev.enlace}
                               onClick={() => setModalAbierto(false)}
-                              className="inline-flex items-center gap-1 text-xs font-semibold text-brand-700 bg-brand-50 hover:bg-brand-100 border border-brand-200/80 px-2.5 py-1.5 rounded-xl transition-colors shrink-0"
+                              className="inline-flex items-center gap-1 text-xs font-semibold text-brand-700 bg-brand-500/15 hover:bg-brand-500/25 border-0 px-2.5 py-1.5 rounded-xl transition-colors shrink-0"
                             >
                               <span>Ver</span>
                               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -607,7 +623,7 @@ export default function CalendarioVencimientos({
               <button
                 type="button"
                 onClick={() => setModalAbierto(false)}
-                className="px-4 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
+                className="px-4 py-2 rounded-xl border-0 bg-gray-100 hover:bg-gray-200/80 text-sm font-semibold text-gray-700 transition-colors cursor-pointer"
               >
                 Cerrar
               </button>

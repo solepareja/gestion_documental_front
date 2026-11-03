@@ -14,7 +14,6 @@ export default function FormMaterial() {
     nombre: '',
     descripcion: '',
     requiereTalla: false,
-    precio: '',
     vidaUtilMeses: '',
   });
 
@@ -34,7 +33,6 @@ export default function FormMaterial() {
           nombre: data.nombre || '',
           descripcion: data.descripcion || '',
           requiereTalla: Boolean(data.requiereTalla),
-          precio: data.precio !== null && data.precio !== undefined ? String(data.precio) : '',
           vidaUtilMeses: data.vidaUtilMeses !== null && data.vidaUtilMeses !== undefined ? String(data.vidaUtilMeses) : '',
         });
       })
@@ -70,7 +68,6 @@ export default function FormMaterial() {
         nombre: formData.nombre.trim(),
         descripcion: formData.descripcion.trim() || null,
         requiereTalla: Boolean(formData.requiereTalla),
-        precio: formData.precio !== '' ? parseFloat(formData.precio) : null,
         vidaUtilMeses: formData.vidaUtilMeses !== '' ? parseInt(formData.vidaUtilMeses, 10) : null,
       };
 
@@ -95,7 +92,7 @@ export default function FormMaterial() {
       title={esEdicion ? 'Editar material' : 'Añadir material'}
       category="Materiales"
       backTo="/materiales"
-      description="Registra un EPI o prenda de vestuario laboral con sus características, vida útil y precio."
+      description="Registra un EPI o prenda de vestuario laboral con sus características y vida útil."
     >
       {error && <p role="alert" className="create-error">{error}</p>}
       {cargandoInicial && <p role="status" className="pb-6 text-sm text-gray-500">Cargando material…</p>}
@@ -103,17 +100,17 @@ export default function FormMaterial() {
       <form onSubmit={handleSubmit}>
         <fieldset disabled={cargandoInicial || cargando} className="create-form disabled:opacity-60">
           
-          {/* Tipo de Material (Selector visual) */}
+          {/* Tipo de Material (Selector visual sin bordes por contraste) */}
           <div className="col-span-full">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Categoría de material *
             </label>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <label
-                className={`relative flex items-center gap-3 p-4 rounded-2xl border-2 cursor-pointer transition-all ${
+                className={`relative flex items-center gap-3.5 p-4 rounded-2xl border-0 cursor-pointer transition-all ${
                   formData.tipo === 'EPI'
-                    ? 'border-brand-600 bg-brand-50/40 text-brand-900 shadow-xs'
-                    : 'border-gray-200 hover:border-gray-300 bg-white text-gray-700'
+                    ? 'bg-amber-100/70 dark:bg-amber-950/40 text-amber-950 dark:text-amber-200 ring-2 ring-amber-500/30 shadow-xs'
+                    : 'bg-gray-100/80 hover:bg-gray-200/70 dark:bg-gray-800/60 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'
                 }`}
               >
                 <input
@@ -124,22 +121,22 @@ export default function FormMaterial() {
                   onChange={handleChange}
                   className="sr-only"
                 />
-                <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-amber-200/80 dark:bg-amber-900/60 text-amber-900 dark:text-amber-200 flex items-center justify-center shrink-0">
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                   </svg>
                 </div>
                 <div className="flex flex-col">
                   <span className="font-bold text-sm">EPI (Protección individual)</span>
-                  <span className="text-xs text-gray-500">Cascos, guantes, calzado de seguridad, gafas, arneses…</span>
+                  <span className="text-xs opacity-75">Cascos, guantes, calzado de seguridad, gafas, arneses…</span>
                 </div>
               </label>
 
               <label
-                className={`relative flex items-center gap-3 p-4 rounded-2xl border-2 cursor-pointer transition-all ${
+                className={`relative flex items-center gap-3.5 p-4 rounded-2xl border-0 cursor-pointer transition-all ${
                   formData.tipo === 'VESTUARIO'
-                    ? 'border-brand-600 bg-brand-50/40 text-brand-900 shadow-xs'
-                    : 'border-gray-200 hover:border-gray-300 bg-white text-gray-700'
+                    ? 'bg-blue-100/70 dark:bg-blue-950/40 text-blue-950 dark:text-blue-200 ring-2 ring-blue-500/30 shadow-xs'
+                    : 'bg-gray-100/80 hover:bg-gray-200/70 dark:bg-gray-800/60 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'
                 }`}
               >
                 <input
@@ -150,14 +147,14 @@ export default function FormMaterial() {
                   onChange={handleChange}
                   className="sr-only"
                 />
-                <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-800 flex items-center justify-center shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-blue-200/80 dark:bg-blue-900/60 text-blue-900 dark:text-blue-200 flex items-center justify-center shrink-0">
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
                 </div>
                 <div className="flex flex-col">
                   <span className="font-bold text-sm">Vestuario laboral</span>
-                  <span className="text-xs text-gray-500">Pantalones, camisetas, polos, sudaderas, chaquetas…</span>
+                  <span className="text-xs opacity-75">Pantalones, camisetas, polos, sudaderas, chaquetas…</span>
                 </div>
               </label>
             </div>
@@ -176,23 +173,6 @@ export default function FormMaterial() {
               onChange={handleChange}
               placeholder="Ej: Bota de seguridad S3 o Pantalón multibolsillos"
               required
-            />
-          </div>
-
-          {/* Precio */}
-          <div className="col-span-full sm:col-span-1">
-            <label className="block text-sm font-medium text-gray-700" htmlFor="precio">
-              Precio unitario (€)
-            </label>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              id="precio"
-              name="precio"
-              value={formData.precio}
-              onChange={handleChange}
-              placeholder="0.00"
             />
           </div>
 
@@ -216,20 +196,20 @@ export default function FormMaterial() {
             </span>
           </div>
 
-          {/* Requiere Talla (Toggle) */}
+          {/* Requiere Talla (Toggle sin bordes) */}
           <div className="col-span-full sm:col-span-1 flex flex-col justify-center pt-2">
-            <label className="inline-flex items-center gap-3 cursor-pointer p-3 rounded-xl hover:bg-gray-50 border border-gray-200 transition-colors">
+            <label className="inline-flex items-center gap-3.5 cursor-pointer p-4 rounded-2xl bg-gray-100/80 hover:bg-gray-200/70 dark:bg-gray-800/60 dark:hover:bg-gray-800 transition-all border-0">
               <input
                 type="checkbox"
                 id="requiereTalla"
                 name="requiereTalla"
                 checked={formData.requiereTalla}
                 onChange={handleChange}
-                className="w-5 h-5 rounded text-brand-600 focus:ring-brand-500 border-gray-300"
+                className="w-5 h-5 rounded text-brand-600 focus:ring-brand-500 border-0"
               />
               <div className="flex flex-col">
-                <span className="text-sm font-bold text-gray-800">¿Requiere especificar talla?</span>
-                <span className="text-xs text-gray-500">
+                <span className="text-sm font-bold text-gray-800 dark:text-gray-200">¿Requiere especificar talla?</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">
                   Marca si este artículo necesita número de calzado o talla (S, M, L, XL, 42, etc.)
                 </span>
               </div>

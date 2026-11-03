@@ -4,30 +4,30 @@
 // - Trabajadores: Contrato firmado, Alta de trabajador/es, Certificado corriente Seg. Social, Certificado corriente AEAT, Modelo 036/037, Alta de autónomo (RETA), Seguro de responsabilidad civil.
 
 export const tiposDocumentoVehiculo = {
-  DOCUMENTACION_VEHICULO: 'Documentación del vehículo',
+  DOCUMENTACION_VEHICULO: 'Ficha técnica del vehículo',
   SEGURO: 'Póliza del vehículo',
   PERMISO_CIRCULACION: 'Permiso de circulación',
+  SEGURO_RESPONSABILIDAD_CIVIL: 'Seguro de responsabilidad civil',
   ITV: 'ITV',
   TARJETA_TRANSPORTE: 'Tarjeta de transporte',
 };
 
 export const tiposDocumentoConductor = {
-  CONTRATO_FIRMADO: 'Contrato firmado',
   ALTA_TRABAJADOR: 'Alta de trabajador/es',
   RETA: 'Alta de autónomo (RETA)',
-  SEGURO_RESPONSABILIDAD_CIVIL: 'Seguro de responsabilidad civil',
   MODELO_036_037: 'Modelo 036/037',
   CERTIFICADO_SEG_SOCIAL: 'Certificado corriente de pago en la Seguridad Social',
   AEAT: 'Certificado corriente de pago AEAT',
 };
 
+export const tiposDocumentoTransportista = tiposDocumentoConductor;
+
 export const tiposDocumentoTrabajador = {
-  CONTRATO_FIRMADO: 'Contrato firmado',
   ALTA_TRABAJADOR: 'Alta de trabajador/es',
+  RETA: 'Alta de autónomo (RETA)',
   CERTIFICADO_SEG_SOCIAL: 'Certificado corriente de pago en la Seguridad Social',
   AEAT: 'Certificado corriente de pago AEAT',
   MODELO_036_037: 'Modelo 036/037',
-  SEGURO_RESPONSABILIDAD_CIVIL: 'Seguro de responsabilidad civil',
 };
 
 export const tiposDocumento = {
@@ -116,8 +116,8 @@ export function procesarDocumentosConHistorial(documentos) {
     if (doc.estado === 'ANULADO') continue;
     const entidadId = doc.vehiculoId
       ? `v_${doc.vehiculoId}`
-      : doc.conductorId
-      ? `c_${doc.conductorId}`
+      : (doc.transportistaId || doc.conductorId)
+      ? `c_${doc.transportistaId || doc.conductorId}`
       : doc.trabajadorId
       ? `t_${doc.trabajadorId}`
       : `d_${doc.id || 0}`;
@@ -148,8 +148,8 @@ export function procesarDocumentosConHistorial(documentos) {
 
     const entidadId = doc.vehiculoId
       ? `v_${doc.vehiculoId}`
-      : doc.conductorId
-      ? `c_${doc.conductorId}`
+      : (doc.transportistaId || doc.conductorId)
+      ? `c_${doc.transportistaId || doc.conductorId}`
       : doc.trabajadorId
       ? `t_${doc.trabajadorId}`
       : `d_${doc.id || 0}`;
@@ -203,7 +203,7 @@ export function obtenerInfoEstadoDocumento(estado, fechaCaducidad, esHistorico =
     return {
       clave: 'PENDIENTE',
       etiqueta: 'Pendiente',
-      estilo: 'bg-brand-50 text-brand-700 border-brand-100',
+      estilo: 'bg-brand-50 text-brand-700 border-brand-200',
     };
   }
 
@@ -242,6 +242,6 @@ export function obtenerInfoEstadoDocumento(estado, fechaCaducidad, esHistorico =
   return {
     clave: 'VIGENTE',
     etiqueta: 'Vigente',
-    estilo: 'bg-emerald-50 text-emerald-700 border-emerald-100',
+    estilo: 'bg-emerald-50 text-emerald-700 border-emerald-200',
   };
 }

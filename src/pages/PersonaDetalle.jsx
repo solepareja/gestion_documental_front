@@ -17,8 +17,8 @@ function fechaVisible(value) {
 export default function PersonaDetalle({ tipo }) {
   const { id } = useParams();
   const navigate = useNavigate();
-  const conductor = tipo === 'conductores';
-  const category = conductor ? 'Conductores' : 'Trabajadores';
+  const conductor = tipo === 'conductores' || tipo === 'transportistas';
+  const category = conductor ? 'Transportistas' : 'Trabajadores';
   const [state, setState] = useState(null);
   const [entregas, setEntregas] = useState([]);
   const [cargandoEntregas, setCargandoEntregas] = useState(!conductor);
@@ -80,14 +80,14 @@ export default function PersonaDetalle({ tipo }) {
             </div>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="h-64 bg-white rounded-2xl border border-gray-100" />
-            <div className="h-64 bg-white rounded-2xl border border-gray-100" />
+            <div className="h-64 bg-white dark:bg-gray-900 rounded-2xl border-0 shadow-xs" />
+            <div className="h-64 bg-white dark:bg-gray-900 rounded-2xl border-0 shadow-xs" />
           </div>
         </div>
       )}
 
       {current?.error && (
-        <div className="bg-white rounded-2xl border border-gray-100 p-8 text-center shadow-xs">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border-0 p-8 text-center shadow-xs">
           <p role="alert" className="text-red-500 font-medium mb-4">{current.error}</p>
           <Button onClick={() => navigate(`/${tipo}`)}>Regresar a la lista</Button>
         </div>
@@ -97,16 +97,16 @@ export default function PersonaDetalle({ tipo }) {
         <>
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div className="flex items-center gap-4 min-w-0">
-              <div className="w-14 h-14 rounded-2xl bg-brand-50 border border-brand-100/60 flex items-center justify-center text-brand-600 flex-shrink-0 shadow-xs">
+              <div className="w-14 h-14 rounded-2xl bg-brand-50 dark:bg-brand-950/60 border-0 flex items-center justify-center text-brand-600 dark:text-brand-300 flex-shrink-0 shadow-xs">
                 <svg aria-hidden="true" className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM4 21v-2a8 8 0 0116 0v2" />
                 </svg>
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-2.5 flex-wrap">
-                  <h1 className="text-2xl font-bold text-gray-900 tracking-tight break-words">{nombre}</h1>
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-brand-50 text-brand-700 border border-brand-100">
-                    {conductor ? 'Conductor' : 'Trabajador'}
+                  <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 tracking-tight break-words">{nombre}</h1>
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-brand-50 dark:bg-brand-950/60 text-brand-700 dark:text-brand-300 border-0">
+                    {conductor ? 'Transportista' : 'Trabajador'}
                   </span>
                 </div>
               </div>
@@ -140,7 +140,7 @@ export default function PersonaDetalle({ tipo }) {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <InfoCard title={conductor ? 'Datos del conductor' : 'Datos del trabajador'} fields={personales} />
+            <InfoCard title={conductor ? 'Datos del transportista' : 'Datos del trabajador'} fields={personales} />
             {conductor ? (
               <InfoCard
                 title="Resumen del carnet"
@@ -153,10 +153,10 @@ export default function PersonaDetalle({ tipo }) {
               />
             ) : (
               <InfoCard
-                title="Datos de contacto"
+                title="Contacto y departamento"
                 fields={[
                   ['Correo electrónico', persona.correo],
-                  ['Teléfono', persona.telefono || 'Sin indicar'],
+                  ['Departamento', persona.departamento || 'Sin indicar'],
                 ]}
               />
             )}
@@ -164,7 +164,7 @@ export default function PersonaDetalle({ tipo }) {
 
           {/* Tabla detallada de permisos de conducir según reverso del carnet físico */}
           {conductor && (
-            <section className="bg-white rounded-2xl border border-gray-100 shadow-xs p-6 space-y-4">
+            <section className="bg-white dark:bg-gray-900 rounded-2xl border-0 shadow-xs p-6 space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-4">
                 <div>
                   <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
@@ -187,80 +187,85 @@ export default function PersonaDetalle({ tipo }) {
                 </Button>
               </div>
 
-              {persona.permisos && persona.permisos.length > 0 ? (
-                <div className="overflow-x-auto rounded-xl border border-gray-200/80 dark:border-gray-700">
-                  <table className="w-full text-left border-collapse text-xs">
-                    <thead>
-                      <tr className="bg-gray-50 dark:bg-gray-950 text-gray-700 dark:text-gray-300 font-bold uppercase text-[11px] border-b-2 border-gray-200 dark:border-gray-700">
-                        <th className="py-2.5 px-3">9. Categoría</th>
-                        <th className="py-2.5 px-3">10. Expedición</th>
-                        <th className="py-2.5 px-3">11. Expiración / Caducidad</th>
-                        {/* <th className="py-2.5 px-3">12. Códigos</th> */}
-                        <th className="py-2.5 px-3 text-center">Estado</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                      {persona.permisos.map((p, idx) => {
-                        const cat = MAPA_CATEGORIAS[p.tipo?.toUpperCase()] || {
-                          codigo: p.tipo,
-                          nombre: p.tipo,
-                          icono: '🚗',
-                          tipoVehiculo: 'Permiso habilitado'
-                        };
-                        const est = calcularEstadoPermiso(p.fechaCaducidad);
-                        return (
-                          <tr key={idx} className="hover:bg-gray-50/60 transition-colors">
-                            <td className="py-2.5 px-3">
-                              <div className="flex items-center gap-2">
-                                <span className="w-8 text-center font-black bg-gray-900 text-white py-0.5 rounded text-xs shadow-2xs shrink-0">
-                                  {p.tipo}
-                                </span>
-                                <div className="w-10 h-5 flex items-center justify-center shrink-0">
-                                  <IconoVehiculoCarnet codigo={p.tipo} className="h-4.5 w-auto max-w-[40px] text-gray-800" />
+              {(() => {
+                const listaPermisos = (persona.permisos || []).flatMap((p) => {
+                  if (!p.tipo) return [];
+                  const subTipos = String(p.tipo).split(',').map((s) => s.trim().toUpperCase()).filter(Boolean);
+                  if (subTipos.length <= 1) return [{ ...p, tipo: subTipos[0] || p.tipo }];
+                  return subTipos.map((st) => ({ ...p, tipo: st }));
+                });
+
+                if (listaPermisos.length === 0) {
+                  return (
+                    <div className="p-5 rounded-xl bg-gray-50 text-center text-xs text-gray-500">
+                      Este transportista no tiene permisos detallados registrados.{' '}
+                      <button
+                        type="button"
+                        onClick={() => navigate(`/${tipo}/${id}/editar`)}
+                        className="text-brand-600 font-bold hover:underline cursor-pointer"
+                      >
+                        Editar transportista para añadirlos
+                      </button>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="overflow-x-auto rounded-2xl border-0 shadow-xs">
+                    <table className="w-full text-left border-collapse text-xs border-0">
+                      <thead>
+                        <tr className="bg-gray-100/75 dark:bg-gray-950 text-gray-500 dark:text-gray-400 font-bold uppercase text-[11px] border-0">
+                          <th className="py-3 px-4 border-0">9. Categoría</th>
+                          <th className="py-3 px-4 border-0">10. Expedición</th>
+                          <th className="py-3 px-4 border-0">11. Expiración / Caducidad</th>
+                          <th className="py-3 px-4 text-center border-0">Estado</th>
+                        </tr>
+                      </thead>
+                      <tbody className="border-0">
+                        {listaPermisos.map((p, idx) => {
+                          const cat = MAPA_CATEGORIAS[p.tipo?.toUpperCase()] || {
+                            codigo: p.tipo,
+                            nombre: p.tipo,
+                            tipoVehiculo: 'Permiso habilitado'
+                          };
+                          const est = calcularEstadoPermiso(p.fechaCaducidad);
+                          return (
+                            <tr key={idx} className="even:bg-gray-50/70 dark:even:bg-gray-800/30 hover:bg-brand-500/10 dark:hover:bg-brand-500/15 transition-colors border-0">
+                              <td className="py-2.5 px-3">
+                                <div className="flex items-center gap-2">
+                                  <span className="w-8 text-center font-black bg-gray-900 text-white py-0.5 rounded text-xs shadow-2xs shrink-0">
+                                    {p.tipo}
+                                  </span>
+                                  <div className="w-10 h-5 flex items-center justify-center shrink-0">
+                                    <IconoVehiculoCarnet codigo={p.tipo} className="h-4.5 w-auto max-w-[40px] text-gray-800" />
+                                  </div>
                                 </div>
-                                <span className="text-xs font-semibold text-gray-700">
-                                  {cat.nombre}
+                              </td>
+                              <td className="py-2.5 px-3 font-semibold text-gray-700">
+                                {fechaVisible(p.fechaEmision)}
+                              </td>
+                              <td className="py-2.5 px-3 font-semibold text-gray-900">
+                                {fechaVisible(p.fechaCaducidad)}
+                              </td>
+                              <td className="py-2.5 px-3 text-center">
+                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${est.clase}`}>
+                                  {est.label}
                                 </span>
-                              </div>
-                            </td>
-                            <td className="py-2.5 px-3 font-semibold text-gray-700">
-                              {fechaVisible(p.fechaEmision)}
-                            </td>
-                            <td className="py-2.5 px-3 font-semibold text-gray-900">
-                              {fechaVisible(p.fechaCaducidad)}
-                            </td>
-                            {/* <td className="py-2.5 px-3 text-gray-500 font-mono">
-                              {p.observaciones || '—'}
-                            </td> */}
-                            <td className="py-2.5 px-3 text-center">
-                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${est.clase}`}>
-                                {est.label}
-                              </span>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <div className="p-5 rounded-xl bg-gray-50 text-center text-xs text-gray-500">
-                  Este conductor no tiene permisos detallados registrados.{' '}
-                  <button
-                    type="button"
-                    onClick={() => navigate(`/${tipo}/${id}/editar`)}
-                    className="text-brand-600 font-bold hover:underline cursor-pointer"
-                  >
-                    Editar conductor para añadirlos
-                  </button>
-                </div>
-              )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                );
+              })()}
             </section>
           )}
 
-          {/* Fotografías del Carnet (Anverso y Reverso) para Conductores */}
+          {/* Fotografías del Carnet (Anverso y Reverso) para Transportistas */}
           {conductor && (
-            <section className="bg-white rounded-2xl border border-gray-100 shadow-xs p-6 space-y-4">
+            <section className="bg-white dark:bg-gray-900 rounded-2xl border-0 shadow-xs p-6 space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-4">
                 <div>
                   <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
@@ -387,7 +392,7 @@ export default function PersonaDetalle({ tipo }) {
           )}
 
           {conductor && (
-            <section className="bg-white rounded-2xl border border-gray-100 shadow-xs p-6">
+            <section className="bg-white dark:bg-gray-900 rounded-2xl border-0 shadow-xs p-6">
               <div className="flex items-center justify-between mb-2">
                 <h2 className="text-base font-bold text-gray-900">Vehículo asignado</h2>
                 {persona.vehiculoId && (
@@ -408,11 +413,11 @@ export default function PersonaDetalle({ tipo }) {
                       <Link className="text-sm font-bold text-gray-900 hover:text-brand-700 hover:underline" to={`/vehiculos/${persona.vehiculoId}`}>
                         {persona.vehiculoMatricula || 'Ver vehículo'}
                       </Link>
-                      <p className="text-xs text-gray-500 mt-0.5">Vehículo vinculado a este conductor</p>
+                      <p className="text-xs text-gray-500 mt-0.5">Vehículo vinculado a este transportista</p>
                     </div>
                   </div>
                 ) : (
-                  <p className="text-sm text-gray-500">Este conductor no tiene vehículo asignado actualmente.</p>
+                  <p className="text-sm text-gray-500">Este transportista no tiene vehículo asignado actualmente.</p>
                 )}
                 <Button variant="secondary" size="sm" onClick={() => navigate(`/${tipo}/${id}/editar`)}>
                   {persona.vehiculoId ? 'Cambiar vehículo' : 'Asignar vehículo'}
@@ -421,23 +426,23 @@ export default function PersonaDetalle({ tipo }) {
             </section>
           )}
 
-          {/* Documentación del Conductor */}
+          {/* Documentación del Transportista */}
           {conductor && (
             <section className="space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <h2 className="text-base font-bold text-gray-900">
-                    Documentación del conductor
+                    Documentación del transportista
                   </h2>
                   <p className="text-xs text-gray-500 mt-0.5">
                     Contrato firmado, alta de trabajador/es, alta de autónomo (RETA), seguro de responsabilidad civil, certificados AEAT y Seguridad Social, y modelo 036/037.
                   </p>
                 </div>
-                <Link to={`/documentos?conductorId=${id}`} className="text-sm font-semibold text-brand-700 hover:underline">
+                <Link to={`/documentos?transportistaId=${id}`} className="text-sm font-semibold text-brand-700 hover:underline">
                   Ver en Documentos →
                 </Link>
               </div>
-              <DocumentacionEntidad entidadTipo="conductor" entidadId={id} />
+              <DocumentacionEntidad entidadTipo="transportista" entidadId={id} />
             </section>
           )}
 
@@ -463,7 +468,7 @@ export default function PersonaDetalle({ tipo }) {
 
           {/* Sección de Entregas de EPIS y Vestuario para Trabajadores */}
           {!conductor && (
-            <section className="bg-white rounded-3xl border border-gray-100 shadow-xs p-6 space-y-4">
+            <section className="bg-white dark:bg-gray-900 rounded-3xl border-0 shadow-xs p-6 space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-4">
                 <div>
                   <h2 className="text-lg font-bold text-gray-900">
@@ -509,8 +514,8 @@ export default function PersonaDetalle({ tipo }) {
                             {fechaVisible(ent.fechaEntrega)}
                           </span>
                           {ent.firma && (
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                              ✓ Firmado
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border-0">
+                              Firmado
                             </span>
                           )}
                         </div>
@@ -519,10 +524,10 @@ export default function PersonaDetalle({ tipo }) {
                           {(ent.lineas || []).map((l) => (
                             <span
                               key={l.id}
-                              className={`text-xs px-2.5 py-1 rounded-lg border font-medium ${
+                              className={`text-xs px-2.5 py-1 rounded-lg border-0 font-medium ${
                                 l.materialTipo === 'EPI'
-                                  ? 'bg-amber-50 text-amber-900 border-amber-200'
-                                  : 'bg-blue-50 text-blue-900 border-blue-200'
+                                  ? 'bg-amber-100/70 text-amber-900'
+                                  : 'bg-blue-100/70 text-blue-900'
                               }`}
                             >
                               <strong>{l.cantidad}x</strong> {l.materialNombre}
@@ -594,7 +599,7 @@ export default function PersonaDetalle({ tipo }) {
 
 function InfoCard({ title, fields }) {
   return (
-    <section className="bg-white rounded-2xl border border-gray-100 shadow-xs p-6">
+    <section className="bg-white dark:bg-gray-900 rounded-2xl border-0 shadow-xs p-6">
       <h2 className="text-base font-bold text-gray-900 mb-5">{title}</h2>
       <dl className="grid grid-cols-2 gap-y-5 gap-x-6">
         {fields.map(([label, value]) => (

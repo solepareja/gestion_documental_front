@@ -14,13 +14,15 @@ import DocumentoEstado from './DocumentoEstado';
 
 const MAPA_TIPOS = {
   vehiculo: tiposDocumentoVehiculo,
+  transportista: tiposDocumentoConductor,
   conductor: tiposDocumentoConductor,
   trabajador: tiposDocumentoTrabajador,
 };
 
 const MAPA_RUTAS = {
   vehiculo: 'vehiculos',
-  conductor: 'conductores',
+  transportista: 'transportistas',
+  conductor: 'transportistas',
   trabajador: 'trabajadores',
 };
 
@@ -80,7 +82,7 @@ export default function DocumentacionEntidad({ entidadTipo, entidadId }) {
       header: 'Estado',
       render: fila => fila.ultimo
         ? <DocumentoEstado estado={fila.ultimo.estado} fechaCaducidad={fila.ultimo.fechaCaducidad} />
-        : <span className="inline-flex px-2.5 py-0.5 rounded-full border text-xs font-semibold bg-gray-50 text-gray-700 border-gray-200">Sin añadir</span>
+        : <span className="inline-flex px-2.5 py-0.5 rounded-full border-0 text-xs font-semibold bg-gray-100 text-gray-500">Sin añadir</span>
     },
     {
       header: 'Acciones',

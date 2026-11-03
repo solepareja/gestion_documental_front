@@ -8,7 +8,7 @@
 
 export function TableHead({ children, className = '' }) {
   return (
-    <thead className={`bg-gray-50/75 dark:bg-gray-950 border-b-2 border-gray-200 dark:border-gray-700 ${className}`}>
+    <thead className={`bg-gray-100/75 dark:bg-gray-950/80 border-0 ${className}`}>
       {children}
     </thead>
   );
@@ -16,7 +16,7 @@ export function TableHead({ children, className = '' }) {
 
 export function TableBody({ children, className = '' }) {
   return (
-    <tbody className={`divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-900 ${className}`}>
+    <tbody className={`bg-white dark:bg-gray-900 border-0 ${className}`}>
       {children}
     </tbody>
   );
@@ -26,8 +26,8 @@ export function TableRow({ children, onClick, className = '', hoverable = true }
   return (
     <tr
       onClick={onClick}
-      className={`transition-colors duration-150 ${
-        hoverable ? 'hover:bg-slate-50/80 dark:hover:bg-gray-800/60' : ''
+      className={`border-0 transition-colors duration-150 even:bg-gray-50/70 dark:even:bg-gray-800/35 ${
+        hoverable ? 'hover:bg-brand-500/10 dark:hover:bg-brand-500/15' : ''
       } ${onClick ? 'cursor-pointer' : ''} ${className}`}
     >
       {children}
@@ -42,7 +42,7 @@ export function TableHeader({ children, align = 'left', className = '' }) {
   return (
     <th
       scope="col"
-      className={`px-6 py-3.5 ${alignClass} text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider ${className}`}
+      className={`px-6 py-4 ${alignClass} text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider border-0 ${className}`}
     >
       {children}
     </th>
@@ -54,7 +54,7 @@ export function TableCell({ children, align = 'left', className = '' }) {
     align === 'right' ? 'text-right' : align === 'center' ? 'text-center' : 'text-left';
 
   return (
-    <td className={`px-6 py-4 ${alignClass} text-sm text-gray-700 dark:text-gray-200 align-middle [overflow-wrap:anywhere] ${className}`}>
+    <td className={`px-6 py-4 ${alignClass} text-sm text-gray-800 dark:text-gray-200 align-middle border-0 [overflow-wrap:anywhere] ${className}`}>
       {children}
     </td>
   );
@@ -92,7 +92,7 @@ export default function Table({
   // Modo composición mediante children
   if (children) {
     return (
-      <div className={`w-full overflow-hidden rounded-2xl bg-white dark:bg-gray-900 shadow-xs border border-gray-200 dark:border-gray-700 ${className}`}>
+      <div className={`w-full overflow-hidden rounded-3xl bg-white dark:bg-gray-900 shadow-xs border-0 ${className}`}>
         <div className="overflow-x-auto">
           <table style={{ minWidth }} className={`w-full table-fixed border-collapse text-left ${tableClassName}`}>
             {children}
@@ -104,7 +104,7 @@ export default function Table({
 
   // Modo declarativo (props columns y data)
   return (
-    <div className={`w-full overflow-hidden rounded-2xl bg-white dark:bg-gray-900 shadow-xs border border-gray-200 dark:border-gray-700 ${className}`}>
+    <div className={`w-full overflow-hidden rounded-3xl bg-white dark:bg-gray-900 shadow-xs border-0 ${className}`}>
       <div className="overflow-x-auto">
         <table style={{ minWidth }} className={`w-full table-fixed border-collapse text-left ${tableClassName}`}>
           <colgroup>

@@ -22,6 +22,7 @@ export default function Navbar() {
   const isDropdownActive =
     location.pathname.startsWith('/usuarios') ||
     location.pathname.startsWith('/documentos') ||
+    location.pathname.startsWith('/firmas') ||
     location.pathname.startsWith('/materiales') ||
     location.pathname.startsWith('/entregas');
 
@@ -38,33 +39,37 @@ export default function Navbar() {
     };
   }, []);
 
-  const linkBaseClass = "items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors duration-200 h-full select-none";
-  const linkActiveClass = "border-brand-600 text-brand-700 dark:text-brand-400 dark:border-brand-500";
-  const linkInactiveClass = "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-800 dark:text-gray-400 dark:hover:border-gray-700 dark:hover:text-gray-200";
+  const linkBaseClass = "inline-flex items-center px-3.5 py-1.5 rounded-xl text-sm font-semibold transition-all duration-150 select-none border-0";
+  const linkActiveClass = "bg-brand-500/10 text-brand-600 font-bold border-0 shadow-none dark:bg-brand-500/20 dark:text-brand-300";
+  const linkInactiveClass = "text-gray-600 hover:text-gray-900 hover:bg-gray-100/80 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-800/60 border-0";
 
   return (
-    <nav className="bg-white dark:bg-gray-900 shadow-sm border-b border-gray-200 dark:border-gray-800 sticky top-0 z-50 print:hidden transition-colors duration-200">
+    <nav className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-md shadow-xs border-b border-gray-200/70 dark:border-gray-800 sticky top-0 z-50 print:hidden transition-all duration-200">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16 gap-2">
           
           {/* Logo y Enlaces de navegación */}
-          <div className="flex items-center gap-2 sm:gap-4 lg:gap-8 h-full min-w-0">
-            <Link to="/" className="text-lg sm:text-xl font-black text-brand-700 tracking-tight shrink-0">
-              SofásValencia
+          <div className="flex items-center gap-3 sm:gap-6 lg:gap-8 h-full min-w-0">
+            <Link to="/" className="flex items-center shrink-0 hover:opacity-90 transition-opacity select-none" title="Sofás Valencia">
+              <img
+                src="/logo.png"
+                alt="Sofás Valencia"
+                className="h-8 sm:h-9 md:h-10 w-auto object-contain"
+              />
             </Link>
 
             {/* Opciones directas (SOLO visibles en escritorio >= 1024px) */}
-            <div className="hidden lg:flex items-center space-x-6 xl:space-x-8 h-full">
-              <Link to="/" className={`inline-flex ${linkBaseClass} ${isRouteActive('/') ? linkActiveClass : linkInactiveClass}`}>
+            <div className="hidden lg:flex items-center space-x-2 h-full">
+              <Link to="/" className={`${linkBaseClass} ${isRouteActive('/') ? linkActiveClass : linkInactiveClass}`}>
                 Panel de Control
               </Link>
-              <Link to="/vehiculos" className={`inline-flex ${linkBaseClass} ${isRouteActive('/vehiculos') ? linkActiveClass : linkInactiveClass}`}>
+              <Link to="/vehiculos" className={`${linkBaseClass} ${isRouteActive('/vehiculos') ? linkActiveClass : linkInactiveClass}`}>
                 Vehículos
               </Link>
-              <Link to="/conductores" className={`inline-flex ${linkBaseClass} ${isRouteActive('/conductores') ? linkActiveClass : linkInactiveClass}`}>
-                Conductores
+              <Link to="/transportistas" className={`${linkBaseClass} ${isRouteActive('/transportistas') || isRouteActive('/conductores') ? linkActiveClass : linkInactiveClass}`}>
+                Transportistas
               </Link>
-              <Link to="/trabajadores" className={`inline-flex ${linkBaseClass} ${isRouteActive('/trabajadores') ? linkActiveClass : linkInactiveClass}`}>
+              <Link to="/trabajadores" className={`${linkBaseClass} ${isRouteActive('/trabajadores') ? linkActiveClass : linkInactiveClass}`}>
                 Trabajadores
               </Link>
             </div>
@@ -74,12 +79,12 @@ export default function Navbar() {
               <button 
                 type="button"
                 onClick={() => setMasAbierto((prev) => !prev)}
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-150 cursor-pointer focus:outline-none select-none ${
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-150 cursor-pointer focus:outline-none select-none border-0 ${
                   masAbierto 
-                    ? 'bg-brand-100 text-brand-700 ring-2 ring-brand-300' 
+                    ? 'bg-brand-500/15 text-brand-600 ring-2 ring-brand-400/50' 
                     : isDropdownActive 
-                    ? 'bg-brand-50 text-brand-600 font-bold border border-brand-200'
-                    : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900 border border-gray-200 bg-gray-50/70'
+                    ? 'bg-brand-500/10 text-brand-600 font-bold dark:bg-brand-500/20 dark:text-brand-300'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-200/60 hover:text-gray-900 bg-gray-100/80 dark:bg-gray-800/60 dark:hover:bg-gray-800'
                 }`}
                 aria-expanded={masAbierto}
                 aria-label="Menú de navegación"
@@ -100,18 +105,18 @@ export default function Navbar() {
 
               {/* Menú Desplegable flotante */}
               {masAbierto && (
-                <div className="fixed inset-x-3 top-18 sm:absolute sm:top-full sm:left-0 sm:inset-x-auto sm:mt-1 sm:w-80 rounded-2xl bg-white shadow-2xl border border-gray-100 p-2 z-50 max-h-[calc(100vh-80px)] overflow-y-auto animate-in fade-in zoom-in-95 duration-100">
+                <div className="fixed inset-x-3 top-18 sm:absolute sm:top-full sm:left-0 sm:inset-x-auto sm:mt-1 sm:w-80 rounded-2xl bg-white dark:bg-gray-900 shadow-2xl border-0 p-2 z-50 max-h-[calc(100vh-80px)] overflow-y-auto animate-in fade-in zoom-in-95 duration-100">
                   
                   {/* Ficha de usuario en móvil */}
-                  <div className="md:hidden flex items-center gap-3 p-3 mb-2 rounded-xl bg-orange-50/70 border border-brand-100">
-                    <div className="h-9 w-9 rounded-full bg-brand-100 flex items-center justify-center text-brand-700 font-bold text-sm border border-brand-200 shrink-0">
+                  <div className="md:hidden flex items-center gap-3 p-3 mb-2 rounded-xl bg-orange-50/70 dark:bg-orange-950/30 border-0">
+                    <div className="h-9 w-9 rounded-full bg-brand-100 dark:bg-brand-900/50 flex items-center justify-center text-brand-600 dark:text-brand-300 font-bold text-sm border-0 shrink-0">
                       {(usuario?.nombre || 'U').charAt(0).toUpperCase()}
                     </div>
                     <div className="flex flex-col min-w-0">
                       <span className="text-sm font-bold text-gray-900 truncate">
                         {usuario?.nombre || 'Usuario'}
                       </span>
-                      <span className="text-xs text-brand-700 font-medium truncate">
+                      <span className="text-xs text-brand-600 font-medium truncate">
                         {usuario?.admin ? 'Administrador' : (usuario?.correo || 'Conectado')}
                       </span>
                     </div>
@@ -127,11 +132,11 @@ export default function Navbar() {
                       to="/"
                       onClick={() => setMasAbierto(false)}
                       className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-150 ${
-                        location.pathname === '/' ? 'bg-brand-50 text-brand-700 font-semibold' : 'text-gray-700 hover:bg-gray-50 hover:text-brand-700'
+                        location.pathname === '/' ? 'bg-brand-50 text-brand-600 font-semibold' : 'text-gray-700 hover:bg-gray-50 hover:text-brand-600'
                       }`}
                     >
                       <div className={`p-2 rounded-lg transition-colors ${
-                        location.pathname === '/' ? 'bg-brand-100 text-brand-700' : 'bg-gray-100 text-gray-500 group-hover:bg-brand-50 group-hover:text-brand-600'
+                        location.pathname === '/' ? 'bg-brand-100 text-brand-600' : 'bg-gray-100 text-gray-500 group-hover:bg-brand-50 group-hover:text-brand-600'
                       }`}>
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
@@ -147,11 +152,11 @@ export default function Navbar() {
                       to="/vehiculos"
                       onClick={() => setMasAbierto(false)}
                       className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-150 ${
-                        isRouteActive('/vehiculos') ? 'bg-brand-50 text-brand-700 font-semibold' : 'text-gray-700 hover:bg-gray-50 hover:text-brand-700'
+                        isRouteActive('/vehiculos') ? 'bg-brand-50 text-brand-600 font-semibold' : 'text-gray-700 hover:bg-gray-50 hover:text-brand-600'
                       }`}
                     >
                       <div className={`p-2 rounded-lg transition-colors ${
-                        isRouteActive('/vehiculos') ? 'bg-brand-100 text-brand-700' : 'bg-gray-100 text-gray-500 group-hover:bg-brand-50 group-hover:text-brand-600'
+                        isRouteActive('/vehiculos') ? 'bg-brand-100 text-brand-600' : 'bg-gray-100 text-gray-500 group-hover:bg-brand-50 group-hover:text-brand-600'
                       }`}>
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M3 13h18l-1.5-6H4.5L3 13zm0 0v5h3m15-5v5h-3M6 18h12M7 13v5m10-5v5" />
@@ -164,21 +169,21 @@ export default function Navbar() {
                     </Link>
 
                     <Link
-                      to="/conductores"
+                      to="/transportistas"
                       onClick={() => setMasAbierto(false)}
                       className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-150 ${
-                        isRouteActive('/conductores') ? 'bg-brand-50 text-brand-700 font-semibold' : 'text-gray-700 hover:bg-gray-50 hover:text-brand-700'
+                        isRouteActive('/transportistas') || isRouteActive('/conductores') ? 'bg-brand-50 text-brand-600 font-semibold' : 'text-gray-700 hover:bg-gray-50 hover:text-brand-600'
                       }`}
                     >
                       <div className={`p-2 rounded-lg transition-colors ${
-                        isRouteActive('/conductores') ? 'bg-brand-100 text-brand-700' : 'bg-gray-100 text-gray-500 group-hover:bg-brand-50 group-hover:text-brand-600'
+                        isRouteActive('/transportistas') || isRouteActive('/conductores') ? 'bg-brand-100 text-brand-600' : 'bg-gray-100 text-gray-500 group-hover:bg-brand-50 group-hover:text-brand-600'
                       }`}>
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                         </svg>
                       </div>
                       <div className="flex flex-col">
-                        <span className="font-medium">Conductores</span>
+                        <span className="font-medium">Transportistas</span>
                         <span className="text-xs text-gray-400 font-normal">Carnets y asignación</span>
                       </div>
                     </Link>
@@ -187,11 +192,11 @@ export default function Navbar() {
                       to="/trabajadores"
                       onClick={() => setMasAbierto(false)}
                       className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-150 ${
-                        isRouteActive('/trabajadores') ? 'bg-brand-50 text-brand-700 font-semibold' : 'text-gray-700 hover:bg-gray-50 hover:text-brand-700'
+                        isRouteActive('/trabajadores') ? 'bg-brand-50 text-brand-600 font-semibold' : 'text-gray-700 hover:bg-gray-50 hover:text-brand-600'
                       }`}
                     >
                       <div className={`p-2 rounded-lg transition-colors ${
-                        isRouteActive('/trabajadores') ? 'bg-brand-100 text-brand-700' : 'bg-gray-100 text-gray-500 group-hover:bg-brand-50 group-hover:text-brand-600'
+                        isRouteActive('/trabajadores') ? 'bg-brand-100 text-brand-600' : 'bg-gray-100 text-gray-500 group-hover:bg-brand-50 group-hover:text-brand-600'
                       }`}>
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -215,11 +220,11 @@ export default function Navbar() {
                       to="/materiales"
                       onClick={() => setMasAbierto(false)}
                       className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-150 ${
-                        isRouteActive('/materiales') ? 'bg-brand-50 text-brand-700 font-semibold' : 'text-gray-700 hover:bg-gray-50 hover:text-brand-700'
+                        isRouteActive('/materiales') ? 'bg-brand-50 text-brand-600 font-semibold' : 'text-gray-700 hover:bg-gray-50 hover:text-brand-600'
                       }`}
                     >
                       <div className={`p-2 rounded-lg transition-colors ${
-                        isRouteActive('/materiales') ? 'bg-brand-100 text-brand-700' : 'bg-gray-100 text-gray-500 group-hover:bg-brand-50 group-hover:text-brand-600'
+                        isRouteActive('/materiales') ? 'bg-brand-100 text-brand-600' : 'bg-gray-100 text-gray-500 group-hover:bg-brand-50 group-hover:text-brand-600'
                       }`}>
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
@@ -236,11 +241,11 @@ export default function Navbar() {
                       to="/entregas"
                       onClick={() => setMasAbierto(false)}
                       className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-150 ${
-                        isRouteActive('/entregas') ? 'bg-brand-50 text-brand-700 font-semibold' : 'text-gray-700 hover:bg-gray-50 hover:text-brand-700'
+                        isRouteActive('/entregas') ? 'bg-brand-50 text-brand-600 font-semibold' : 'text-gray-700 hover:bg-gray-50 hover:text-brand-600'
                       }`}
                     >
                       <div className={`p-2 rounded-lg transition-colors ${
-                        isRouteActive('/entregas') ? 'bg-brand-100 text-brand-700' : 'bg-gray-100 text-gray-500 group-hover:bg-brand-50 group-hover:text-brand-600'
+                        isRouteActive('/entregas') ? 'bg-brand-100 text-brand-600' : 'bg-gray-100 text-gray-500 group-hover:bg-brand-50 group-hover:text-brand-600'
                       }`}>
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -257,14 +262,34 @@ export default function Navbar() {
                     </div>
 
                     <Link
-                      to="/documentos"
+                      to="/firmas"
                       onClick={() => setMasAbierto(false)}
                       className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-150 ${
-                        isRouteActive('/documentos') ? 'bg-brand-50 text-brand-700 font-semibold' : 'text-gray-700 hover:bg-gray-50 hover:text-brand-700'
+                        isRouteActive('/firmas') ? 'bg-brand-50 text-brand-600 font-semibold' : 'text-gray-700 hover:bg-gray-50 hover:text-brand-600'
                       }`}
                     >
                       <div className={`p-2 rounded-lg transition-colors ${
-                        isRouteActive('/documentos') ? 'bg-brand-100 text-brand-700' : 'bg-gray-100 text-gray-500 group-hover:bg-brand-50 group-hover:text-brand-600'
+                        isRouteActive('/firmas') ? 'bg-brand-100 text-brand-600' : 'bg-gray-100 text-gray-500 group-hover:bg-brand-50 group-hover:text-brand-600'
+                      }`}>
+                        <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                        </svg>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="font-medium">Firmas</span>
+                        <span className="text-xs text-gray-400 font-normal">RGPD, EPIs y normativa</span>
+                      </div>
+                    </Link>
+
+                    <Link
+                      to="/documentos"
+                      onClick={() => setMasAbierto(false)}
+                      className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-150 ${
+                        isRouteActive('/documentos') ? 'bg-brand-50 text-brand-600 font-semibold' : 'text-gray-700 hover:bg-gray-50 hover:text-brand-600'
+                      }`}
+                    >
+                      <div className={`p-2 rounded-lg transition-colors ${
+                        isRouteActive('/documentos') ? 'bg-brand-100 text-brand-600' : 'bg-gray-100 text-gray-500 group-hover:bg-brand-50 group-hover:text-brand-600'
                       }`}>
                         <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 3H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2V9zM14 3v6h6M8 13h8M8 17h5" />
@@ -281,13 +306,13 @@ export default function Navbar() {
                       onClick={() => setMasAbierto(false)}
                       className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-150 ${
                         isRouteActive('/usuarios')
-                          ? 'bg-brand-50 text-brand-700 font-semibold'
-                          : 'text-gray-700 hover:bg-gray-50 hover:text-brand-700'
+                          ? 'bg-brand-50 text-brand-600 font-semibold'
+                          : 'text-gray-700 hover:bg-gray-50 hover:text-brand-600'
                       }`}
                     >
                       <div className={`p-2 rounded-lg transition-colors ${
                         isRouteActive('/usuarios')
-                          ? 'bg-brand-100 text-brand-700'
+                          ? 'bg-brand-100 text-brand-600'
                           : 'bg-gray-100 text-gray-500 group-hover:bg-brand-50 group-hover:text-brand-600'
                       }`}>
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -296,7 +321,7 @@ export default function Navbar() {
                       </div>
 
                       <div className="flex flex-col">
-                        <span className="font-medium text-gray-800 group-hover:text-brand-700">
+                        <span className="font-medium text-gray-800 group-hover:text-brand-600">
                           Gestión de usuarios
                         </span>
                         <span className="text-xs text-gray-400 font-normal">
@@ -340,7 +365,7 @@ export default function Navbar() {
             <div className="h-6 w-px bg-gray-200 dark:bg-gray-800 hidden sm:block mx-1"></div>
             
             <div className="flex items-center gap-2">
-              <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-full bg-brand-100 dark:bg-brand-950 flex items-center justify-center text-brand-700 dark:text-brand-300 font-bold text-xs sm:text-sm border border-brand-200 dark:border-brand-800 shrink-0">
+              <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-full bg-brand-100 dark:bg-brand-900/40 flex items-center justify-center text-brand-600 dark:text-brand-300 font-bold text-xs sm:text-sm border-0 shrink-0">
                 {(usuario?.nombre || 'U').charAt(0).toUpperCase()}
               </div>
               <div className="hidden md:flex flex-col text-left">

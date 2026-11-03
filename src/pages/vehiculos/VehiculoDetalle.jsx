@@ -5,46 +5,47 @@ import Button from '../../components/Button';
 import DeleteButton from '../../components/DeleteButton';
 import ModalConfirmacion from '../../components/ModalConfirmacion';
 import DocumentacionVehiculo from '../../components/DocumentacionVehiculo';
+import CustomSelect from '../../components/CustomSelect';
 
 export default function VehiculoDetalle() {
   const [vehiculo, setVehiculo] = useState(null);
-  const [conductores, setConductores] = useState([]);
-  const [conductorAsignado, setConductorAsignado] = useState(null);
+  const [transportistas, setTransportistas] = useState([]);
+  const [transportistaAsignado, setTransportistaAsignado] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
 
-  // Estados para el modal de asignación de conductor
+  // Estados para el modal de asignación de transportista
   const [modalAsignar, setModalAsignar] = useState(false);
   const [modalDesasignar, setModalDesasignar] = useState(false);
-  const [conductorSeleccionadoId, setConductorSeleccionadoId] = useState('');
+  const [transportistaSeleccionadoId, setTransportistaSeleccionadoId] = useState('');
   const [guardandoAsignacion, setGuardandoAsignacion] = useState(false);
   const [errorDesasignar, setErrorDesasignar] = useState(null);
 
   const { id } = useParams();
   const navigate = useNavigate();
 
-  // Carga paralela de vehículo y conductores (sin tocar el backend)
+  // Carga paralela de vehículo y transportistas
   useEffect(() => {
     const cargarDatos = async () => {
       try {
-        const [resVehiculo, resConductores] = await Promise.all([
+        const [resVehiculo, resTransportistas] = await Promise.all([
           api.get(`/vehiculos/${id}`),
-          api.get('/conductores').catch(() => ({ data: [] }))
+          api.get('/transportistas').catch(() => api.get('/conductores')).catch(() => ({ data: [] }))
         ]);
 
         setVehiculo(resVehiculo.data);
 
-        const listaConductores = resConductores.data || [];
-        setConductores(listaConductores);
+        const listaTransportistas = resTransportistas.data || [];
+        setTransportistas(listaTransportistas);
 
-        // Buscamos si algún conductor tiene asignado este vehículo
-        const asignado = listaConductores.find(
+        // Buscamos si algún transportista tiene asignado este vehículo
+        const asignado = listaTransportistas.find(
           (c) =>
             String(c.vehiculoId) === String(id) ||
             String(c.vehiculo?.id) === String(id) ||
             String(c.vehiculo) === String(id)
         );
-        setConductorAsignado(asignado || null);
+        setTransportistaAsignado(asignado || null);
       } catch (err) {
         console.error('Error al cargar datos del vehículo', err);
         setError('No se pudo cargar la información del vehículo.');
@@ -70,74 +71,74 @@ export default function VehiculoDetalle() {
     return fecha;
   };
 
-  // Asignar o cambiar conductor actualizando el conductor en la API
+  // Asignar o cambiar transportista actualizando el transportista en la API
   const handleAsignarConductor = async () => {
-    if (!conductorSeleccionadoId) return;
+    if (!transportistaSeleccionadoId) return;
     setGuardandoAsignacion(true);
 
     try {
-      // 1. Si había un conductor previo y es distinto, lo desvinculamos
-      if (conductorAsignado && String(conductorAsignado.id) !== String(conductorSeleccionadoId)) {
+      // 1. Si había un transportista previo y es distinto, lo desvinculamos
+      if (transportistaAsignado && String(transportistaAsignado.id) !== String(transportistaSeleccionadoId)) {
         try {
-          await api.put(`/conductores/${conductorAsignado.id}`, {
-            ...conductorAsignado,
-            cadCarnet: formatearFechaParaBack(conductorAsignado.cadCarnet),
+          await api.put(`/transportistas/${transportistaAsignado.id}`, {
+            ...transportistaAsignado,
+            cadCarnet: formatearFechaParaBack(transportistaAsignado.cadCarnet),
             vehiculo: null,
             vehiculoId: null
           });
         } catch (e) {
-          console.warn('No se pudo desvincular el conductor previo', e);
+          console.warn('No se pudo desvincular el transportista previo', e);
         }
       }
 
-      // 2. Vinculamos al nuevo conductor con este vehículo
-      const nuevoConductor = conductores.find((c) => String(c.id) === String(conductorSeleccionadoId));
-      await api.put(`/conductores/${conductorSeleccionadoId}`, {
-        ...nuevoConductor,
-        cadCarnet: formatearFechaParaBack(nuevoConductor?.cadCarnet),
+      // 2. Vinculamos al nuevo transportista con este vehículo
+      const nuevoTransportista = transportistas.find((c) => String(c.id) === String(transportistaSeleccionadoId));
+      await api.put(`/transportistas/${transportistaSeleccionadoId}`, {
+        ...nuevoTransportista,
+        cadCarnet: formatearFechaParaBack(nuevoTransportista?.cadCarnet),
         vehiculo: id,
         vehiculoId: Number(id)
       });
 
       // 3. Actualizamos el estado local
-      setConductorAsignado({
-        ...nuevoConductor,
+      setTransportistaAsignado({
+        ...nuevoTransportista,
         vehiculoId: Number(id),
         vehiculoMatricula: vehiculo?.matricula
       });
       setModalAsignar(false);
     } catch (err) {
-      console.error('Error al asignar conductor', err);
-      alert('Hubo un error al guardar la asignación del conductor.');
+      console.error('Error al asignar transportista', err);
+      alert('Hubo un error al guardar la asignación del transportista.');
     } finally {
       setGuardandoAsignacion(false);
     }
   };
 
-  // Desasignar conductor
+  // Desasignar transportista
   const handleDesasignarConductor = () => {
-    if (!conductorAsignado) return;
+    if (!transportistaAsignado) return;
     setErrorDesasignar(null);
     setModalDesasignar(true);
   };
 
   const ejecutarDesasignarConductor = async () => {
-    if (!conductorAsignado) return;
+    if (!transportistaAsignado) return;
 
     setGuardandoAsignacion(true);
     setErrorDesasignar(null);
     try {
-      await api.put(`/conductores/${conductorAsignado.id}`, {
-        ...conductorAsignado,
-        cadCarnet: formatearFechaParaBack(conductorAsignado.cadCarnet),
+      await api.put(`/transportistas/${transportistaAsignado.id}`, {
+        ...transportistaAsignado,
+        cadCarnet: formatearFechaParaBack(transportistaAsignado.cadCarnet),
         vehiculo: null,
         vehiculoId: null
       });
-      setConductorAsignado(null);
+      setTransportistaAsignado(null);
       setModalDesasignar(false);
     } catch (err) {
-      console.error('Error al desasignar conductor', err);
-      setErrorDesasignar('No se pudo desasignar el conductor. Por favor, inténtalo de nuevo.');
+      console.error('Error al desasignar transportista', err);
+      setErrorDesasignar('No se pudo desasignar el transportista. Por favor, inténtalo de nuevo.');
     } finally {
       setGuardandoAsignacion(false);
     }
@@ -161,8 +162,8 @@ export default function VehiculoDetalle() {
           </div>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="h-64 bg-white rounded-2xl border border-gray-100 p-6" />
-          <div className="h-64 bg-white rounded-2xl border border-gray-100 p-6" />
+          <div className="h-64 bg-white dark:bg-gray-900 rounded-2xl border-0 shadow-xs p-6" />
+          <div className="h-64 bg-white dark:bg-gray-900 rounded-2xl border-0 shadow-xs p-6" />
         </div>
       </div>
     );
@@ -180,7 +181,7 @@ export default function VehiculoDetalle() {
           </svg>
           Volver a vehículos
         </Link>
-        <div className="bg-white rounded-2xl border border-gray-100 p-8 text-center shadow-xs">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border-0 p-8 text-center shadow-xs">
           <p className="text-red-500 font-medium mb-4">{error || 'Vehículo no encontrado'}</p>
           <Button variant="primary" onClick={() => navigate('/vehiculos')}>
             Regresar a la lista
@@ -215,7 +216,7 @@ export default function VehiculoDetalle() {
         
         {/* Identificación del Vehículo */}
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-brand-50 border border-brand-100/60 flex items-center justify-center text-brand-600 flex-shrink-0 shadow-xs">
+          <div className="w-14 h-14 rounded-2xl bg-brand-50 dark:bg-brand-950/60 border-0 flex items-center justify-center text-brand-600 dark:text-brand-300 flex-shrink-0 shadow-xs">
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M3 13h18l-1.5-6H4.5L3 13zm0 0v5h3m15-5v5h-3M6 18h12M7 13v5m10-5v5" />
             </svg>
@@ -223,13 +224,13 @@ export default function VehiculoDetalle() {
 
           <div>
             <div className="flex items-center gap-2.5 flex-wrap">
-              <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">
                 {nombreCompleto}
               </h1>
               <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
                 vehiculo.activo !== false
-                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60'
-                  : 'bg-gray-100 text-gray-600 border border-gray-200'
+                  ? 'bg-emerald-50 text-emerald-700 border-0'
+                  : 'bg-gray-100 text-gray-600 border-0'
               }`}>
                 {vehiculo.activo !== false ? 'Activo' : 'Inactivo'}
               </span>
@@ -264,8 +265,8 @@ export default function VehiculoDetalle() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         
         {/* Tarjeta: Datos del vehículo */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-xs p-6">
-          <h2 className="text-base font-bold text-gray-900 mb-5">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border-0 shadow-xs p-6">
+          <h2 className="text-base font-bold text-gray-900 dark:text-gray-100 mb-5">
             Datos del vehículo
           </h2>
 
@@ -304,8 +305,8 @@ export default function VehiculoDetalle() {
         </div>
 
         {/* Tarjeta: Clasificación */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-xs p-6">
-          <h2 className="text-base font-bold text-gray-900 mb-5">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border-0 shadow-xs p-6">
+          <h2 className="text-base font-bold text-gray-900 dark:text-gray-100 mb-5">
             Clasificación
           </h2>
 
@@ -339,33 +340,33 @@ export default function VehiculoDetalle() {
         <DocumentacionVehiculo vehiculoId={id} />
       </section>
 
-      {/* Tarjeta: Conductor asignado */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-xs p-6">
+      {/* Tarjeta: Transportista asignado */}
+      <div className="bg-white dark:bg-gray-900 rounded-2xl border-0 shadow-xs p-6">
         <div className="flex items-center justify-between mb-2">
-          <h2 className="text-base font-bold text-gray-900">
-            Conductor asignado
+          <h2 className="text-base font-bold text-gray-900 dark:text-gray-100">
+            Transportista asignado
           </h2>
-          {conductorAsignado && (
+          {transportistaAsignado && (
             <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-brand-50 text-brand-700">
               Asignado
             </span>
           )}
         </div>
 
-        {conductorAsignado ? (
+        {transportistaAsignado ? (
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-3 pt-1">
             <Link
-              to={`/conductores/${conductorAsignado.id}`}
-              title="Ver detalle del conductor"
+              to={`/transportistas/${transportistaAsignado.id}`}
+              title="Ver detalle del transportista"
               className="flex items-center gap-3 group p-1 -m-1 rounded-2xl hover:bg-orange-50/50 transition-all cursor-pointer"
             >
               <div className="w-11 h-11 rounded-2xl bg-brand-100 text-brand-700 flex items-center justify-center font-bold text-base shadow-xs group-hover:bg-brand-600 group-hover:text-white transition-colors shrink-0">
-                {(conductorAsignado.nombre || 'C').charAt(0).toUpperCase()}
+                {(transportistaAsignado.nombre || 'T').charAt(0).toUpperCase()}
               </div>
               <div>
                 <div className="flex items-center gap-1.5">
                   <p className="text-sm font-bold text-gray-900 group-hover:text-brand-600 group-hover:underline transition-colors">
-                    {conductorAsignado.nombre} {conductorAsignado.apellidos || ''}
+                    {transportistaAsignado.nombre} {transportistaAsignado.apellidos || ''}
                   </p>
                   <svg
                     className="w-4 h-4 text-gray-400 group-hover:text-brand-600 group-hover:translate-x-0.5 transition-all"
@@ -377,8 +378,8 @@ export default function VehiculoDetalle() {
                   </svg>
                 </div>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  DNI: <span className="font-medium text-gray-700">{conductorAsignado.dni || 'Sin DNI'}</span>
-                  {conductorAsignado.correo && <span className="text-gray-400"> • {conductorAsignado.correo}</span>}
+                  DNI: <span className="font-medium text-gray-700">{transportistaAsignado.dni || 'Sin DNI'}</span>
+                  {transportistaAsignado.correo && <span className="text-gray-400"> • {transportistaAsignado.correo}</span>}
                 </p>
               </div>
             </Link>
@@ -388,11 +389,11 @@ export default function VehiculoDetalle() {
                 variant="secondary"
                 size="sm"
                 onClick={() => {
-                  setConductorSeleccionadoId(String(conductorAsignado.id));
+                  setTransportistaSeleccionadoId(String(transportistaAsignado.id));
                   setModalAsignar(true);
                 }}
               >
-                Cambiar conductor
+                Cambiar transportista
               </Button>
               <Button
                 variant="danger"
@@ -407,9 +408,9 @@ export default function VehiculoDetalle() {
         ) : (
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-2">
             <p className="text-sm text-gray-500">
-              Este vehículo no tiene conductor asignado actualmente.{' '}
-              <Link to="/conductores" className="text-brand-600 hover:text-brand-800 hover:underline font-medium">
-                Ir a conductores
+              Este vehículo no tiene transportista asignado actualmente.{' '}
+              <Link to="/transportistas" className="text-brand-600 hover:text-brand-800 hover:underline font-medium">
+                Ir a transportistas
               </Link>
             </p>
 
@@ -417,7 +418,7 @@ export default function VehiculoDetalle() {
               variant="secondary"
               size="sm"
               onClick={() => {
-                setConductorSeleccionadoId('');
+                setTransportistaSeleccionadoId('');
                 setModalAsignar(true);
               }}
               icon={
@@ -426,19 +427,19 @@ export default function VehiculoDetalle() {
                 </svg>
               }
             >
-              Asignar conductor
+              Asignar transportista
             </Button>
           </div>
         )}
       </div>
 
-      {/* Modal interactivo de asignación de conductor */}
+      {/* Modal interactivo de asignación de transportista */}
       {modalAsignar && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-xl max-w-md w-full p-6">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl border-0 shadow-xl max-w-md w-full p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold text-gray-900">
-                {conductorAsignado ? 'Cambiar conductor asignado' : 'Asignar conductor al vehículo'}
+                {transportistaAsignado ? 'Cambiar transportista asignado' : 'Asignar transportista al vehículo'}
               </h3>
               <button
                 type="button"
@@ -452,20 +453,20 @@ export default function VehiculoDetalle() {
             </div>
 
             <p className="text-xs text-gray-500 mb-4">
-              Selecciona el conductor de la lista para vincularlo a este vehículo ({nombreCompleto} • {vehiculo.matricula}).
+              Selecciona el transportista de la lista para vincularlo a este vehículo ({nombreCompleto} • {vehiculo.matricula}).
             </p>
 
             <div className="mb-6">
               <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
-                Seleccionar Conductor
+                Seleccionar Transportista
               </label>
-              <select
-                value={conductorSeleccionadoId}
-                onChange={(e) => setConductorSeleccionadoId(e.target.value)}
-                className="w-full px-3.5 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 font-medium cursor-pointer"
+              <CustomSelect
+                value={transportistaSeleccionadoId}
+                onChange={(e) => setTransportistaSeleccionadoId(e.target.value)}
+                placeholder="-- Elige un transportista --"
               >
-                <option value="">-- Elige un conductor --</option>
-                {conductores.map((c) => {
+                <option value="">-- Elige un transportista --</option>
+                {transportistas.map((c) => {
                   const yaTieneVehiculo = c.vehiculoId && String(c.vehiculoId) !== String(id);
                   return (
                     <option key={c.id} value={c.id}>
@@ -473,7 +474,7 @@ export default function VehiculoDetalle() {
                     </option>
                   );
                 })}
-              </select>
+              </CustomSelect>
             </div>
 
             <div className="flex items-center justify-end gap-2">
@@ -487,7 +488,7 @@ export default function VehiculoDetalle() {
               <Button
                 variant="primary"
                 onClick={handleAsignarConductor}
-                disabled={!conductorSeleccionadoId || guardandoAsignacion}
+                disabled={!transportistaSeleccionadoId || guardandoAsignacion}
               >
                 {guardandoAsignacion ? 'Guardando...' : 'Confirmar asignación'}
               </Button>
@@ -496,18 +497,18 @@ export default function VehiculoDetalle() {
         </div>
       )}
 
-      {/* Modal de confirmación para desvincular conductor */}
+      {/* Modal de confirmación para desvincular transportista */}
       <ModalConfirmacion
         abierto={modalDesasignar}
         onCerrar={() => !guardandoAsignacion && setModalDesasignar(false)}
         onConfirmar={ejecutarDesasignarConductor}
-        titulo="¿Desvincular conductor?"
+        titulo="¿Desvincular transportista?"
         mensaje={
-          conductorAsignado ? (
+          transportistaAsignado ? (
             <>
-              ¿Deseas desvincular al conductor{' '}
+              ¿Deseas desvincular al transportista{' '}
               <span className="font-semibold text-gray-800 dark:text-gray-200">
-                «{conductorAsignado.nombre} {conductorAsignado.apellidos || ''}»
+                «{transportistaAsignado.nombre} {transportistaAsignado.apellidos || ''}»
               </span>{' '}
               de este vehículo?
             </>

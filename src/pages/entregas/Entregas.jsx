@@ -4,6 +4,7 @@ import { obtenerEntregas } from '../../services/materiales';
 import Button from '../../components/Button';
 import DeleteButton from '../../components/DeleteButton';
 import Table from '../../components/Table';
+import { imprimirOdescargarPdfEntrega } from '../../utils/pdfGenerator';
 
 function formatearFecha(fechaStr) {
   if (!fechaStr) return '—';
@@ -202,16 +203,16 @@ export default function Entregas() {
             return (
               <span
                 key={l.id}
-                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium border ${
+                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium border-0 ${
                   esEPI
-                    ? 'bg-amber-50 text-amber-900 border-amber-200'
-                    : 'bg-blue-50 text-blue-900 border-blue-200'
+                    ? 'bg-amber-100/70 text-amber-900'
+                    : 'bg-blue-100/70 text-blue-900'
                 }`}
               >
                 <span className="font-bold">{l.cantidad}x</span>
                 <span>{l.materialNombre}</span>
                 {l.talla && (
-                  <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-white/80 border border-current/20">
+                  <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-white/80 border-0">
                     T.{l.talla}
                   </span>
                 )}
@@ -242,9 +243,22 @@ export default function Entregas() {
     },
     {
       header: 'Acciones',
-      width: '150px',
+      width: '170px',
       render: (e) => (
         <div className="flex items-center gap-1.5">
+          <Button
+            size="sm"
+            variant="secondary"
+            className="p-2"
+            title={`Descargar justificante PDF #${e.id}`}
+            aria-label={`Descargar justificante PDF #${e.id}`}
+            onClick={() => imprimirOdescargarPdfEntrega(e)}
+            icon={
+              <svg aria-hidden="true" className="w-4 h-4 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            }
+          />
           <Button
             size="sm"
             variant="secondary"
@@ -281,7 +295,7 @@ export default function Entregas() {
             <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">
               Entregas de EPIS y Vestuario
             </h1>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-brand-50 text-brand-700 border border-brand-200">
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-brand-500/15 text-brand-700 border-0">
               {entregas.length} entregas
             </span>
           </div>
@@ -293,7 +307,7 @@ export default function Entregas() {
         <div className="flex items-center gap-2">
           <Link
             to="/materiales"
-            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 font-semibold text-xs sm:text-sm shadow-xs transition-colors"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-gray-100/80 hover:bg-gray-200/80 dark:bg-gray-800 dark:hover:bg-gray-750 border-0 text-gray-700 dark:text-gray-200 font-semibold text-xs sm:text-sm transition-colors"
           >
             <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
@@ -314,17 +328,17 @@ export default function Entregas() {
       )}
 
       {/* Buscador */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-gray-100 shadow-xs">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white dark:bg-gray-900 p-4 sm:p-5 rounded-3xl border-0 shadow-sm">
         <div className="relative flex-1 w-full max-w-md">
           <input
             type="search"
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
             placeholder="Buscar por trabajador, DNI o material entregado…"
-            className="w-full px-4 py-2 pl-10 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-brand-500 bg-gray-50/50"
+            className="w-full px-4 py-2.5 pl-10 text-sm border-0 rounded-2xl focus:outline-none focus:bg-white dark:focus:bg-gray-950 focus:ring-2 focus:ring-brand-500 bg-gray-100/80 hover:bg-gray-200/60 dark:bg-gray-800 dark:hover:bg-gray-750 text-gray-900 dark:text-gray-100 font-medium transition-all"
           />
           <svg
-            className="w-4 h-4 text-gray-400 absolute left-3 top-3 pointer-events-none"
+            className="w-4 h-4 text-gray-400 absolute left-3.5 top-3.5 pointer-events-none"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"

@@ -6,13 +6,18 @@ export function filtrarDocumentos(documentos, busqueda = '', nombresTipo = {}) {
   return documentos.filter(documento => coincideBusqueda(busqueda, [
     nombresTipo[documento.tipo], documento.tipo?.replaceAll('_', ' '),
     documento.numeroReferencia, documento.vehiculoMatricula,
-    documento.conductorNombre, documento.trabajadorNombre, documento.archivoNombre,
+    documento.transportistaNombre, documento.conductorNombre, documento.trabajadorNombre, documento.archivoNombre,
   ]));
 }
 
 export function filtrarDocumentosPorEntidad(documentos, grupo = 'todos') {
-  const campo = { vehiculos: 'vehiculoId', conductores: 'conductorId', trabajadores: 'trabajadorId' }[grupo];
-  return campo ? documentos.filter(documento => Boolean(documento[campo])) : documentos;
+  const campo = {
+    vehiculos: 'vehiculoId',
+    transportistas: 'transportistaId',
+    conductores: 'transportistaId',
+    trabajadores: 'trabajadorId'
+  }[grupo];
+  return campo ? documentos.filter(documento => Boolean(documento[campo] || (campo === 'transportistaId' && documento.conductorId))) : documentos;
 }
 
 function coincideBusqueda(busqueda, campos) {
@@ -39,35 +44,48 @@ export function filtrarVehiculos(vehiculos, { busqueda = '', marca = '', tipo = 
     (!estado || (estado === 'activo' ? vehiculo.activo !== false : vehiculo.activo === false)));
 }
 
-export function filtrarConductores(conductores, { busqueda = '', asignacion = '', tipoCarnet = '' }) {
-  return conductores.filter(conductor => {
-    const asignado = Boolean(conductor.vehiculoId);
-    // Preferir los permisos individuales; admitir el formato antiguo "C1, B, A1".
-    const categorias = conductor.permisos?.length
-      ? conductor.permisos.map(permiso => permiso.tipo)
-      : String(conductor.tipoCarnet ?? '').split(/[,;/\s]+/);
-    return coincideBusqueda(busqueda, [conductor.nombre, conductor.apellidos, conductor.dni, conductor.correo, conductor.telefono, conductor.vehiculoMatricula]) &&
+export function filtrarTransportistas(transportistas, { busqueda = '', asignacion = '', tipoCarnet = '' }) {
+  return (transportistas || []).filter(transportista => {
+    const asignado = Boolean(transportista.vehiculoId);
+    const categorias = transportista.permisos?.length
+      ? transportista.permisos.map(permiso => permiso.tipo)
+      : String(transportista.tipoCarnet ?? '').split(/[,;/\s]+/);
+    return coincideBusqueda(busqueda, [transportista.nombre, transportista.apellidos, transportista.dni, transportista.correo, transportista.telefono, transportista.vehiculoMatricula]) &&
       (!asignacion || (asignacion === 'asignado' ? asignado : !asignado)) &&
       (!tipoCarnet || categorias.some(categoria => normalizarTexto(categoria) === normalizarTexto(tipoCarnet)));
   });
 }
 
+export const filtrarConductores = filtrarTransportistas;
+
 export function filtrarUsuarios(usuarios, { busqueda = '', rol = '' } = {}) {
   return usuarios.filter(usuario => {
     const coincide = coincideBusqueda(busqueda, [usuario.nombre, usuario.correo]);
-    const coincideRol = !rol || (rol === 'admin' ? Boolean(usuario.admin) : !usuario.admin);
+    const userRol = String(usuario.rol || (usuario.admin ? 'ADMIN' : 'USUARIO')).toUpperCase();
+    const filtroUpper = rol ? String(rol).toUpperCase() : '';
+    const coincideRol = !filtroUpper || userRol === filtroUpper;
     return coincide && coincideRol;
   });
 }
 
-export function filtrarTrabajadores(trabajadores, { busqueda = '' } = {}) {
-  return trabajadores.filter(trabajador =>
-    coincideBusqueda(busqueda, [
+export function filtrarTrabajadores(trabajadores, { busqueda = '', departamento = '' } = {}) {
+  return trabajadores.filter(trabajador => {
+    const coincide = coincideBusqueda(busqueda, [
       trabajador.nombre,
       trabajador.apellidos,
       trabajador.dni,
       trabajador.correo,
-      trabajador.telefono,
-    ])
-  );
+      trabajador.departamento,
+    ]);
+
+    if (!coincide) return false;
+
+    if (!departamento) return true;
+
+    if (departamento === 'SIN_DEPARTAMENTO') {
+      return !trabajador.departamento || !trabajador.departamento.trim();
+    }
+
+    return normalizarTexto(trabajador.departamento) === normalizarTexto(departamento);
+  });
 }

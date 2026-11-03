@@ -8,7 +8,7 @@ import ListFilters from '../../components/ListFilters';
 const GRUPOS = [
   { id: 'todos', label: 'Todos los documentos' },
   { id: 'vehiculos', label: 'Vehículos', campo: 'vehiculoId', singular: 'Vehículo', todos: 'Todos los vehículos', origen: 'vehiculo' },
-  { id: 'conductores', label: 'Conductores', campo: 'conductorId', singular: 'Conductor', todos: 'Todos los conductores', origen: 'conductor' },
+  { id: 'transportistas', label: 'Transportistas', campo: 'transportistaId', singular: 'Transportista', todos: 'Todos los transportistas', origen: 'transportista' },
   { id: 'trabajadores', label: 'Trabajadores', campo: 'trabajadorId', singular: 'Trabajador', todos: 'Todos los trabajadores', origen: 'trabajador' },
 ];
 
@@ -17,22 +17,22 @@ export default function Documentos() {
   const [params, setParams] = useSearchParams();
   const [busqueda, setBusqueda] = useState('');
   const [soloVigentes, setSoloVigentes] = useState(true);
-  const [datos, setDatos] = useState({ vehiculos: [], conductores: [], trabajadores: [] });
+  const [datos, setDatos] = useState({ vehiculos: [], transportistas: [], trabajadores: [] });
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
   const [retry, setRetry] = useState(0);
 
-  const grupo = GRUPOS.find(item => item.campo && params.get(item.campo))
-    || GRUPOS.find(item => item.id === params.get('grupo')) || GRUPOS[0];
-  const entidadId = grupo.campo ? params.get(grupo.campo) || '' : '';
+  const grupo = GRUPOS.find(item => item.campo && (params.get(item.campo) || (item.id === 'transportistas' && params.get('conductorId'))))
+    || GRUPOS.find(item => item.id === params.get('grupo') || (item.id === 'transportistas' && params.get('grupo') === 'conductores')) || GRUPOS[0];
+  const entidadId = grupo.campo ? params.get(grupo.campo) || (grupo.id === 'transportistas' ? params.get('conductorId') || '' : '') : '';
   const opciones = datos[grupo.id] || [];
 
   useEffect(() => {
     let active = true;
-    Promise.allSettled(['vehiculos', 'conductores', 'trabajadores'].map(recurso => api.get('/' + recurso)))
+    Promise.allSettled(['vehiculos', 'transportistas', 'trabajadores'].map(recurso => api.get('/' + recurso)))
       .then(results => {
         if (!active) return;
-        setDatos(Object.fromEntries(['vehiculos', 'conductores', 'trabajadores'].map((key, index) =>
+        setDatos(Object.fromEntries(['vehiculos', 'transportistas', 'trabajadores'].map((key, index) =>
           [key, results[index].status === 'fulfilled' ? results[index].value.data || [] : []])));
         setError(results.some(result => result.status === 'rejected') ? 'No se han podido cargar todos los selectores. Puedes seguir buscando por categoría.' : null);
         setCargando(false);
@@ -94,7 +94,7 @@ export default function Documentos() {
       <Button variant="secondary" size="sm" onClick={() => setRetry(value => value + 1)}>Reintentar</Button>
     </div>}    <DocumentosTabla busqueda={busqueda} soloVigentes={soloVigentes} grupoEntidad={grupo.id}
       vehiculoId={grupo.id === 'vehiculos' ? entidadId : ''}
-      conductorId={grupo.id === 'conductores' ? entidadId : ''}
+      transportistaId={grupo.id === 'transportistas' ? entidadId : ''}
       trabajadorId={grupo.id === 'trabajadores' ? entidadId : ''} enEntidad={false} />
   </div>;
 }

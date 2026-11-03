@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import api from '../../services/api';
 import { Link, useNavigate } from 'react-router-dom';
 import Button from '../../components/Button';
 import Table from '../../components/Table';
 import ListFilters from '../../components/ListFilters';
-import { filtrarTrabajadores } from '../../services/filtros';
+import { filtrarTrabajadores, opcionesFiltro } from '../../services/filtros';
 
 export default function Trabajadores() {
   const [trabajadores, setTrabajadores] = useState([]);
@@ -12,9 +12,24 @@ export default function Trabajadores() {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  const [filtros, setFiltros] = useState({ busqueda: '' });
+  const [filtros, setFiltros] = useState({ busqueda: '', departamento: '' });
+  const cambiarFiltro = (key, value) => setFiltros((prev) => ({ ...prev, [key]: value }));
   const filtrados = filtrarTrabajadores(trabajadores, filtros);
-  const hayFiltros = Boolean(filtros.busqueda.trim());
+  const hayFiltros = Boolean(filtros.busqueda.trim() || filtros.departamento);
+
+  const opcionesDepartamento = useMemo(() => {
+    const deps = opcionesFiltro(trabajadores, 'departamento').map((dep) => ({
+      value: dep,
+      label: dep,
+    }));
+    const haySinDepartamento = trabajadores.some(
+      (t) => !t.departamento || !t.departamento.trim()
+    );
+    if (haySinDepartamento) {
+      deps.push({ value: 'SIN_DEPARTAMENTO', label: 'Sin departamento' });
+    }
+    return deps;
+  }, [trabajadores]);
 
   useEffect(() => {
     const cargarTrabajadores = async () => {
@@ -46,10 +61,10 @@ export default function Trabajadores() {
     { header: 'Apellidos', accessor: 'apellidos' },
     { header: 'DNI', accessor: 'dni' },
     {
-      header: 'Teléfono',
+      header: 'Departamento',
       render: (p) => (
         <span className="text-sm font-medium text-gray-700">
-          {p.telefono || '—'}
+          {p.departamento || '—'}
         </span>
       ),
     },
@@ -59,7 +74,7 @@ export default function Trabajadores() {
       render: (persona) => (
         <Link
           to={`/entregas/nueva?trabajadorId=${persona.id}`}
-          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-brand-50 text-brand-700 hover:bg-brand-100 border border-brand-200/60 transition-colors"
+          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-brand-500/15 text-brand-700 hover:bg-brand-500/25 border-0 transition-colors"
           title="Registrar entrega de EPIS o vestuario a este trabajador"
         >
           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -86,7 +101,7 @@ export default function Trabajadores() {
         <div className="flex items-center gap-2">
           <Link
             to="/entregas"
-            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 font-semibold text-xs sm:text-sm shadow-xs transition-colors"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200/80 active:scale-[0.98] border-0 text-gray-700 dark:text-gray-200 dark:bg-gray-800 dark:hover:bg-gray-750 font-semibold text-xs sm:text-sm transition-colors"
           >
             <svg className="w-4 h-4 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -105,15 +120,24 @@ export default function Trabajadores() {
       <ListFilters
         id="trabajadores"
         busqueda={filtros.busqueda}
-        onSearch={value => setFiltros({ busqueda: value })}
-        placeholder="Buscar por nombre, apellidos, DNI, teléfono o correo…"
+        onSearch={value => cambiarFiltro('busqueda', value)}
+        placeholder="Buscar por nombre, apellidos, DNI, departamento o correo…"
         active={hayFiltros}
         count={filtrados.length}
         total={trabajadores.length}
         loading={cargando}
         error={error}
-        onClear={() => setFiltros({ busqueda: '' })}
-        filters={[]}
+        onClear={() => setFiltros({ busqueda: '', departamento: '' })}
+        filters={[
+          {
+            key: 'departamento',
+            label: 'Departamento',
+            allLabel: 'Todos los departamentos',
+            value: filtros.departamento,
+            onChange: value => cambiarFiltro('departamento', value),
+            options: opcionesDepartamento,
+          },
+        ]}
       />
 
       <Table
@@ -122,7 +146,7 @@ export default function Trabajadores() {
         isLoading={cargando}
         emptyMessage={
           hayFiltros
-            ? 'No hay trabajadores que coincidan con la búsqueda'
+            ? 'No hay trabajadores que coincidan con la búsqueda y los filtros'
             : 'No hay trabajadores disponibles'
         }
       />

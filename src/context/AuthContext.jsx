@@ -50,6 +50,7 @@ export function AuthProvider({ children }) {
           correo: correo.trim(),
           contrasenya,
           admin: false,
+          rol: 'USUARIO',
         });
       } catch (err) {
         if (err.response?.status === 404) {
@@ -58,6 +59,7 @@ export function AuthProvider({ children }) {
             correo: correo.trim(),
             contrasenya,
             admin: false,
+            rol: 'USUARIO',
           });
         } else {
           throw err;
@@ -77,12 +79,19 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('usuario_sesion');
   };
 
+  const rolActual = String(usuario?.rol || (usuario?.admin ? 'ADMIN' : 'USUARIO')).toUpperCase();
+  const esKiosko = rolActual === 'KIOSKO';
+  const esAdmin = rolActual === 'ADMIN' || Boolean(usuario?.admin);
+
   return (
     <AuthContext.Provider
       value={{
         usuario,
         isAuthenticated: Boolean(usuario),
         cargando,
+        esKiosko,
+        esAdmin,
+        rol: rolActual,
         login,
         registro,
         logout,

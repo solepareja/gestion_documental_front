@@ -5,6 +5,8 @@ import { obtenerMateriales, crearEntrega, opcionesTallasComunes } from '../../se
 import Button from '../../components/Button';
 import CreateFormLayout from '../../components/CreateFormLayout';
 import SignaturePad from '../../components/SignaturePad';
+import CustomSelect from '../../components/CustomSelect';
+import CustomDatePicker from '../../components/CustomDatePicker';
 
 function sumarMesesAFecha(fechaStr, meses) {
   if (!fechaStr || !meses) return '';
@@ -190,24 +192,24 @@ export default function FormEntrega() {
         <fieldset disabled={cargandoDatos || cargando} className="space-y-8 disabled:opacity-60">
 
           {/* Bloque 1: Trabajador y Fecha */}
-          <div className="bg-white p-4 sm:p-5 lg:p-6 rounded-2xl border border-gray-100 shadow-xs space-y-4 sm:space-y-5">
-            <h2 className="text-base font-bold text-gray-900 border-b border-gray-100 pb-3 flex items-center gap-2">
-              <span className="w-6 h-6 rounded-full bg-brand-100 text-brand-700 font-bold text-xs flex items-center justify-center shrink-0">1</span>
+          <div className="bg-gray-50/70 dark:bg-gray-900/60 p-5 sm:p-6 rounded-3xl border-0 space-y-5">
+            <h2 className="text-base font-bold text-gray-900 dark:text-gray-100 pb-1 flex items-center gap-2.5">
+              <span className="w-6 h-6 rounded-full bg-brand-500/15 text-brand-700 dark:text-brand-300 font-bold text-xs flex items-center justify-center shrink-0">1</span>
               <span>Datos del receptor y fecha de entrega</span>
             </h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
               {/* Selector de Trabajador */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1" htmlFor="trabajadorId">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1" htmlFor="trabajadorId">
                   Trabajador *
                 </label>
-                <select
+                <CustomSelect
                   id="trabajadorId"
                   value={trabajadorId}
                   onChange={(e) => setTrabajadorId(e.target.value)}
+                  placeholder="-- Selecciona un trabajador --"
                   required
-                  className="w-full min-h-[46px] p-2.5 border border-gray-300 rounded-xl bg-white text-sm focus:outline-none focus:border-brand-500"
                 >
                   <option value="">-- Selecciona un trabajador --</option>
                   {trabajadores.map((t) => (
@@ -215,14 +217,14 @@ export default function FormEntrega() {
                       {t.nombre} {t.apellidos} {t.dni ? `(${t.dni})` : ''}
                     </option>
                   ))}
-                </select>
+                </CustomSelect>
 
                 {trabajadorSeleccionado && (
-                  <div className="mt-2 text-xs text-gray-500 flex flex-wrap gap-x-4 gap-y-1 bg-gray-50 p-2.5 rounded-lg border border-gray-100">
+                  <div className="mt-2.5 text-xs text-gray-600 dark:text-gray-300 flex flex-wrap gap-x-4 gap-y-1 bg-white dark:bg-gray-800 p-3 rounded-2xl border-0 shadow-2xs">
                     <span><strong>DNI:</strong> {trabajadorSeleccionado.dni || 'Sin DNI'}</span>
                     <span><strong>Correo:</strong> {trabajadorSeleccionado.correo || 'Sin correo'}</span>
-                    {trabajadorSeleccionado.telefono && (
-                      <span><strong>Tel:</strong> {trabajadorSeleccionado.telefono}</span>
+                    {trabajadorSeleccionado.departamento && (
+                      <span><strong>Departamento:</strong> {trabajadorSeleccionado.departamento}</span>
                     )}
                   </div>
                 )}
@@ -230,22 +232,20 @@ export default function FormEntrega() {
 
               {/* Fecha de Entrega */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1" htmlFor="fechaEntrega">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1" htmlFor="fechaEntrega">
                   Fecha de entrega *
                 </label>
-                <input
-                  type="date"
+                <CustomDatePicker
                   id="fechaEntrega"
                   value={fechaEntrega}
                   onChange={(e) => setFechaEntrega(e.target.value)}
                   required
-                  className="w-full min-h-[46px] p-2.5 border border-gray-300 rounded-xl bg-white text-sm focus:outline-none focus:border-brand-500"
                 />
               </div>
 
               {/* Observaciones */}
               <div className="col-span-full">
-                <label className="block text-sm font-semibold text-gray-700 mb-1" htmlFor="observaciones">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1" htmlFor="observaciones">
                   Observaciones o notas adicionales (opcional)
                 </label>
                 <input
@@ -254,24 +254,24 @@ export default function FormEntrega() {
                   value={observaciones}
                   onChange={(e) => setObservaciones(e.target.value)}
                   placeholder="Ej: Entrega por inicio de contrato, renovación anual, sustitución por desgaste…"
-                  className="w-full min-h-[46px] p-2.5 border border-gray-300 rounded-xl bg-white text-sm focus:outline-none focus:border-brand-500"
+                  className="w-full min-h-[46px] px-4 py-3 border-0 rounded-2xl bg-white dark:bg-gray-800 text-sm font-medium text-gray-900 dark:text-gray-100 hover:bg-gray-100/60 dark:hover:bg-gray-750 focus:bg-white dark:focus:bg-gray-950 focus:ring-2 focus:ring-brand-500 transition-all"
                 />
               </div>
             </div>
           </div>
 
           {/* Bloque 2: Líneas de material */}
-          <div className="bg-white p-4 sm:p-5 lg:p-6 rounded-2xl border border-gray-100 shadow-xs space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-3">
-              <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
-                <span className="w-6 h-6 rounded-full bg-brand-100 text-brand-700 font-bold text-xs flex items-center justify-center shrink-0">2</span>
+          <div className="bg-gray-50/70 dark:bg-gray-900/60 p-5 sm:p-6 rounded-3xl border-0 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1">
+              <h2 className="text-base font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2.5">
+                <span className="w-6 h-6 rounded-full bg-brand-500/15 text-brand-700 dark:text-brand-300 font-bold text-xs flex items-center justify-center shrink-0">2</span>
                 <span>Artículos entregados (EPIS y Vestuario)</span>
               </h2>
 
               <button
                 type="button"
                 onClick={agregarLinea}
-                className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-brand-700 bg-brand-50 hover:bg-brand-100 border border-brand-200 transition-colors cursor-pointer shrink-0 self-start sm:self-auto whitespace-nowrap"
+                className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold text-brand-700 dark:text-brand-300 bg-brand-500/10 hover:bg-brand-500/20 border-0 transition-colors cursor-pointer shrink-0 self-start sm:self-auto whitespace-nowrap"
               >
                 <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -281,7 +281,7 @@ export default function FormEntrega() {
             </div>
 
             {materiales.length === 0 && (
-              <div className="p-4 rounded-xl bg-amber-50 text-amber-800 text-sm">
+              <div className="p-4 rounded-2xl bg-amber-100/70 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 border-0 text-sm">
                 No hay materiales dados de alta en el catálogo todavía.{' '}
                 <Link to="/materiales/nuevo" className="underline font-bold">
                   Añade materiales aquí
@@ -298,19 +298,19 @@ export default function FormEntrega() {
                 return (
                   <div
                     key={linea.idTemp}
-                    className="p-3.5 sm:p-4 rounded-xl border border-gray-200 bg-gray-50/70 hover:bg-gray-50 transition-colors space-y-3"
+                    className="p-4 sm:p-5 rounded-2xl border-0 bg-white dark:bg-gray-800 hover:bg-gray-50/80 dark:hover:bg-gray-800/90 transition-all space-y-3.5 shadow-xs"
                   >
                     {/* Fila 1: Selector de material completo + botón eliminar */}
                     <div className="flex items-end gap-2.5">
                       <div className="flex-1 min-w-0">
-                        <label className="block text-xs font-bold text-gray-700 mb-1">
+                        <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
                           Material #{index + 1} *
                         </label>
-                        <select
+                        <CustomSelect
                           value={linea.materialId}
                           onChange={(e) => handleMaterialChange(index, e.target.value)}
+                          placeholder="-- Elige un artículo --"
                           required
-                          className="w-full min-h-[42px] px-3 py-2 border border-gray-300 rounded-xl bg-white text-sm focus:outline-none focus:border-brand-500 truncate"
                         >
                           <option value="">-- Elige un artículo --</option>
                           <optgroup label="EPIS">
@@ -318,7 +318,7 @@ export default function FormEntrega() {
                               .filter((m) => m.tipo === 'EPI')
                               .map((m) => (
                                 <option key={m.id} value={m.id}>
-                                  {m.nombre} {m.precio ? `(${Number(m.precio).toFixed(2)} €)` : ''}
+                                  {m.nombre}
                                 </option>
                               ))}
                           </optgroup>
@@ -327,11 +327,11 @@ export default function FormEntrega() {
                               .filter((m) => m.tipo === 'VESTUARIO')
                               .map((m) => (
                                 <option key={m.id} value={m.id}>
-                                  {m.nombre} {m.precio ? `(${Number(m.precio).toFixed(2)} €)` : ''}
+                                  {m.nombre}
                                 </option>
                               ))}
                           </optgroup>
-                        </select>
+                        </CustomSelect>
                       </div>
 
                       <div className="shrink-0 pb-0.5">
@@ -340,7 +340,7 @@ export default function FormEntrega() {
                           onClick={() => eliminarLinea(index)}
                           disabled={lineas.length <= 1}
                           title="Eliminar este artículo"
-                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors disabled:opacity-20 cursor-pointer disabled:cursor-not-allowed"
+                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl transition-colors disabled:opacity-20 cursor-pointer disabled:cursor-not-allowed"
                         >
                           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -350,10 +350,10 @@ export default function FormEntrega() {
                     </div>
 
                     {/* Fila 2: Cantidad, Talla y Fecha de renovación en columnas */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3 pt-1 border-t border-gray-100">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
                       {/* Cantidad */}
                       <div>
-                        <label className="block text-xs font-bold text-gray-700 mb-1">
+                        <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
                           Cantidad *
                         </label>
                         <input
@@ -362,13 +362,13 @@ export default function FormEntrega() {
                           value={linea.cantidad}
                           onChange={(e) => handleLineaChange(index, 'cantidad', e.target.value)}
                           required
-                          className="w-full min-h-[42px] px-3 py-2 border border-gray-300 rounded-xl bg-white text-sm focus:outline-none focus:border-brand-500 text-center font-bold"
+                          className="w-full min-h-[44px] px-3 py-2 border-0 rounded-xl bg-gray-100/80 hover:bg-gray-200/60 dark:bg-gray-900 dark:hover:bg-gray-950 text-sm font-bold text-gray-900 dark:text-gray-100 text-center focus:bg-white dark:focus:bg-black focus:ring-2 focus:ring-brand-500 transition-all"
                         />
                       </div>
 
                       {/* Talla */}
                       <div>
-                        <label className="block text-xs font-bold text-gray-700 mb-1">
+                        <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
                           Talla {pideTalla && '*'}
                         </label>
                         {pideTalla ? (
@@ -380,7 +380,7 @@ export default function FormEntrega() {
                               onChange={(e) => handleLineaChange(index, 'talla', e.target.value)}
                               placeholder="Ej: L o 43"
                               required
-                              className="w-full min-h-[42px] px-3 py-2 border border-brand-300 rounded-xl bg-white text-sm focus:outline-none focus:border-brand-500 font-semibold text-brand-900"
+                              className="w-full min-h-[44px] px-3 py-2 border-0 rounded-xl bg-gray-100/80 hover:bg-gray-200/60 dark:bg-gray-900 dark:hover:bg-gray-950 text-sm font-semibold text-gray-900 dark:text-gray-100 focus:bg-white dark:focus:bg-black focus:ring-2 focus:ring-brand-500 transition-all"
                             />
                             <datalist id={`tallas-sugeridas-${linea.idTemp}`}>
                               {opcionesTallasComunes.map((t) => (
@@ -393,21 +393,21 @@ export default function FormEntrega() {
                             type="text"
                             value="Talla única"
                             disabled
-                            className="w-full min-h-[42px] px-3 py-2 border border-gray-200 rounded-xl bg-gray-100 text-gray-400 text-xs italic"
+                            className="w-full min-h-[44px] px-3 py-2 border-0 rounded-xl bg-gray-100/50 dark:bg-gray-900/50 text-gray-400 text-xs italic"
                           />
                         )}
                       </div>
 
                       {/* Fecha de renovación */}
                       <div>
-                        <label className="block text-xs font-bold text-gray-700 mb-1">
+                        <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
                           Renovación prevista
                         </label>
-                        <input
-                          type="date"
+                        <CustomDatePicker
                           value={linea.fechaRenovacion}
                           onChange={(e) => handleLineaChange(index, 'fechaRenovacion', e.target.value)}
-                          className="w-full min-h-[42px] px-2.5 py-2 border border-gray-300 rounded-xl bg-white text-xs focus:outline-none focus:border-brand-500"
+                          placeholder="dd/mm/aaaa"
+                          size="sm"
                         />
                       </div>
                     </div>
@@ -418,15 +418,15 @@ export default function FormEntrega() {
           </div>
 
           {/* Bloque 3: Firma digital interactiva */}
-          <div className="bg-white p-4 sm:p-5 lg:p-6 rounded-2xl border border-gray-100 shadow-xs space-y-4">
-            <h2 className="text-base font-bold text-gray-900 border-b border-gray-100 pb-3 flex items-center gap-2">
-              <span className="w-6 h-6 rounded-full bg-brand-100 text-brand-700 font-bold text-xs flex items-center justify-center shrink-0">3</span>
+          <div className="bg-gray-50/70 dark:bg-gray-900/60 p-5 sm:p-6 rounded-3xl border-0 space-y-4">
+            <h2 className="text-base font-bold text-gray-900 dark:text-gray-100 pb-1 flex items-center gap-2.5">
+              <span className="w-6 h-6 rounded-full bg-brand-500/15 text-brand-700 dark:text-brand-300 font-bold text-xs flex items-center justify-center shrink-0">3</span>
               <span>Firma digital de conformidad del trabajador *</span>
             </h2>
 
-            <div className="bg-orange-50/60 p-3.5 rounded-xl border border-brand-100 text-xs text-brand-900 space-y-1">
-              <p className="font-semibold">Declaración de recepción:</p>
-              <p className="text-gray-600 leading-relaxed">
+            <div className="bg-brand-500/10 dark:bg-brand-950/40 p-4 rounded-2xl border-0 text-xs text-brand-950 dark:text-brand-200 space-y-1.5">
+              <p className="font-bold">Declaración de recepción:</p>
+              <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
                 El/la trabajador/a declara haber recibido en perfecto estado los equipos de protección individual (EPI)
                 y prendas de vestuario laboral arriba indicados, comprometiéndose a su uso exclusivo en el puesto de trabajo
                 y a su conservación conforme a la Ley de Prevención de Riesgos Laborales.

@@ -64,8 +64,8 @@ export default function Vehiculos() {
             render: (vehiculo) => (
                 <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
                     vehiculo.activo !== false
-                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60'
-                        : 'bg-gray-100 text-gray-500 border border-gray-200'
+                        ? 'bg-emerald-50 text-emerald-700 border-0'
+                        : 'bg-gray-100 text-gray-500 border-0'
                 }`}>
                     {vehiculo.activo !== false ? 'Activo' : 'Inactivo'}
                 </span>

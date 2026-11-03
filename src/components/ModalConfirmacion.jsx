@@ -45,7 +45,7 @@ export default function ModalConfirmacion({
       aria-labelledby="modal-confirmacion-titulo"
     >
       <div
-        className="relative w-full max-w-md bg-white dark:bg-gray-900 rounded-3xl shadow-2xl border border-gray-100 dark:border-gray-800 p-6 sm:p-7 text-center overflow-hidden transform transition-all animate-in zoom-in-95 duration-200"
+        className="relative w-full max-w-md bg-white dark:bg-gray-900 rounded-3xl shadow-2xl border-0 p-6 sm:p-7 text-center overflow-hidden transform transition-all animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Botón cerrar X en esquina superior derecha */}
@@ -65,10 +65,10 @@ export default function ModalConfirmacion({
 
         {/* Icono central superior */}
         <div
-          className={`mx-auto flex h-14 w-14 items-center justify-center rounded-2xl mb-4 border shadow-xs ${
+          className={`mx-auto flex h-14 w-14 items-center justify-center rounded-2xl mb-4 border-0 shadow-2xs ${
             esPeligro
-              ? 'bg-red-50 dark:bg-red-950/60 border-red-100 dark:border-red-900/50 text-red-600 dark:text-red-400'
-              : 'bg-amber-50 dark:bg-amber-950/60 border-amber-100 dark:border-amber-900/50 text-amber-600 dark:text-amber-400'
+              ? 'bg-red-500/15 text-red-600 dark:text-red-400'
+              : 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
           }`}
         >
           {esPeligro ? (
@@ -138,7 +138,7 @@ export default function ModalConfirmacion({
             type="button"
             disabled={cargando}
             onClick={onCerrar}
-            className="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 font-semibold text-sm hover:bg-gray-50 dark:hover:bg-gray-700/80 transition-colors disabled:opacity-50 cursor-pointer"
+            className="w-full sm:w-auto px-4 py-2.5 rounded-xl border-0 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 font-semibold text-sm transition-colors disabled:opacity-50 cursor-pointer"
           >
             {textoCancelar}
           </button>

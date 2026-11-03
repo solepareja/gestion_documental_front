@@ -4,36 +4,36 @@ import { Link, useNavigate } from 'react-router-dom';
 import Button from '../../components/Button';
 import Table from '../../components/Table';
 import ListFilters from '../../components/ListFilters';
-import { filtrarConductores } from '../../services/filtros';
+import { filtrarTransportistas } from '../../services/filtros';
 import { CATEGORIAS_CARNET } from '../../utils/carnetCategorias';
 
-export default function Conductores() {
-    const [conductores, setConductores] = useState([]);
+export default function Transportistas() {
+    const [transportistas, setTransportistas] = useState([]);
     const [cargando, setCargando] = useState(true);
     const [error, setError] = useState(null);
     const navigate = useNavigate();
     const [filtros, setFiltros] = useState({ busqueda: '', asignacion: '', tipoCarnet: '' });
     const cambiarFiltro = (key, value) => setFiltros(current => ({ ...current, [key]: value }));
-    const filtrados = filtrarConductores(conductores, filtros);
+    const filtrados = filtrarTransportistas(transportistas, filtros);
     const hayFiltros = Object.values(filtros).some(value => value.trim());
 
     useEffect(() => {
-        const cargarConductores = async () => {
+        const cargarTransportistas = async () => {
             try {
-                const response = await api.get("/conductores");
-                setConductores(response.data);
+                const response = await api.get("/transportistas");
+                setTransportistas(response.data);
             } catch (err) {
-                console.error("Error al cargar los conductores", err);
-                setError("Error al cargar los conductores");
+                console.error("Error al cargar los transportistas", err);
+                setError("Error al cargar los transportistas");
             } finally {
                 setCargando(false);
             }
         };
-        cargarConductores();
+        cargarTransportistas();
     }, []);
 
     const columns = [
-        { header: 'Nombre', render: (persona) => <Link to={"/conductores/" + persona.id} className="text-brand-600 hover:text-brand-800 hover:underline font-bold">{persona.nombre}</Link> },
+        { header: 'Nombre', render: (persona) => <Link to={"/transportistas/" + persona.id} className="text-brand-600 hover:text-brand-800 hover:underline font-bold">{persona.nombre}</Link> },
         { header: 'Apellidos', render: (persona) => persona.apellidos || '—' },
         { header: 'DNI', accessor: 'dni' },
         {
@@ -66,12 +66,12 @@ export default function Conductores() {
         { header: 'Correo', accessor: 'correo' },
         {
             header: 'Vehículo', width: '180px',
-            render: (conductor) => conductor.vehiculoId ? (
+            render: (transportista) => transportista.vehiculoId ? (
                 <Link
-                    to={`/vehiculos/${conductor.vehiculoId}`}
+                    to={`/vehiculos/${transportista.vehiculoId}`}
                     className="text-brand-600 hover:text-brand-800 hover:underline font-bold"
                 >
-                    {conductor.vehiculoMatricula || 'Ver vehículo'}
+                    {transportista.vehiculoMatricula || 'Ver vehículo'}
                 </Link>
             ) : (
                 <span className="text-gray-400 italic">Sin asignar</span>
@@ -83,21 +83,21 @@ export default function Conductores() {
         <div>
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">
-                    Conductores
+                    Transportistas
                 </h1>
                 
-                <Button onClick={() => navigate('/conductores/nuevo')}>
-                    + Añadir conductor
+                <Button onClick={() => navigate('/transportistas/nuevo')}>
+                    + Añadir transportista
                 </Button>
             </div>
 
             {error && <p className="text-red-500 mb-4">{error}</p>}
 
-            <ListFilters id="conductores" busqueda={filtros.busqueda} onSearch={value => cambiarFiltro('busqueda', value)}
-                placeholder="Nombre, DNI, correo, teléfono o matrícula…" active={hayFiltros} count={filtrados.length} total={conductores.length} loading={cargando} error={error}
+            <ListFilters id="transportistas" busqueda={filtros.busqueda} onSearch={value => cambiarFiltro('busqueda', value)}
+                placeholder="Nombre, DNI, correo, teléfono o matrícula…" active={hayFiltros} count={filtrados.length} total={transportistas.length} loading={cargando} error={error}
                 onClear={() => setFiltros({ busqueda: '', asignacion: '', tipoCarnet: '' })}
                 filters={[
-                    { key: 'asignacion', label: 'Asignación de vehículo', allLabel: 'Todos los conductores', value: filtros.asignacion,
+                    { key: 'asignacion', label: 'Asignación de vehículo', allLabel: 'Todos los transportistas', value: filtros.asignacion,
                         onChange: value => cambiarFiltro('asignacion', value), options: [
                             { value: 'asignado', label: 'Con vehículo asignado' }, { value: 'sin-asignar', label: 'Sin vehículo asignado' },
                         ] },
@@ -110,7 +110,7 @@ export default function Conductores() {
                 columns={columns}
                 data={filtrados}
                 isLoading={cargando}
-                emptyMessage={hayFiltros ? 'No hay conductores que coincidan con la búsqueda y los filtros' : 'No hay conductores disponibles'}
+                emptyMessage={hayFiltros ? 'No hay transportistas que coincidan con la búsqueda y los filtros' : 'No hay transportistas disponibles'}
             />
         </div>
     );

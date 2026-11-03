@@ -14,11 +14,25 @@ export default function useEditRecord(resource, id, setFormData) {
         if (key === 'activo') {
           value = data[key] !== undefined && data[key] !== null ? Boolean(data[key]) : true;
         }
+        if (key === 'rol') {
+          value = data['rol'] || (data['admin'] ? 'ADMIN' : 'USUARIO');
+        }
         if (key === 'permisos') {
           if (Array.isArray(data[key]) && data[key].length > 0) {
-            value = data[key];
+            value = data[key].flatMap(p => {
+              if (!p.tipo) return [];
+              const tipos = String(p.tipo).split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
+              if (tipos.length <= 1) return [{ ...p, tipo: tipos[0] || p.tipo }];
+              return tipos.map(t => ({
+                id: null,
+                tipo: t,
+                fechaEmision: p.fechaEmision || '',
+                fechaCaducidad: p.fechaCaducidad || '',
+                observaciones: p.observaciones || ''
+              }));
+            });
           } else if (data['tipoCarnet']) {
-            const tipos = String(data['tipoCarnet']).split(',').map(s => s.trim()).filter(Boolean);
+            const tipos = String(data['tipoCarnet']).split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
             value = tipos.map(tipo => ({
               tipo,
               fechaEmision: '',

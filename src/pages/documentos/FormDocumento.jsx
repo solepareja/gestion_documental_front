@@ -4,6 +4,7 @@ import api from '../../services/api';
 import {
   tiposDocumentoVehiculo,
   tiposDocumentoConductor,
+  tiposDocumentoTransportista,
   tiposDocumentoTrabajador,
   tiposDocumento,
   fechaDocumentoParaBack
@@ -11,6 +12,8 @@ import {
 import Button from '../../components/Button';
 import CreateFormLayout from '../../components/CreateFormLayout';
 import DocumentoFileUploader from '../../components/DocumentoFileUploader';
+import CustomSelect from '../../components/CustomSelect';
+import CustomDatePicker from '../../components/CustomDatePicker';
 
 const DESCRIPCIONES_DOCUMENTO = {
   // Vehículos
@@ -38,15 +41,15 @@ export default function FormDocumento() {
 
   // Parámetros de origen desde URL
   const paramVehiculoId = params.get('vehiculoId') || '';
-  const paramConductorId = params.get('conductorId') || '';
+  const paramTransportistaId = params.get('transportistaId') || params.get('conductorId') || '';
   const paramTrabajadorId = params.get('trabajadorId') || '';
   const paramOrigen = params.get('origen') || '';
   const paramTipo = params.get('tipo') || '';
 
   // Determinar entidad inicial
-  const entidadInicial = paramConductorId
-    ? 'conductor'
-    : paramTrabajadorId
+  const entidadInicial = paramTransportistaId || paramOrigen === 'transportista' || paramOrigen === 'conductor'
+    ? 'transportista'
+    : paramTrabajadorId || paramOrigen === 'trabajador'
     ? 'trabajador'
     : 'vehiculo';
 
@@ -57,17 +60,19 @@ export default function FormDocumento() {
     fechaEmision: '',
     fechaCaducidad: '',
     vehiculoId: paramVehiculoId,
-    conductorId: paramConductorId,
+    transportistaId: paramTransportistaId,
+    conductorId: paramTransportistaId,
     trabajadorId: paramTrabajadorId,
     numeroReferencia: '',
     companiaAseguradora: '',
     estado: 'VIGENTE',
+    avisos: true,
     archivo: '',
     archivoNombre: '',
   });
 
   const [vehiculos, setVehiculos] = useState(null);
-  const [conductores, setConductores] = useState(null);
+  const [transportistas, setTransportistas] = useState(null);
   const [trabajadores, setTrabajadores] = useState(null);
   const [cargandoListas, setCargandoListas] = useState(true);
   const [listasError, setListasError] = useState(null);
@@ -109,20 +114,23 @@ export default function FormDocumento() {
       .then(({ data }) => {
         if (!active) return;
         let tipoEnt = 'vehiculo';
-        if (data.conductorId) tipoEnt = 'conductor';
+        if (data.transportistaId || data.conductorId) tipoEnt = 'transportista';
         else if (data.trabajadorId) tipoEnt = 'trabajador';
         setEntidadTipo(tipoEnt);
 
+        const idTransp = data.transportistaId || data.conductorId;
         setFormData({
           tipo: data.tipo || 'ITV',
           fechaEmision: formatearFechaParaInput(data.fechaEmision),
           fechaCaducidad: formatearFechaParaInput(data.fechaCaducidad),
           vehiculoId: data.vehiculoId ? String(data.vehiculoId) : '',
-          conductorId: data.conductorId ? String(data.conductorId) : '',
+          transportistaId: idTransp ? String(idTransp) : '',
+          conductorId: idTransp ? String(idTransp) : '',
           trabajadorId: data.trabajadorId ? String(data.trabajadorId) : '',
           numeroReferencia: data.numeroReferencia || '',
           companiaAseguradora: data.companiaAseguradora || '',
           estado: data.estado || 'VIGENTE',
+          avisos: data.avisos !== undefined && data.avisos !== null ? Boolean(data.avisos) : true,
           archivo: data.archivo || '',
           archivoNombre: data.archivoNombre || '',
         });
@@ -149,13 +157,13 @@ export default function FormDocumento() {
     setCargandoListas(true);
     Promise.all([
       api.get('/vehiculos').catch(() => ({ data: [] })),
-      api.get('/conductores').catch(() => ({ data: [] })),
+      api.get('/transportistas').catch(() => api.get('/conductores')).catch(() => ({ data: [] })),
       api.get('/trabajadores').catch(() => ({ data: [] })),
     ])
-      .then(([resVeh, resCond, resTrab]) => {
+      .then(([resVeh, resTransp, resTrab]) => {
         if (active) {
           setVehiculos(resVeh.data || []);
-          setConductores(resCond.data || []);
+          setTransportistas(resTransp.data || []);
           setTrabajadores(resTrab.data || []);
           setListasError(null);
         }
@@ -181,8 +189,8 @@ export default function FormDocumento() {
   const tiposDisponibles =
     entidadTipo === 'vehiculo'
       ? tiposDocumentoVehiculo
-      : entidadTipo === 'conductor'
-      ? tiposDocumentoConductor
+      : (entidadTipo === 'transportista' || entidadTipo === 'conductor')
+      ? tiposDocumentoTransportista
       : tiposDocumentoTrabajador;
 
   const handleCambiarEntidad = (nuevaEntidad) => {
@@ -190,27 +198,34 @@ export default function FormDocumento() {
     const tipos =
       nuevaEntidad === 'vehiculo'
         ? tiposDocumentoVehiculo
-        : nuevaEntidad === 'conductor'
-        ? tiposDocumentoConductor
+        : (nuevaEntidad === 'transportista' || nuevaEntidad === 'conductor')
+        ? tiposDocumentoTransportista
         : tiposDocumentoTrabajador;
 
     setFormData(prev => ({
       ...prev,
       tipo: tipos[prev.tipo] ? prev.tipo : Object.keys(tipos)[0],
       vehiculoId: nuevaEntidad === 'vehiculo' ? prev.vehiculoId : '',
-      conductorId: nuevaEntidad === 'conductor' ? prev.conductorId : '',
+      transportistaId: (nuevaEntidad === 'transportista' || nuevaEntidad === 'conductor') ? (prev.transportistaId || prev.conductorId) : '',
+      conductorId: (nuevaEntidad === 'transportista' || nuevaEntidad === 'conductor') ? (prev.transportistaId || prev.conductorId) : '',
       trabajadorId: nuevaEntidad === 'trabajador' ? prev.trabajadorId : '',
     }));
   };
 
   const handleChange = event => {
-    const { name, value } = event.target;
+    const { name, value, type, checked } = event.target;
+    const valorCampo = type === 'checkbox' ? checked : value;
     setFormData(current => {
-      const updated = { ...current, [name]: value };
+      const updated = {
+        ...current,
+        [name]: valorCampo,
+        ...(name === 'transportistaId' ? { conductorId: valorCampo } : {}),
+        ...(name === 'conductorId' ? { transportistaId: valorCampo } : {}),
+      };
       if (name === 'fechaCaducidad' && current.estado !== 'ANULADO' && current.estado !== 'PENDIENTE') {
-        if (value) {
+        if (valorCampo) {
           const hoy = new Date().toISOString().slice(0, 10);
-          updated.estado = value < hoy ? 'CADUCADO' : 'VIGENTE';
+          updated.estado = valorCampo < hoy ? 'CADUCADO' : 'VIGENTE';
         } else {
           updated.estado = 'VIGENTE';
         }
@@ -223,14 +238,14 @@ export default function FormDocumento() {
   const calcularRutaVolver = () => {
     if (paramOrigen === 'historial') {
       if (paramVehiculoId) return `/vehiculos/${paramVehiculoId}/documentos/${encodeURIComponent(paramTipo || formData.tipo)}`;
-      if (paramConductorId) return `/conductores/${paramConductorId}/documentos/${encodeURIComponent(paramTipo || formData.tipo)}`;
+      if (paramTransportistaId) return `/transportistas/${paramTransportistaId}/documentos/${encodeURIComponent(paramTipo || formData.tipo)}`;
       if (paramTrabajadorId) return `/trabajadores/${paramTrabajadorId}/documentos/${encodeURIComponent(paramTipo || formData.tipo)}`;
     }
     if (paramOrigen === 'vehiculo' && (formData.vehiculoId || paramVehiculoId)) {
       return `/vehiculos/${formData.vehiculoId || paramVehiculoId}`;
     }
-    if (paramOrigen === 'conductor' && (formData.conductorId || paramConductorId)) {
-      return `/conductores/${formData.conductorId || paramConductorId}`;
+    if ((paramOrigen === 'transportista' || paramOrigen === 'conductor') && (formData.transportistaId || formData.conductorId || paramTransportistaId)) {
+      return `/transportistas/${formData.transportistaId || formData.conductorId || paramTransportistaId}`;
     }
     if (paramOrigen === 'trabajador' && (formData.trabajadorId || paramTrabajadorId)) {
       return `/trabajadores/${formData.trabajadorId || paramTrabajadorId}`;
@@ -253,8 +268,8 @@ export default function FormDocumento() {
       setError('Selecciona el vehículo al que pertenece el documento.');
       return;
     }
-    if (entidadTipo === 'conductor' && !formData.conductorId) {
-      setError('Selecciona el conductor al que pertenece el documento.');
+    if ((entidadTipo === 'transportista' || entidadTipo === 'conductor') && !formData.transportistaId && !formData.conductorId) {
+      setError('Selecciona el transportista al que pertenece el documento.');
       return;
     }
     if (entidadTipo === 'trabajador' && !formData.trabajadorId) {
@@ -292,11 +307,13 @@ export default function FormDocumento() {
         fechaEmision: fechaDocumentoParaBack(formData.fechaEmision),
         fechaCaducidad: fechaDocumentoParaBack(formData.fechaCaducidad),
         vehiculoId: entidadTipo === 'vehiculo' ? Number(formData.vehiculoId) : null,
-        conductorId: entidadTipo === 'conductor' ? Number(formData.conductorId) : null,
+        transportistaId: (entidadTipo === 'transportista' || entidadTipo === 'conductor') ? Number(formData.transportistaId || formData.conductorId) : null,
+        conductorId: (entidadTipo === 'transportista' || entidadTipo === 'conductor') ? Number(formData.transportistaId || formData.conductorId) : null,
         trabajadorId: entidadTipo === 'trabajador' ? Number(formData.trabajadorId) : null,
         numeroReferencia: (formData.numeroReferencia || '').trim() || null,
         companiaAseguradora: esSeguro && formData.companiaAseguradora ? formData.companiaAseguradora.trim() : null,
         estado: estadoAjustado,
+        avisos: formData.avisos !== false,
         archivo: formData.archivo || null,
         archivoNombre: formData.archivoNombre ? formData.archivoNombre.trim() : null,
       };
@@ -344,13 +361,13 @@ export default function FormDocumento() {
           ? 'el historial'
           : paramOrigen === 'vehiculo'
           ? 'la ficha del vehículo'
-          : paramOrigen === 'conductor'
-          ? 'la ficha del conductor'
+          : (paramOrigen === 'transportista' || paramOrigen === 'conductor')
+          ? 'la ficha del transportista'
           : paramOrigen === 'trabajador'
           ? 'la ficha del trabajador'
           : 'documentos'
       }
-      description="Registra la documentación correspondiente a vehículos, conductores o trabajadores con fechas de control y archivo digital."
+      description="Registra la documentación correspondiente a vehículos, transportistas o trabajadores con fechas de control y archivo digital."
     >
       {(error || loadError) && <p role="alert" className="create-error">{error || loadError}</p>}
       {listasError && (
@@ -366,32 +383,34 @@ export default function FormDocumento() {
           className="create-form disabled:opacity-60 space-y-6"
           disabled={saving || loadingDoc || Boolean(loadError) || cargandoListas}
         >
-          {/* Selector de Entidad: Vehículo / Conductor / Trabajador */}
+          {/* Selector de Entidad: Vehículo / Transportista / Trabajador (Segmented Control sin bordes) */}
           <div className="col-span-full">
-            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+            <label className="block text-[11px] font-extrabold text-gray-500 uppercase tracking-wider mb-2">
               ¿A quién corresponde este documento?
             </label>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="p-1.5 rounded-2xl bg-gray-100/90 dark:bg-gray-800/80 flex items-center gap-1.5">
               {[
                 { id: 'vehiculo', label: 'Vehículo' },
-                { id: 'conductor', label: 'Conductor' },
+                { id: 'transportista', label: 'Transportista' },
                 { id: 'trabajador', label: 'Trabajador' },
-              ].map((ent) => (
-                <button
-                  key={ent.id}
-                  type="button"
-                  disabled={Boolean(id) || Boolean(paramOrigen && paramOrigen !== 'documentos')}
-                  onClick={() => handleCambiarEntidad(ent.id)}
-                  className={`flex items-center justify-center gap-2 p-3 rounded-2xl border text-sm font-bold transition-all cursor-pointer ${
-                    entidadTipo === ent.id
-                      ? 'border-brand-500 bg-brand-50/80 text-brand-900 ring-2 ring-brand-500/20 shadow-xs'
-                      : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
-                  } disabled:cursor-not-allowed`}
-                >
-                  <span className="text-base">{ent.icon}</span>
-                  <span>{ent.label}</span>
-                </button>
-              ))}
+              ].map((ent) => {
+                const activo = (entidadTipo === ent.id || (ent.id === 'transportista' && entidadTipo === 'conductor'));
+                return (
+                  <button
+                    key={ent.id}
+                    type="button"
+                    disabled={Boolean(id) || Boolean(paramOrigen && paramOrigen !== 'documentos')}
+                    onClick={() => handleCambiarEntidad(ent.id)}
+                    className={`flex-1 flex items-center justify-center py-2.5 px-3 rounded-xl text-sm font-bold tracking-tight transition-all cursor-pointer border-0 ${
+                      activo
+                        ? 'bg-white dark:bg-gray-900 text-brand-600 dark:text-brand-400 shadow-sm'
+                        : 'text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-white/40'
+                    } disabled:cursor-not-allowed`}
+                  >
+                    <span>{ent.label}</span>
+                  </button>
+                );
+              })}
             </div>
             {paramOrigen && paramOrigen !== 'documentos' && (
               <p className="text-[11px] text-gray-400 mt-1.5">
@@ -404,11 +423,12 @@ export default function FormDocumento() {
           {entidadTipo === 'vehiculo' && (
             <div>
               <label htmlFor="vehiculoId">Vehículo asignado <span className="text-red-500">*</span></label>
-              <select
+              <CustomSelect
                 id="vehiculoId"
                 name="vehiculoId"
                 value={formData.vehiculoId}
                 onChange={handleChange}
+                placeholder="Selecciona un vehículo"
                 required
               >
                 <option value="">Selecciona un vehículo</option>
@@ -417,38 +437,40 @@ export default function FormDocumento() {
                     {vehiculo.matricula} — {vehiculo.marca} {vehiculo.modelo}
                   </option>
                 ))}
-              </select>
+              </CustomSelect>
             </div>
           )}
 
-          {entidadTipo === 'conductor' && (
+          {(entidadTipo === 'transportista' || entidadTipo === 'conductor') && (
             <div>
-              <label htmlFor="conductorId">Conductor asignado <span className="text-red-500">*</span></label>
-              <select
-                id="conductorId"
-                name="conductorId"
-                value={formData.conductorId}
+              <label htmlFor="transportistaId">Transportista asignado <span className="text-red-500">*</span></label>
+              <CustomSelect
+                id="transportistaId"
+                name="transportistaId"
+                value={formData.transportistaId || formData.conductorId}
                 onChange={handleChange}
+                placeholder="Selecciona un transportista"
                 required
               >
-                <option value="">Selecciona un conductor</option>
-                {conductores?.map(c => (
+                <option value="">Selecciona un transportista</option>
+                {transportistas?.map(c => (
                   <option key={c.id} value={c.id}>
                     {c.nombre} {c.apellidos || ''} {c.dni ? `(${c.dni})` : ''}
                   </option>
                 ))}
-              </select>
+              </CustomSelect>
             </div>
           )}
 
           {entidadTipo === 'trabajador' && (
             <div>
               <label htmlFor="trabajadorId">Trabajador asignado <span className="text-red-500">*</span></label>
-              <select
+              <CustomSelect
                 id="trabajadorId"
                 name="trabajadorId"
                 value={formData.trabajadorId}
                 onChange={handleChange}
+                placeholder="Selecciona un trabajador"
                 required
               >
                 <option value="">Selecciona un trabajador</option>
@@ -457,18 +479,18 @@ export default function FormDocumento() {
                     {t.nombre} {t.apellidos || ''} {t.dni ? `(${t.dni})` : ''}
                   </option>
                 ))}
-              </select>
+              </CustomSelect>
             </div>
           )}
 
           {/* Tipo de Documento */}
           <div>
             <label htmlFor="tipo">Tipo de documento <span className="text-red-500">*</span></label>
-            <select id="tipo" name="tipo" value={formData.tipo} onChange={handleChange} required>
+            <CustomSelect id="tipo" name="tipo" value={formData.tipo} onChange={handleChange} required>
               {Object.entries(tiposDisponibles).map(([value, label]) => (
                 <option key={value} value={value}>{label}</option>
               ))}
-            </select>
+            </CustomSelect>
             {DESCRIPCIONES_DOCUMENTO[formData.tipo] && (
               <p className="text-xs text-gray-500 mt-1.5 font-normal">
                 {DESCRIPCIONES_DOCUMENTO[formData.tipo]}
@@ -479,10 +501,9 @@ export default function FormDocumento() {
           {/* Fechas */}
           <div>
             <label htmlFor="fechaEmision">Fecha de emisión <span className="text-red-500">*</span></label>
-            <input
+            <CustomDatePicker
               id="fechaEmision"
               name="fechaEmision"
-              type="date"
               value={formData.fechaEmision}
               onChange={handleChange}
               required
@@ -494,10 +515,9 @@ export default function FormDocumento() {
               Fecha de caducidad
               {esCaducidadObligatoria && <span className="text-red-500 font-bold ml-1">*</span>}
             </label>
-            <input
+            <CustomDatePicker
               id="fechaCaducidad"
               name="fechaCaducidad"
-              type="date"
               min={formData.fechaEmision || undefined}
               value={formData.fechaCaducidad}
               onChange={handleChange}
@@ -538,12 +558,94 @@ export default function FormDocumento() {
           {/* Estado del documento */}
           <div>
             <label htmlFor="estado">Estado</label>
-            <select id="estado" name="estado" value={formData.estado} onChange={handleChange} required>
+            <CustomSelect id="estado" name="estado" value={formData.estado} onChange={handleChange} required>
               <option value="VIGENTE">Vigente</option>
               <option value="CADUCADO">Caducado</option>
               <option value="PENDIENTE">Pendiente</option>
               <option value="ANULADO">Anulado</option>
-            </select>
+            </CustomSelect>
+          </div>
+
+          {/* Configuración de Avisos y Notificaciones (Selector moderno sin bordes basado en contraste) */}
+          <div
+            role="switch"
+            aria-checked={Boolean(formData.avisos)}
+            tabIndex={0}
+            onClick={() => setFormData(prev => ({ ...prev, avisos: !prev.avisos }))}
+            onKeyDown={(e) => {
+              if (e.key === ' ' || e.key === 'Enter') {
+                e.preventDefault();
+                setFormData(prev => ({ ...prev, avisos: !prev.avisos }));
+              }
+            }}
+            className={`col-span-full rounded-2xl p-4.5 transition-all cursor-pointer select-none border-0 ${
+              formData.avisos
+                ? 'bg-amber-100/70 dark:bg-amber-950/40 hover:bg-amber-100/90'
+                : 'bg-gray-100/80 dark:bg-gray-800/60 hover:bg-gray-100'
+            }`}
+          >
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3.5 min-w-0">
+                {/* Icono con fondo contrastado */}
+                <div
+                  className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 transition-colors ${
+                    formData.avisos
+                      ? 'bg-amber-500 text-white shadow-sm shadow-amber-500/25'
+                      : 'bg-gray-200 dark:bg-gray-700 text-gray-400'
+                  }`}
+                >
+                  {formData.avisos ? (
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                    </svg>
+                  ) : (
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+                    </svg>
+                  )}
+                </div>
+
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-sm font-bold text-gray-900 dark:text-gray-100">
+                      Avisos y recordatorios de caducidad
+                    </span>
+                    <span
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wide transition-colors ${
+                        formData.avisos
+                          ? 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300'
+                          : 'bg-gray-200/90 text-gray-500 dark:bg-gray-700/80 dark:text-gray-400'
+                      }`}
+                    >
+                      {formData.avisos ? 'Avisos activados' : 'Avisos desactivados'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 leading-relaxed">
+                    {formData.avisos
+                      ? 'Recibirás avisos automáticos en la campana y en el panel cuando esté próximo a vencer.'
+                      : 'No se generarán avisos ni recordatorios de caducidad para este documento.'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Interruptor Switch moderno tipo iOS */}
+              <div className="shrink-0 pl-2">
+                <div
+                  className={`w-12 h-7 rounded-full p-1 transition-colors duration-200 ease-in-out ${
+                    formData.avisos
+                      ? 'bg-brand-500'
+                      : 'bg-gray-300 dark:bg-gray-600'
+                  }`}
+                >
+                  <div
+                    className={`w-5 h-5 rounded-full bg-white shadow-sm transform transition-transform duration-200 ease-in-out ${
+                      formData.avisos ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Archivo digital */}

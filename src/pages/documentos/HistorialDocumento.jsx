@@ -10,28 +10,30 @@ export default function HistorialDocumento({ entidadTipo }) {
   const navigate = useNavigate();
   const tipo = params.tipo;
 
-  const tipoEntidadEfectivo = entidadTipo || (params.vehiculoId ? 'vehiculo' : params.conductorId ? 'conductor' : 'trabajador');
-  const entidadId = params.vehiculoId || params.conductorId || params.trabajadorId;
+  const tipoEntidadEfectivo = entidadTipo || (params.vehiculoId ? 'vehiculo' : (params.transportistaId || params.conductorId) ? 'transportista' : 'trabajador');
+  const entidadId = params.vehiculoId || params.transportistaId || params.conductorId || params.trabajadorId;
 
   const [state, setState] = useState(null);
   const tipoValido = Boolean(tiposDocumento[tipo]);
 
+  const esTransportista = tipoEntidadEfectivo === 'transportista' || tipoEntidadEfectivo === 'conductor';
+
   const endpoint = tipoEntidadEfectivo === 'vehiculo'
     ? `/vehiculos/${entidadId}`
-    : tipoEntidadEfectivo === 'conductor'
-    ? `/conductores/${entidadId}`
+    : esTransportista
+    ? `/transportistas/${entidadId}`
     : `/trabajadores/${entidadId}`;
 
   const rutaFicha = tipoEntidadEfectivo === 'vehiculo'
     ? `/vehiculos/${entidadId}`
-    : tipoEntidadEfectivo === 'conductor'
-    ? `/conductores/${entidadId}`
+    : esTransportista
+    ? `/transportistas/${entidadId}`
     : `/trabajadores/${entidadId}`;
 
   const etiquetaVolver = tipoEntidadEfectivo === 'vehiculo'
     ? 'la ficha del vehículo'
-    : tipoEntidadEfectivo === 'conductor'
-    ? 'la ficha del conductor'
+    : esTransportista
+    ? 'la ficha del transportista'
     : 'la ficha del trabajador';
 
   useEffect(() => {

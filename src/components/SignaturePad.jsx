@@ -62,12 +62,6 @@ export default function SignaturePad({ value, onChange, disabled = false }) {
     if (!canvas) return { x: 0, y: 0 };
     const rect = canvas.getBoundingClientRect();
 
-    if (event.touches && event.touches.length > 0) {
-      return {
-        x: event.touches[0].clientX - rect.left,
-        y: event.touches[0].clientY - rect.top,
-      };
-    }
     return {
       x: event.clientX - rect.left,
       y: event.clientY - rect.top,
@@ -76,10 +70,18 @@ export default function SignaturePad({ value, onChange, disabled = false }) {
 
   const startDrawing = (event) => {
     if (disabled) return;
-    if (event.cancelable) event.preventDefault();
-    const coords = getCoordinates(event);
     const canvas = canvasRef.current;
     if (!canvas) return;
+
+    if (event.target?.setPointerCapture && event.pointerId !== undefined) {
+      try {
+        event.target.setPointerCapture(event.pointerId);
+      } catch {
+        // Ignorar si el navegador no permite capturar el puntero
+      }
+    }
+
+    const coords = getCoordinates(event);
     const ctx = canvas.getContext('2d');
     ctx.beginPath();
     ctx.moveTo(coords.x, coords.y);
@@ -93,10 +95,10 @@ export default function SignaturePad({ value, onChange, disabled = false }) {
 
   const draw = (event) => {
     if (!isDrawing || disabled) return;
-    if (event.cancelable) event.preventDefault();
-    const coords = getCoordinates(event);
     const canvas = canvasRef.current;
     if (!canvas) return;
+
+    const coords = getCoordinates(event);
     const ctx = canvas.getContext('2d');
     ctx.lineTo(coords.x, coords.y);
     ctx.stroke();
@@ -105,9 +107,18 @@ export default function SignaturePad({ value, onChange, disabled = false }) {
     setHasSignature(true);
   };
 
-  const stopDrawing = () => {
+  const stopDrawing = (event) => {
     if (!isDrawing || disabled) return;
     setIsDrawing(false);
+
+    if (event?.target?.releasePointerCapture && event.pointerId !== undefined) {
+      try {
+        event.target.releasePointerCapture(event.pointerId);
+      } catch {
+        // Ignorar si ya fue liberado
+      }
+    }
+
     const canvas = canvasRef.current;
     if (canvas && onChange) {
       const dataUrl = canvas.toDataURL('image/png');
@@ -128,28 +139,26 @@ export default function SignaturePad({ value, onChange, disabled = false }) {
 
   return (
     <div className="w-full">
-      <div className="relative rounded-2xl border-2 border-dashed border-gray-300 bg-white p-1 overflow-hidden transition-colors focus-within:border-brand-500 hover:border-gray-400">
+      <div className="relative rounded-2xl border-0 bg-white dark:bg-gray-800 p-1 overflow-hidden shadow-xs ring-1 ring-black/5 dark:ring-white/10 transition-all focus-within:ring-2 focus-within:ring-brand-500">
         <canvas
           ref={canvasRef}
-          onMouseDown={startDrawing}
-          onMouseMove={draw}
-          onMouseUp={stopDrawing}
-          onMouseLeave={stopDrawing}
-          onTouchStart={startDrawing}
-          onTouchMove={draw}
-          onTouchEnd={stopDrawing}
-          className="w-full h-44 sm:h-52 cursor-crosshair touch-none rounded-xl block"
+          onPointerDown={startDrawing}
+          onPointerMove={draw}
+          onPointerUp={stopDrawing}
+          onPointerLeave={stopDrawing}
+          style={{ touchAction: 'none' }}
+          className="w-full h-44 sm:h-52 cursor-crosshair touch-none rounded-xl block select-none"
         />
 
         {/* Guía visual para la firma */}
-        <div className="pointer-events-none absolute bottom-8 left-6 right-6 border-b border-gray-200 flex justify-between items-center pb-1 text-[11px] text-gray-400 font-medium">
+        <div className="pointer-events-none absolute bottom-8 left-6 right-6 border-b border-gray-200/60 dark:border-gray-700/60 flex justify-between items-center pb-1 text-[11px] text-gray-400 font-medium select-none">
           <span>X Firma del trabajador / receptor</span>
           <span>Firma en pantalla o con el ratón</span>
         </div>
 
         {hasSignature && (
-          <div className="absolute top-3 left-3 pointer-events-none">
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+          <div className="absolute top-3 left-3 pointer-events-none select-none">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-0">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Firmado
             </span>
           </div>
@@ -157,14 +166,14 @@ export default function SignaturePad({ value, onChange, disabled = false }) {
       </div>
 
       <div className="flex items-center justify-between mt-2 px-1">
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-gray-500 dark:text-gray-400">
           Usa tu dedo, lápiz táctil o ratón para firmar la entrega.
         </p>
         <button
           type="button"
           onClick={clear}
           disabled={disabled || !hasSignature}
-          className="text-xs font-semibold text-gray-600 hover:text-red-600 px-2.5 py-1 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-40 cursor-pointer"
+          className="text-xs font-semibold text-gray-600 dark:text-gray-300 hover:text-red-600 px-2.5 py-1 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-40 cursor-pointer"
         >
           Limpiar firma
         </button>

@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { obtenerEntrega, tiposMaterial } from '../../services/materiales';
 import Button from '../../components/Button';
 import DeleteButton from '../../components/DeleteButton';
+import { imprimirOdescargarPdfEntrega } from '../../utils/pdfGenerator';
 
 function formatearFecha(fechaStr) {
   if (!fechaStr) return '—';
@@ -43,8 +44,10 @@ export default function EntregaDetalle() {
     };
   }, [id]);
 
-  const imprimir = () => {
-    window.print();
+  const descargarPdf = () => {
+    if (entrega) {
+      imprimirOdescargarPdfEntrega(entrega);
+    }
   };
 
   if (cargando) {
@@ -85,11 +88,11 @@ export default function EntregaDetalle() {
         </Link>
 
         <div className="flex items-center gap-2 flex-wrap">
-          <Button variant="secondary" onClick={imprimir}>
+          <Button variant="secondary" onClick={descargarPdf} title="Descargar o imprimir justificante oficial en PDF">
             <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
-            Imprimir justificante
+            Descargar PDF
           </Button>
 
           <Button onClick={() => navigate('/entregas/nueva')}>
@@ -110,16 +113,23 @@ export default function EntregaDetalle() {
         
         {/* Cabecera del Documento */}
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6 border-b border-gray-200 pb-6">
-          <div>
-            <span className="text-xl sm:text-2xl font-black text-brand-800 tracking-tight block">
-              Fábrica Sofás Valencia S.L.
-            </span>
-            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mt-1">
-              Departamento de Prevención y Recursos Humanos
-            </span>
-            <p className="text-xs text-gray-400 mt-0.5">
-              Gestión y Control de EPIS y Vestuario Laboral
-            </p>
+          <div className="flex items-center gap-4">
+            <img
+              src="/logo.png"
+              alt="Sofás Valencia"
+              className="h-10 sm:h-12 w-auto object-contain shrink-0"
+            />
+            <div>
+              <span className="text-xl sm:text-2xl font-black text-brand-800 tracking-tight block">
+                Fábrica Sofás Valencia S.L.
+              </span>
+              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mt-1">
+                Departamento de Prevención y Recursos Humanos
+              </span>
+              <p className="text-xs text-gray-400 mt-0.5">
+                Gestión y Control de EPIS y Vestuario Laboral
+              </p>
+            </div>
           </div>
 
           <div className="text-left sm:text-right bg-gray-50 sm:bg-transparent p-4 sm:p-0 rounded-2xl border border-gray-100 sm:border-none">
@@ -156,8 +166,8 @@ export default function EntregaDetalle() {
               <span className="font-semibold text-gray-800">{entrega.trabajadorCorreo || '—'}</span>
             </div>
             <div>
-              <span className="block text-gray-400 font-medium">Teléfono:</span>
-              <span className="font-semibold text-gray-800">{entrega.trabajadorTelefono || '—'}</span>
+              <span className="block text-gray-400 font-medium">Departamento:</span>
+              <span className="font-semibold text-gray-800">{entrega.trabajadorDepartamento || '—'}</span>
             </div>
           </div>
         </div>
@@ -167,21 +177,21 @@ export default function EntregaDetalle() {
           <h3 className="text-sm font-bold text-gray-900 mb-3">
             Detalle de material entregado
           </h3>
-          <div className="overflow-x-auto rounded-2xl border border-gray-200">
-            <table className="w-full min-w-[620px] text-left text-xs border-collapse">
-              <thead className="bg-gray-50 border-b border-gray-200 text-gray-600 font-bold uppercase tracking-wider text-[11px]">
+          <div className="overflow-x-auto rounded-2xl border-0 shadow-xs">
+            <table className="w-full min-w-[620px] text-left text-xs border-collapse border-0">
+              <thead className="bg-gray-100/75 text-gray-500 font-bold uppercase tracking-wider text-[11px] border-0">
                 <tr>
-                  <th className="p-3.5">Material</th>
-                  <th className="p-3.5">Tipo</th>
-                  <th className="p-3.5 text-center">Cantidad</th>
-                  <th className="p-3.5 text-center">Talla</th>
-                  <th className="p-3.5">Renovación prevista</th>
-                  <th className="p-3.5 text-right">Estado</th>
+                  <th className="p-3.5 border-0">Material</th>
+                  <th className="p-3.5 border-0">Tipo</th>
+                  <th className="p-3.5 text-center border-0">Cantidad</th>
+                  <th className="p-3.5 text-center border-0">Talla</th>
+                  <th className="p-3.5 border-0">Renovación prevista</th>
+                  <th className="p-3.5 text-right border-0">Estado</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="border-0">
                 {(entrega.lineas || []).map((l) => (
-                  <tr key={l.id} className="hover:bg-gray-50/50">
+                  <tr key={l.id} className="even:bg-gray-50/70 hover:bg-brand-500/10 transition-colors border-0">
                     <td className="p-3.5 font-bold text-gray-900 text-sm">
                       {l.materialNombre}
                     </td>

@@ -15,7 +15,7 @@ export default function FormTrabajador() {
     apellidos: '',
     dni: '',
     correo: '',
-    telefono: '',
+    departamento: '',
   });
 
   const [dniError, setDniError] = useState(null);
@@ -76,7 +76,7 @@ export default function FormTrabajador() {
         apellidos: formData.apellidos.trim(),
         dni: normalizarDni(formData.dni),
         correo: formData.correo.trim(),
-        telefono: (formData.telefono || '').trim(),
+        departamento: (formData.departamento || '').trim(),
       };
 
       if (id) await api.put('/trabajadores/' + id, datosAEnviar);
@@ -148,7 +148,7 @@ export default function FormTrabajador() {
               onBlur={handleDniBlur}
               placeholder="Ej: 12345678Z o X1234567L"
               required
-              className={dniError ? 'border-red-400 focus:border-red-500' : ''}
+              className={dniError ? '!ring-2 !ring-red-500' : ''}
             />
             {dniError && (
               <p className="mt-1.5 text-xs text-red-600 font-semibold">{dniError}</p>
@@ -171,16 +171,16 @@ export default function FormTrabajador() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="telefono">
-              Teléfono (opcional)
+            <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="departamento">
+              Departamento
             </label>
             <input
               type="text"
-              id="telefono"
-              name="telefono"
-              value={formData.telefono}
+              id="departamento"
+              name="departamento"
+              value={formData.departamento || ''}
               onChange={handleChange}
-              placeholder="Ej: 600123456"
+              placeholder="Ej: Producción, Logística o Administración"
             />
           </div>
 
