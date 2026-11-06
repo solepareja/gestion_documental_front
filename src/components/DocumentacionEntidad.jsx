@@ -4,7 +4,6 @@ import api from '../services/api';
 import {
   tiposDocumentoVehiculo,
   tiposDocumentoConductor,
-  tiposDocumentoTrabajador,
   resumirDocumentosPorTipo,
   fechaDocumentoVisible
 } from '../services/documentos';
@@ -16,7 +15,6 @@ const MAPA_TIPOS = {
   vehiculo: tiposDocumentoVehiculo,
   transportista: tiposDocumentoConductor,
   conductor: tiposDocumentoConductor,
-  trabajador: tiposDocumentoTrabajador,
 };
 
 const MAPA_RUTAS = {

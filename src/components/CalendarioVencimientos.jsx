@@ -1,8 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 import ModalConfirmacion from './ModalConfirmacion';
-import CustomSelect from './CustomSelect';
 
 const DIAS_SEMANA = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 const DIAS_SEMANA_CORTO = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
@@ -14,7 +13,6 @@ const MESES = [
 export default function CalendarioVencimientos({
   eventos = [],
   cargando = false,
-  onAvisoCreado,
   onAvisoEliminado
 }) {
   const hoy = useMemo(() => new Date(), []);
@@ -22,21 +20,47 @@ export default function CalendarioVencimientos({
   const [filtroTipo, setFiltroTipo] = useState('TODOS');
   const [diaSeleccionado, setDiaSeleccionado] = useState(null);
   const [modalAbierto, setModalAbierto] = useState(false);
+  const [menuAbierto, setMenuAbierto] = useState(null); // null | 'mes' | 'anyo'
+  const menuNavRef = useRef(null);
+  const yearItemRef = useRef(null);
 
-  // Estados del formulario para añadir avisos / notas
-  const [mostrarFormulario, setMostrarFormulario] = useState(false);
-  const [formTitulo, setFormTitulo] = useState('');
-  const [formTipo, setFormTipo] = useState('NOTA');
-  const [formPrioridad, setFormPrioridad] = useState('NORMAL');
-  const [formDescripcion, setFormDescripcion] = useState('');
-  const [guardando, setGuardando] = useState(false);
-  const [errorFormulario, setErrorFormulario] = useState(null);
+  // Cerrar menú al hacer clic fuera
+  useEffect(() => {
+    if (!menuAbierto) return;
+    const clickFuera = (e) => {
+      if (menuNavRef.current && !menuNavRef.current.contains(e.target)) {
+        setMenuAbierto(null);
+      }
+    };
+    document.addEventListener('mousedown', clickFuera);
+    return () => document.removeEventListener('mousedown', clickFuera);
+  }, [menuAbierto]);
+
+  // Centrar el año seleccionado cuando se abre el desplegable
+  useEffect(() => {
+    if (menuAbierto === 'anyo' && yearItemRef.current) {
+      yearItemRef.current.scrollIntoView({ block: 'nearest' });
+    }
+  }, [menuAbierto]);
+
   const [eliminandoId, setEliminandoId] = useState(null);
   const [avisoAEliminar, setAvisoAEliminar] = useState(null);
   const [errorEliminarAviso, setErrorEliminarAviso] = useState(null);
 
   const anyo = fechaActual.getFullYear();
   const mes = fechaActual.getMonth();
+
+  // Lista de años disponibles para salto rápido
+  const aniosDisponibles = useMemo(() => {
+    const anioActual = hoy.getFullYear();
+    const minAnio = Math.min(anioActual - 5, anyo - 3);
+    const maxAnio = Math.max(anioActual + 10, anyo + 5);
+    const anios = [];
+    for (let a = minAnio; a <= maxAnio; a++) {
+      anios.push(a);
+    }
+    return anios;
+  }, [hoy, anyo]);
 
   // Filtrar eventos por tipo
   const eventosFiltrados = useMemo(() => {
@@ -125,19 +149,24 @@ export default function CalendarioVencimientos({
     return celdas;
   }, [anyo, mes, eventosPorDia, hoy]);
 
-  const mesAnterior = () => setFechaActual(new Date(anyo, mes - 1, 1));
-  const mesSiguiente = () => setFechaActual(new Date(anyo, mes + 1, 1));
-  const irAHoy = () => setFechaActual(new Date(hoy.getFullYear(), hoy.getMonth(), 1));
+  const mesAnterior = () => {
+    setFechaActual(new Date(anyo, mes - 1, 1));
+    setMenuAbierto(null);
+  };
+  const mesSiguiente = () => {
+    setFechaActual(new Date(anyo, mes + 1, 1));
+    setMenuAbierto(null);
+  };
+  const cambiarMes = (nuevoMes) => setFechaActual(new Date(anyo, nuevoMes, 1));
+  const cambiarAnyo = (nuevoAnyo) => setFechaActual(new Date(nuevoAnyo, mes, 1));
+  const irAHoy = () => {
+    setFechaActual(new Date(hoy.getFullYear(), hoy.getMonth(), 1));
+    setMenuAbierto(null);
+  };
 
   const manejarClickDia = (celda) => {
     setDiaSeleccionado(celda);
     setModalAbierto(true);
-    setMostrarFormulario(false);
-    setErrorFormulario(null);
-    setFormTitulo('');
-    setFormDescripcion('');
-    setFormTipo('NOTA');
-    setFormPrioridad('NORMAL');
   };
 
   const formatearFechaCabecera = (clave) => {
@@ -148,42 +177,6 @@ export default function CalendarioVencimientos({
       return d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
     }
     return clave;
-  };
-
-  const manejarGuardarAviso = async (e) => {
-    e.preventDefault();
-    if (!formTitulo.trim()) {
-      setErrorFormulario('El título es obligatorio.');
-      return;
-    }
-
-    setGuardando(true);
-    setErrorFormulario(null);
-
-    try {
-      const payload = {
-        titulo: formTitulo.trim(),
-        tipo: formTipo,
-        prioridad: formPrioridad,
-        descripcion: formDescripcion.trim() || null,
-        fecha: diaSeleccionado.clave,
-      };
-
-      const res = await api.post('/avisos', payload);
-      if (onAvisoCreado) {
-        onAvisoCreado(res.data);
-      }
-      setFormTitulo('');
-      setFormDescripcion('');
-      setFormTipo('NOTA');
-      setFormPrioridad('NORMAL');
-      setMostrarFormulario(false);
-    } catch (err) {
-      console.error('Error al guardar aviso:', err);
-      setErrorFormulario('No se pudo guardar la nota o aviso. Inténtalo de nuevo.');
-    } finally {
-      setGuardando(false);
-    }
   };
 
   const manejarConfirmarEliminarAviso = async () => {
@@ -209,23 +202,172 @@ export default function CalendarioVencimientos({
       {/* Barra superior de controles del calendario */}
       <div className="p-5 sm:p-6 bg-white dark:bg-gray-900 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-3">
-            <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight">
-              {MESES[mes]} <span className="text-brand-500 font-black">{anyo}</span>
-            </h2>
+          <div ref={menuNavRef} className="flex flex-wrap items-center gap-2.5">
+            <div className="flex items-center gap-1.5 bg-gray-100/70 dark:bg-gray-800/60 p-1 rounded-2xl">
+              {/* Botón Mes anterior */}
+              <button
+                type="button"
+                onClick={mesAnterior}
+                aria-label="Mes anterior"
+                title="Mes anterior"
+                className="w-8 h-8 flex items-center justify-center shrink-0 text-gray-500 hover:text-brand-500 hover:bg-white dark:hover:bg-gray-700 rounded-xl transition-colors cursor-pointer border-0"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+
+              {/* Desplegable estilizado de Mes con ancho fijo para evitar saltos de botones */}
+              <div className="relative shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setMenuAbierto((prev) => (prev === 'mes' ? null : 'mes'))}
+                  className={`w-[144px] sm:w-[160px] flex items-center justify-center gap-1.5 bg-white dark:bg-gray-850 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-900 dark:text-white font-extrabold text-base sm:text-lg py-1 px-2 sm:px-3 rounded-xl cursor-pointer shadow-2xs transition-colors ${
+                    menuAbierto === 'mes' ? 'ring-2 ring-brand-500' : ''
+                  }`}
+                  aria-haspopup="listbox"
+                  aria-expanded={menuAbierto === 'mes'}
+                >
+                  <span className="truncate">{MESES[mes]}</span>
+                  <svg
+                    className={`w-3.5 h-3.5 shrink-0 text-brand-500 transition-transform duration-200 ${
+                      menuAbierto === 'mes' ? 'rotate-180' : ''
+                    }`}
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </button>
+
+                {menuAbierto === 'mes' && (
+                  <div
+                    role="listbox"
+                    className="absolute left-0 top-full mt-2 z-50 w-44 bg-white dark:bg-gray-900 rounded-2xl border-0 shadow-2xl p-1.5 max-h-56 overflow-y-auto ring-1 ring-black/5 dark:ring-white/10 animate-in fade-in duration-100"
+                  >
+                    {MESES.map((m, idx) => {
+                      const activo = idx === mes;
+                      return (
+                        <div
+                          key={m}
+                          role="option"
+                          aria-selected={activo}
+                          onClick={() => {
+                            cambiarMes(idx);
+                            setMenuAbierto(null);
+                          }}
+                          className={`flex items-center justify-between px-3 py-1.5 text-xs rounded-xl cursor-pointer select-none transition-all ${
+                            activo
+                              ? 'bg-brand-50 dark:bg-brand-950/40 text-brand-600 dark:text-brand-400 font-bold'
+                              : 'text-gray-700 dark:text-gray-200 hover:bg-brand-50/70 dark:hover:bg-gray-800 hover:text-brand-600'
+                          }`}
+                        >
+                          <span>{m}</span>
+                          {activo && (
+                            <svg className="w-3.5 h-3.5 text-brand-500 shrink-0 ml-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Desplegable estilizado de Año con ancho fijo */}
+              <div className="relative shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setMenuAbierto((prev) => (prev === 'anyo' ? null : 'anyo'))}
+                  className={`w-[86px] sm:w-[96px] flex items-center justify-center gap-1.5 bg-brand-50 hover:bg-brand-100/80 dark:bg-brand-950/40 dark:hover:bg-brand-900/60 text-brand-600 dark:text-brand-400 font-black text-base sm:text-lg py-1 px-2 sm:px-3 rounded-xl cursor-pointer shadow-2xs transition-colors ${
+                    menuAbierto === 'anyo' ? 'ring-2 ring-brand-500' : ''
+                  }`}
+                  aria-haspopup="listbox"
+                  aria-expanded={menuAbierto === 'anyo'}
+                >
+                  <span>{anyo}</span>
+                  <svg
+                    className={`w-3.5 h-3.5 shrink-0 text-brand-500 transition-transform duration-200 ${
+                      menuAbierto === 'anyo' ? 'rotate-180' : ''
+                    }`}
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </button>
+
+                {menuAbierto === 'anyo' && (
+                  <div
+                    role="listbox"
+                    className="absolute left-0 top-full mt-2 z-50 w-32 bg-white dark:bg-gray-900 rounded-2xl border-0 shadow-2xl p-1.5 max-h-56 overflow-y-auto ring-1 ring-black/5 dark:ring-white/10 animate-in fade-in duration-100"
+                  >
+                    {aniosDisponibles.map((a) => {
+                      const activo = a === anyo;
+                      return (
+                        <div
+                          key={a}
+                          ref={activo ? yearItemRef : null}
+                          role="option"
+                          aria-selected={activo}
+                          onClick={() => {
+                            cambiarAnyo(a);
+                            setMenuAbierto(null);
+                          }}
+                          className={`flex items-center justify-between px-3 py-1.5 text-xs rounded-xl cursor-pointer select-none transition-all ${
+                            activo
+                              ? 'bg-brand-50 dark:bg-brand-950/40 text-brand-600 dark:text-brand-400 font-bold'
+                              : 'text-gray-700 dark:text-gray-200 hover:bg-brand-50/70 dark:hover:bg-gray-800 hover:text-brand-600'
+                          }`}
+                        >
+                          <span>{a}</span>
+                          {activo && (
+                            <svg className="w-3.5 h-3.5 text-brand-500 shrink-0 ml-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Botón Mes siguiente */}
+              <button
+                type="button"
+                onClick={mesSiguiente}
+                aria-label="Mes siguiente"
+                title="Mes siguiente"
+                className="w-8 h-8 flex items-center justify-center shrink-0 text-gray-500 hover:text-brand-500 hover:bg-white dark:hover:bg-gray-700 rounded-xl transition-colors cursor-pointer border-0"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+
             <button
               type="button"
               onClick={irAHoy}
-              className="text-xs px-3 py-1.5 rounded-xl font-bold bg-brand-500/15 text-brand-600 hover:bg-brand-500/25 border-0 transition-all cursor-pointer"
+              className="text-xs px-3.5 py-2 rounded-xl font-bold bg-brand-500/15 text-brand-600 hover:bg-brand-500/25 border-0 transition-colors cursor-pointer shadow-2xs shrink-0"
             >
               Hoy
             </button>
           </div>
         </div>
 
-        {/* Botones de navegación y filtros */}
+        {/* Botones de filtros rápidos */}
         <div className="flex flex-wrap items-center gap-3">
-          {/* Filtros rápidos */}
           <div className="inline-flex rounded-xl bg-gray-100/90 dark:bg-gray-800 p-1 border-0 text-xs font-semibold">
             {[
               { id: 'TODOS', label: 'Todos' },
@@ -248,30 +390,6 @@ export default function CalendarioVencimientos({
                 {f.label}
               </button>
             ))}
-          </div>
-
-          {/* Flechas mes */}
-          <div className="flex items-center gap-1 bg-gray-100/80 dark:bg-gray-800 border-0 rounded-xl p-1">
-            <button
-              type="button"
-              onClick={mesAnterior}
-              aria-label="Mes anterior"
-              className="p-1.5 text-gray-500 hover:text-brand-500 hover:bg-brand-50/80 rounded-lg transition-all cursor-pointer border-0"
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
-            <button
-              type="button"
-              onClick={mesSiguiente}
-              aria-label="Mes siguiente"
-              className="p-1.5 text-gray-500 hover:text-brand-500 hover:bg-brand-50/80 rounded-lg transition-all cursor-pointer border-0"
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
           </div>
         </div>
       </div>
@@ -364,7 +482,7 @@ export default function CalendarioVencimientos({
       {/* Pie de leyenda */}
       <div className="px-6 py-3 flex flex-wrap items-center justify-between gap-3 text-xs text-gray-400">
         <span className="text-[11px]">
-          Haz clic en cualquier día para añadir una nota, aviso o evento, o consultar los existentes
+          Haz clic en cualquier día para consultar los vencimientos y eventos programados
         </span>
       </div>
 
@@ -394,136 +512,14 @@ export default function CalendarioVencimientos({
             </div>
 
             <div className="overflow-y-auto pr-1 py-4 space-y-4">
-
-              {!mostrarFormulario ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMostrarFormulario(true);
-                    setErrorFormulario(null);
-                  }}
-                  className="w-full py-2.5 px-4 rounded-2xl bg-brand-50 hover:bg-brand-100 text-brand-700 font-bold text-sm border-0 flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs"
-                >
-                  <svg className="w-5 h-5 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                  <span>Añadir nota, evento o aviso</span>
-                </button>
-              ) : (
-                <form onSubmit={manejarGuardarAviso} className="bg-orange-50/50 dark:bg-orange-950/30 border-0 rounded-2xl p-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-sm font-bold text-brand-900 flex items-center gap-1.5">
-                      <svg className="w-4 h-4 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                      </svg>
-                      Nueva entrada
-                    </h4>
-                    <button
-                      type="button"
-                      onClick={() => setMostrarFormulario(false)}
-                      className="text-xs text-gray-500 hover:text-gray-800 font-semibold cursor-pointer"
-                    >
-                      Cancelar
-                    </button>
-                  </div>
-
-                  {errorFormulario && (
-                    <div className="p-2.5 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 font-medium">
-                      {errorFormulario}
-                    </div>
-                  )}
-
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">
-                      Título *
-                    </label>
-                    <input
-                      type="text"
-                      value={formTitulo}
-                      onChange={(e) => setFormTitulo(e.target.value)}
-                      className="w-full px-3.5 py-2 text-sm bg-white dark:bg-gray-800 border-0 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/25 shadow-2xs transition-all"
-                      required
-                      autoFocus
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-700 mb-1">
-                        Tipo
-                      </label>
-                      <CustomSelect
-                        value={formTipo}
-                        onChange={(e) => setFormTipo(e.target.value)}
-                      >
-                        <option value="NOTA">Nota</option>
-                        <option value="RECORDATORIO">Recordatorio</option>
-                        <option value="EVENTO">Evento</option>
-                        <option value="AVISO">Aviso</option>
-                      </CustomSelect>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-700 mb-1">
-                        Prioridad
-                      </label>
-                      <CustomSelect
-                        value={formPrioridad}
-                        onChange={(e) => setFormPrioridad(e.target.value)}
-                      >
-                        <option value="NORMAL">Normal</option>
-                        <option value="IMPORTANTE">Importante</option>
-                        <option value="URGENTE">Urgente</option>
-                      </CustomSelect>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">
-                      Descripción (opcional)
-                    </label>
-                    <textarea
-                      value={formDescripcion}
-                      onChange={(e) => setFormDescripcion(e.target.value)}
-                      rows={2}
-                      className="w-full px-3.5 py-2 text-sm bg-white dark:bg-gray-800 border-0 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/25 shadow-2xs transition-all resize-none"
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-end gap-2 pt-1">
-                    <button
-                      type="button"
-                      onClick={() => setMostrarFormulario(false)}
-                      className="px-3 py-1.5 text-xs font-semibold text-gray-600 hover:text-gray-900 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer"
-                    >
-                      Descartar
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={guardando}
-                      className="px-4 py-2 text-xs font-bold text-white bg-brand-500 hover:bg-brand-600 active:scale-[0.98] disabled:opacity-50 rounded-xl shadow-xs hover:shadow transition-all cursor-pointer flex items-center gap-1.5"
-                    >
-                      {guardando ? (
-                        <>
-                          <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                          <span>Guardando…</span>
-                        </>
-                      ) : (
-                        <span>Guardar</span>
-                      )}
-                    </button>
-                  </div>
-                </form>
-              )}
-
               <div className="space-y-2">
                 <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-                  Eventos y avisos del día ({eventosDelDia.length})
+                  Vencimientos y eventos del día ({eventosDelDia.length})
                 </h4>
 
                 {eventosDelDia.length === 0 ? (
                   <p className="text-sm text-gray-400 py-6 text-center italic bg-gray-50/50 dark:bg-gray-800/50 rounded-2xl border-0">
-                    No hay eventos ni notas programadas para este día.
+                    No hay vencimientos ni eventos programados para este día.
                   </p>
                 ) : (
                   <div className="space-y-2.5">

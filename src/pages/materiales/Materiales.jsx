@@ -1,15 +1,18 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { obtenerMateriales, tiposMaterial } from '../../services/materiales';
+import { obtenerMateriales, tiposMaterial, tiposTallaje, obtenerTipoTallaje } from '../../services/materiales';
 import Button from '../../components/Button';
 import DeleteButton from '../../components/DeleteButton';
 import Table from '../../components/Table';
+import RenovacionVestuario from '../../components/RenovacionVestuario';
+import { useSearchParams } from 'react-router-dom';
 
 export default function Materiales() {
   const [materiales, setMateriales] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
-  const [filtroTipo, setFiltroTipo] = useState('TODOS'); // 'TODOS' | 'EPI' | 'VESTUARIO'
+  const [searchParams] = useSearchParams();
+  const [filtroTipo, setFiltroTipo] = useState(searchParams.get('tipo') === 'VESTUARIO' ? 'VESTUARIO' : 'TODOS'); // 'TODOS' | 'EPI' | 'VESTUARIO'
   const [busqueda, setBusqueda] = useState('');
   const [recargaTick, setRecargaTick] = useState(0);
   const navigate = useNavigate();
@@ -85,10 +88,10 @@ export default function Materiales() {
         const esEPI = m.tipo === 'EPI';
         return (
           <span
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${
               esEPI
-                ? 'bg-amber-50 text-amber-800 border-amber-200'
-                : 'bg-blue-50 text-blue-800 border-blue-200'
+                ? 'bg-amber-50 text-amber-800'
+                : 'bg-blue-50 text-blue-800'
             }`}
           >
             <span
@@ -100,16 +103,24 @@ export default function Materiales() {
       },
     },
     {
+      header: 'Stock',
+      render: (m) => (
+        <span className={(m.stock ?? 0) === 0 ? 'font-semibold text-amber-700' : 'font-semibold text-gray-700'}>
+          {m.stock ?? 0} uds.
+        </span>
+      ),
+    },
+    {
       header: 'Talla',
       render: (m) => (
         <span
           className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold ${
             m.requiereTalla
-              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60'
+              ? 'bg-emerald-50 text-emerald-700'
               : 'bg-gray-100 text-gray-500'
           }`}
         >
-          {m.requiereTalla ? 'Requiere talla' : 'Talla única / N/A'}
+          {tiposTallaje[obtenerTipoTallaje(m)]}
         </span>
       ),
     },
@@ -165,7 +176,7 @@ export default function Materiales() {
               {conteo.todos} registrados
             </span>
           </div>
-          <p className="text-sm font-medium text-gray-500 mt-1">
+          <p className="text-sm font-light text-gray-500 mt-1">
             Catálogo de equipos de protección individual y ropa laboral para entrega a trabajadores.
           </p>
         </div>
@@ -255,6 +266,8 @@ export default function Materiales() {
           </svg>
         </div>
       </div>
+
+      {filtroTipo === 'VESTUARIO' && <RenovacionVestuario />}
 
       {/* Tabla de materiales */}
       <Table

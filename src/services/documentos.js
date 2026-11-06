@@ -4,12 +4,13 @@
 // - Trabajadores: Contrato firmado, Alta de trabajador/es, Certificado corriente Seg. Social, Certificado corriente AEAT, Modelo 036/037, Alta de autónomo (RETA), Seguro de responsabilidad civil.
 
 export const tiposDocumentoVehiculo = {
-  DOCUMENTACION_VEHICULO: 'Ficha técnica del vehículo',
-  SEGURO: 'Póliza del vehículo',
   PERMISO_CIRCULACION: 'Permiso de circulación',
-  SEGURO_RESPONSABILIDAD_CIVIL: 'Seguro de responsabilidad civil',
+  DOCUMENTACION_VEHICULO: 'Ficha técnica del vehículo',
   ITV: 'ITV',
   TARJETA_TRANSPORTE: 'Tarjeta de transporte',
+  SEGURO: 'Póliza del vehículo',
+  SEGURO_RESPONSABILIDAD_CIVIL: 'Seguro de responsabilidad civil',
+  SEGURO_CARGA: 'Seguro de carga',
 };
 
 export const tiposDocumentoConductor = {
@@ -22,18 +23,10 @@ export const tiposDocumentoConductor = {
 
 export const tiposDocumentoTransportista = tiposDocumentoConductor;
 
-export const tiposDocumentoTrabajador = {
-  ALTA_TRABAJADOR: 'Alta de trabajador/es',
-  RETA: 'Alta de autónomo (RETA)',
-  CERTIFICADO_SEG_SOCIAL: 'Certificado corriente de pago en la Seguridad Social',
-  AEAT: 'Certificado corriente de pago AEAT',
-  MODELO_036_037: 'Modelo 036/037',
-};
 
 export const tiposDocumento = {
   ...tiposDocumentoVehiculo,
   ...tiposDocumentoConductor,
-  ...tiposDocumentoTrabajador,
   ALTA_AUTONOMO: 'Alta de autónomo',
   OTRO: 'Otro',
 };

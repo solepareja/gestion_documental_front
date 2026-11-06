@@ -434,9 +434,6 @@ export default function PersonaDetalle({ tipo }) {
                   <h2 className="text-base font-bold text-gray-900">
                     Documentación del transportista
                   </h2>
-                  <p className="text-xs text-gray-500 mt-0.5">
-                    Contrato firmado, alta de trabajador/es, alta de autónomo (RETA), seguro de responsabilidad civil, certificados AEAT y Seguridad Social, y modelo 036/037.
-                  </p>
                 </div>
                 <Link to={`/documentos?transportistaId=${id}`} className="text-sm font-semibold text-brand-700 hover:underline">
                   Ver en Documentos →
@@ -446,26 +443,7 @@ export default function PersonaDetalle({ tipo }) {
             </section>
           )}
 
-          {/* Documentación del Trabajador */}
-          {!conductor && (
-            <section className="space-y-4">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <h2 className="text-base font-bold text-gray-900">
-                    Documentación del trabajador
-                  </h2>
-                  <p className="text-xs text-gray-500 mt-0.5">
-                    Contrato firmado, alta de trabajador/es, certificados de Seguridad Social y AEAT, modelo 036/037, alta de autónomo (RETA) y seguro de responsabilidad civil.
-                  </p>
-                </div>
-                <Link to={`/documentos?trabajadorId=${id}`} className="text-sm font-semibold text-brand-700 hover:underline">
-                  Ver en Documentos →
-                </Link>
-              </div>
-              <DocumentacionEntidad entidadTipo="trabajador" entidadId={id} />
-            </section>
-          )}
-
+          
           {/* Sección de Entregas de EPIS y Vestuario para Trabajadores */}
           {!conductor && (
             <section className="bg-white dark:bg-gray-900 rounded-3xl border-0 shadow-xs p-6 space-y-4">

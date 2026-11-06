@@ -7,9 +7,7 @@ export function ThemeProvider({ children }) {
     try {
       const guardado = localStorage.getItem('theme');
       if (guardado === 'dark' || guardado === 'light') return guardado;
-      return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
-        ? 'dark'
-        : 'light';
+      return 'light';
     } catch {
       return 'light';
     }

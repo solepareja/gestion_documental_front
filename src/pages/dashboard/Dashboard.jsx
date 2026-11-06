@@ -31,6 +31,7 @@ export default function Dashboard() {
   const [conductores, setConductores] = useState([]);
   const [vehiculos, setVehiculos] = useState([]);
   const [entregas, setEntregas] = useState([]);
+  const [renovacionVestuario, setRenovacionVestuario] = useState(null);
   const [avisos, setAvisos] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
@@ -41,12 +42,13 @@ export default function Dashboard() {
     const cargarDatos = async () => {
       setCargando(true);
       try {
-        const [resDocs, resCond, resVeh, resEnt, resAvisos] = await Promise.all([
+        const [resDocs, resCond, resVeh, resEnt, resAvisos, resVestuario] = await Promise.all([
           api.get('/documentos').catch(() => ({ data: [] })),
           api.get('/transportistas').catch(() => api.get('/conductores')).catch(() => ({ data: [] })),
           api.get('/vehiculos').catch(() => ({ data: [] })),
           api.get('/entregas').catch(() => ({ data: [] })),
           api.get('/avisos').catch(() => ({ data: [] })),
+          api.get('/materiales/renovacion-vestuario').catch(() => ({ data: null, fallo: true })),
         ]);
 
         if (activo) {
@@ -55,7 +57,8 @@ export default function Dashboard() {
           setVehiculos(resVeh.data || []);
           setEntregas(resEnt.data || []);
           setAvisos(resAvisos.data || []);
-          setError(null);
+          setRenovacionVestuario(resVestuario.data);
+          setError(resVestuario.fallo ? 'No se pudo cargar el aviso general de vestuario. Recarga la página.' : null);
         }
       } catch {
         if (activo) setError('No se pudieron cargar todos los datos del panel.');
@@ -188,7 +191,7 @@ export default function Dashboard() {
     for (const ent of entregas) {
       if (!ent.lineas) continue;
       for (const linea of ent.lineas) {
-        if (!linea.fechaRenovacion || linea.estado === 'DEVUELTO') continue;
+        if (linea.materialTipo === 'VESTUARIO' || !linea.fechaRenovacion || linea.estado === 'DEVUELTO') continue;
         const clave = normalizarFechaAClave(linea.fechaRenovacion);
         if (!clave) continue;
 
@@ -206,6 +209,19 @@ export default function Dashboard() {
           estado: 'VIGENTE',
         });
       }
+    }
+
+    if (renovacionVestuario?.proximaFecha) {
+      lista.push({
+        id: 'renovacion-vestuario', tipo: 'vestuario', categoria: 'MATERIAL',
+        titulo: 'Renovación general de vestuario',
+        subtitulo: 'Todo el vestuario · Cada 6 meses',
+        fecha: normalizarFechaAClave(renovacionVestuario.proximaFecha),
+        rawFecha: renovacionVestuario.proximaFecha,
+        enlace: '/materiales?tipo=VESTUARIO',
+        estiloClase: 'bg-teal-100/90 text-teal-900 border-0 dark:bg-teal-950/60 dark:text-teal-300',
+        estado: 'VIGENTE',
+      });
     }
 
     // 4. Notas, eventos y avisos personalizados creados manualmente
@@ -244,11 +260,7 @@ export default function Dashboard() {
     }
 
     return lista;
-  }, [documentos, conductores, entregas, avisos]);
-
-  const handleAvisoCreado = (nuevoAviso) => {
-    setAvisos((prev) => [...prev, nuevoAviso]);
-  };
+  }, [documentos, conductores, entregas, avisos, renovacionVestuario]);
 
   const handleAvisoEliminado = (idAviso) => {
     setAvisos((prev) => prev.filter((a) => a.id !== idAviso));
@@ -258,7 +270,7 @@ export default function Dashboard() {
   const proximosVencimientos = useMemo(() => {
     const hoyStr = new Date().toISOString().slice(0, 10);
     return eventos
-      .filter((ev) => ev.fecha >= hoyStr && (ev.tipo !== 'documento' || ev.avisos !== false))
+      .filter((ev) => (ev.fecha >= hoyStr || ev.tipo === 'vestuario') && (ev.tipo !== 'documento' || ev.avisos !== false))
       .sort((a, b) => a.fecha.localeCompare(b.fecha))
       .slice(0, 6);
   }, [eventos]);
@@ -290,8 +302,8 @@ export default function Dashboard() {
           <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
             Panel de Control
           </h1>
-          <p className="text-sm font-medium text-gray-500 mt-1">
-            Bienvenido/a, <span className="font-semibold text-gray-700">{usuario?.nombre || 'Usuario'}</span>. Calendario de control de flota y vencimientos.
+          <p className="text-sm font-light text-gray-500 mt-1">
+            Bienvenido/a, <span className="font-semibold text-gray-500">{usuario?.nombre || 'Usuario'}</span>. Calendario de control de flota y vencimientos.
           </p>
         </div>
 
@@ -320,70 +332,12 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Tarjetas KPI de Resumen */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
-        {/* Total Vehículos */}
-        <div className="bg-white dark:bg-gray-900 p-4 sm:p-5 rounded-2xl border-0 shadow-xs hover:shadow-sm transition-all flex items-center gap-3.5 sm:gap-4">
-          <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-brand-50 dark:bg-brand-950/60 text-brand-500 border-0 flex items-center justify-center shrink-0 shadow-2xs">
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M3 13h18l-1.5-6H4.5L3 13zm0 0v5h3m15-5v5h-3M6 18h12M7 13v5m10-5v5" />
-            </svg>
-          </div>
-          <div className="min-w-0">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 block truncate">Vehículos</span>
-            <p className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-gray-100 mt-0.5">{metricas.totalVehiculos}</p>
-          </div>
-        </div>
-
-        {/* Conductores */}
-        <div className="bg-white dark:bg-gray-900 p-4 sm:p-5 rounded-2xl border-0 shadow-xs hover:shadow-sm transition-all flex items-center gap-3.5 sm:gap-4">
-          <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 border-0 flex items-center justify-center shrink-0 shadow-2xs">
-            <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
-                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-          </div>
-          <div className="min-w-0">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 block truncate">Conductores</span>
-            <p className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-gray-100 mt-0.5">{metricas.totalConductores}</p>
-          </div>
-        </div>
-
-        {/* Vencen en 30 días */}
-        <div className="bg-white dark:bg-gray-900 p-4 sm:p-5 rounded-2xl border-0 shadow-xs hover:shadow-sm transition-all flex items-center gap-3.5 sm:gap-4">
-          <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 border-0 flex items-center justify-center shrink-0 shadow-2xs">
-            <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
-                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <div className="min-w-0">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 block truncate">Próximos 30 d</span>
-            <p className="text-2xl sm:text-3xl font-extrabold text-amber-700 dark:text-amber-400 mt-0.5">{metricas.proximosVencer}</p>
-          </div>
-        </div>
-
-        {/* Ya Caducados */}
-        <div className="bg-white dark:bg-gray-900 p-4 sm:p-5 rounded-2xl border-0 shadow-xs hover:shadow-sm transition-all flex items-center gap-3.5 sm:gap-4">
-          <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-red-50 dark:bg-red-950/60 text-red-500 border-0 flex items-center justify-center shrink-0 shadow-2xs">
-            <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-          </div>
-          <div className="min-w-0">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 block truncate">Caducados</span>
-            <p className="text-2xl sm:text-3xl font-extrabold text-red-600 dark:text-red-400 mt-0.5">{metricas.caducados}</p>
-          </div>
-        </div>
-      </div>
 
       {/* Sección principal: Calendario de Vencimientos */}
       <section className="space-y-4">
         <CalendarioVencimientos
           eventos={eventos}
           cargando={cargando}
-          onAvisoCreado={handleAvisoCreado}
           onAvisoEliminado={handleAvisoEliminado}
         />
       </section>
@@ -421,10 +375,10 @@ export default function Dashboard() {
                   <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${ev.estiloClase}`}>
                     {ev.categoria}
                   </span>
-                  <span className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${
+                  <span className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full ${
                     ev.tipo === 'material' 
-                      ? 'bg-teal-50 text-teal-800 border-teal-200' 
-                      : 'bg-amber-50 text-amber-800 border-amber-200'
+                      ? 'bg-teal-50 text-teal-800' 
+                      : 'bg-amber-50 text-amber-800'
                   }`}>
                     {ev.tipo === 'material' ? 'Renovación' : 'Por vencer'}
                   </span>

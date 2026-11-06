@@ -2,7 +2,7 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="/logo.png" />
+    <link rel="icon" type="image/png" href="/logo-original.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Gestión Documental</title>
 
@@ -18,7 +18,7 @@
       (function() {
         try {
           var t = localStorage.getItem('theme');
-          if (t === 'dark' || (!t && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          if (t === 'dark') {
             document.documentElement.classList.add('dark');
           } else {
             document.documentElement.classList.remove('dark');

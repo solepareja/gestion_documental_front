@@ -93,9 +93,6 @@ export default function Trabajadores() {
           <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">
             Trabajadores
           </h1>
-          <p className="text-sm font-medium text-gray-500 mt-1">
-            Gestión de plantilla, datos de contacto y entrega de material laboral.
-          </p>
         </div>
 
         <div className="flex items-center gap-2">

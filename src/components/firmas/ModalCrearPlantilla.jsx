@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { crearPlantillaDocumento } from '../../services/firmas';
+import CustomSelect from '../CustomSelect';
 
 const PLANTILLAS_PREDEFINIDAS = [
   {
@@ -155,17 +156,16 @@ export default function ModalCrearPlantilla({ onClose, onPlantillaCreada }) {
               <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1">
                 Colectivo / Ámbito Asignado *
               </label>
-              <select
+              <CustomSelect
                 value={colectivo}
                 onChange={(e) => setColectivo(e.target.value)}
-                className="w-full px-4 py-3 rounded-2xl bg-gray-100/80 hover:bg-gray-200/60 dark:bg-gray-800 dark:hover:bg-gray-750 border-0 focus:outline-none focus:bg-white dark:focus:bg-gray-950 focus:ring-2 focus:ring-brand-500 text-gray-900 dark:text-gray-100 text-sm transition-all"
               >
                 <option value="Toda la plantilla">Toda la plantilla (Todos los trabajadores)</option>
                 <option value="Fábrica y Operarios">Fábrica y Operarios (Producción / Almacén)</option>
                 <option value="Conductores y Transportistas">Conductores y Transportistas (Flota)</option>
                 <option value="Administración">Administración / Oficinas</option>
                 <option value="Otro">Otro (personalizado)</option>
-              </select>
+              </CustomSelect>
             </div>
 
             {colectivo === 'Otro' ? (

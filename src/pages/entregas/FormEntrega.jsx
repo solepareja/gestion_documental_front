@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import api from '../../services/api';
-import { obtenerMateriales, crearEntrega, opcionesTallasComunes } from '../../services/materiales';
+import { obtenerMateriales, crearEntrega, obtenerTallasMaterial } from '../../services/materiales';
 import Button from '../../components/Button';
 import CreateFormLayout from '../../components/CreateFormLayout';
 import SignaturePad from '../../components/SignaturePad';
@@ -87,7 +87,7 @@ export default function FormEntrega() {
       linea.materialId = nuevoMaterialId;
 
       // Calcular fecha de renovación automática si el material tiene vida útil
-      if (mat?.vidaUtilMeses && fechaEntrega) {
+      if (mat?.tipo !== 'VESTUARIO' && mat?.vidaUtilMeses && fechaEntrega) {
         linea.fechaRenovacion = sumarMesesAFecha(fechaEntrega, mat.vidaUtilMeses);
       } else {
         linea.fechaRenovacion = '';
@@ -140,6 +140,11 @@ export default function FormEntrega() {
 
     if (lineas.some((l) => !l.materialId)) {
       setError('Todas las líneas de entrega deben tener un material seleccionado.');
+      return;
+    }
+
+    if (lineas.some(l => materiales.find(m => String(m.id) === String(l.materialId))?.requiereTalla && !l.talla.trim())) {
+      setError('Indica la talla de todos los materiales que la necesitan.');
       return;
     }
 
@@ -318,7 +323,7 @@ export default function FormEntrega() {
                               .filter((m) => m.tipo === 'EPI')
                               .map((m) => (
                                 <option key={m.id} value={m.id}>
-                                  {m.nombre}
+                                  {m.nombre} · Stock: {m.stock ?? 0}
                                 </option>
                               ))}
                           </optgroup>
@@ -327,7 +332,7 @@ export default function FormEntrega() {
                               .filter((m) => m.tipo === 'VESTUARIO')
                               .map((m) => (
                                 <option key={m.id} value={m.id}>
-                                  {m.nombre}
+                                  {m.nombre} · Stock: {m.stock ?? 0}
                                 </option>
                               ))}
                           </optgroup>
@@ -383,7 +388,7 @@ export default function FormEntrega() {
                               className="w-full min-h-[44px] px-3 py-2 border-0 rounded-xl bg-gray-100/80 hover:bg-gray-200/60 dark:bg-gray-900 dark:hover:bg-gray-950 text-sm font-semibold text-gray-900 dark:text-gray-100 focus:bg-white dark:focus:bg-black focus:ring-2 focus:ring-brand-500 transition-all"
                             />
                             <datalist id={`tallas-sugeridas-${linea.idTemp}`}>
-                              {opcionesTallasComunes.map((t) => (
+                              {obtenerTallasMaterial(matSel).map((t) => (
                                 <option key={t} value={t} />
                               ))}
                             </datalist>
@@ -403,12 +408,14 @@ export default function FormEntrega() {
                         <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
                           Renovación prevista
                         </label>
-                        <CustomDatePicker
+                        {matSel?.tipo === 'VESTUARIO' ? (
+                          <p className="text-xs text-gray-500 py-2">Renovación general cada 6 meses</p>
+                        ) : <CustomDatePicker
                           value={linea.fechaRenovacion}
                           onChange={(e) => handleLineaChange(index, 'fechaRenovacion', e.target.value)}
                           placeholder="dd/mm/aaaa"
                           size="sm"
-                        />
+                        />}
                       </div>
                     </div>
                   </div>

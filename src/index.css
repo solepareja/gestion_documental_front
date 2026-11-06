@@ -158,6 +158,16 @@ select:focus {
   box-shadow: 0 0 0 3px rgba(250, 137, 84, 0.22) !important;
 }
 
+/* Selectores en calendarios: sin corte de texto, sin chevron de fondo invasivo */
+select.calendar-select,
+.calendar-select {
+  background-image: none !important;
+  padding-right: 8px !important;
+  padding-left: 8px !important;
+  text-align: center;
+  text-align-last: center;
+}
+
 /* Desplegables con calendario: input[type="date"] */
 input[type="date"] {
   position: relative;

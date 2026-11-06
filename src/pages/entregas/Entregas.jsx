@@ -227,7 +227,7 @@ export default function Entregas() {
       render: (e) => (
         <div>
           {e.firma ? (
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700">
               <svg className="w-3.5 h-3.5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
               </svg>
@@ -299,12 +299,23 @@ export default function Entregas() {
               {entregas.length} entregas
             </span>
           </div>
-          <p className="text-sm font-medium text-gray-500 mt-1">
+          <p className="text-sm font-light text-gray-500 mt-1">
             Registro histórico de entrega de equipos y vestuario a trabajadores con firma digital.
           </p>
         </div>
 
         <div className="flex items-center gap-2">
+          <Link
+            to="/kiosko"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200/80 active:scale-[0.98] border-0 text-gray-700 dark:text-gray-200 dark:bg-gray-800 dark:hover:bg-gray-750 font-semibold text-xs sm:text-sm transition-colors"
+            title="Abrir el modo tablet con tu sesión actual"
+          >
+            <svg aria-hidden="true" className="w-4 h-4 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <rect x="5" y="2" width="14" height="20" rx="2" strokeWidth={2} />
+              <path strokeLinecap="round" strokeWidth={2} d="M11 18h2" />
+            </svg>
+            <span>Modo tablet</span>
+          </Link>
           <Link
             to="/materiales"
             className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-gray-100/80 hover:bg-gray-200/80 dark:bg-gray-800 dark:hover:bg-gray-750 border-0 text-gray-700 dark:text-gray-200 font-semibold text-xs sm:text-sm transition-colors"

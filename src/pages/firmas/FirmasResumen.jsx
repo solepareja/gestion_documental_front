@@ -76,7 +76,7 @@ export default function FirmasResumen() {
           <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">
             Gestión de Firmas
           </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          <p className="text-sm font-light text-gray-500 dark:text-gray-400 mt-1">
             Resumen global de cumplimiento por documento oficial de la empresa
           </p>
         </div>
@@ -233,7 +233,7 @@ export default function FirmasResumen() {
 
                     {/* Firmados */}
                     <td className="px-2 py-3 text-center">
-                      <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                      <span className="font-medium text-gray-700 dark:text-gray-300">
                         {doc.firmados}
                       </span>
                     </td>
@@ -243,7 +243,7 @@ export default function FirmasResumen() {
                       <span
                         className={`inline-flex items-center justify-center min-w-[24px] px-1.5 py-0.5 rounded-md text-xs font-bold ${
                           doc.pendientes > 0
-                            ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-400 border border-rose-200/80 dark:border-rose-900/60'
+                            ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-400 dark:border-rose-900/60'
                             : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400'
                         }`}
                       >

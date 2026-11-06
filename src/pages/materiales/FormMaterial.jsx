@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { obtenerMaterial, crearMaterial, modificarMaterial } from '../../services/materiales';
+import { obtenerMaterial, crearMaterial, modificarMaterial, tiposTallaje, obtenerTipoTallaje } from '../../services/materiales';
 import Button from '../../components/Button';
+import CustomSelect from '../../components/CustomSelect';
 import CreateFormLayout from '../../components/CreateFormLayout';
 
 export default function FormMaterial() {
@@ -13,8 +14,9 @@ export default function FormMaterial() {
     tipo: 'EPI',
     nombre: '',
     descripcion: '',
-    requiereTalla: false,
+    tipoTallaje: '',
     vidaUtilMeses: '',
+    stock: '0',
   });
 
   const [cargando, setCargando] = useState(false);
@@ -31,8 +33,9 @@ export default function FormMaterial() {
         setFormData({
           tipo: data.tipo || 'EPI',
           nombre: data.nombre || '',
+          stock: String(data.stock ?? 0),
           descripcion: data.descripcion || '',
-          requiereTalla: Boolean(data.requiereTalla),
+          tipoTallaje: obtenerTipoTallaje(data),
           vidaUtilMeses: data.vidaUtilMeses !== null && data.vidaUtilMeses !== undefined ? String(data.vidaUtilMeses) : '',
         });
       })
@@ -59,15 +62,27 @@ export default function FormMaterial() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!formData.tipoTallaje) {
+      setError('Selecciona si el material es de talla única o necesita talla.');
+      return;
+    }
+    const stock = Number(formData.stock);
+    if (formData.stock.trim() === '' || !Number.isInteger(stock) || stock < 0 || stock > 2147483647) {
+      setError('El stock debe ser un número entero entre 0 y 2147483647.');
+      return;
+    }
+
     setCargando(true);
     setError(null);
 
     try {
       const payload = {
         tipo: formData.tipo,
+        stock,
         nombre: formData.nombre.trim(),
         descripcion: formData.descripcion.trim() || null,
-        requiereTalla: Boolean(formData.requiereTalla),
+        tipoTallaje: formData.tipoTallaje,
+        requiereTalla: formData.tipoTallaje !== 'UNICA',
         vidaUtilMeses: formData.vidaUtilMeses !== '' ? parseInt(formData.vidaUtilMeses, 10) : null,
       };
 
@@ -128,7 +143,6 @@ export default function FormMaterial() {
                 </div>
                 <div className="flex flex-col">
                   <span className="font-bold text-sm">EPI (Protección individual)</span>
-                  <span className="text-xs opacity-75">Cascos, guantes, calzado de seguridad, gafas, arneses…</span>
                 </div>
               </label>
 
@@ -154,7 +168,6 @@ export default function FormMaterial() {
                 </div>
                 <div className="flex flex-col">
                   <span className="font-bold text-sm">Vestuario laboral</span>
-                  <span className="text-xs opacity-75">Pantalones, camisetas, polos, sudaderas, chaquetas…</span>
                 </div>
               </label>
             </div>
@@ -174,6 +187,26 @@ export default function FormMaterial() {
               placeholder="Ej: Bota de seguridad S3 o Pantalón multibolsillos"
               required
             />
+          </div>
+
+          <div className="col-span-full sm:col-span-1">
+            <label className="block text-sm font-medium text-gray-700" htmlFor="stock">
+              Stock (unidades) *
+            </label>
+            <input
+              type="number"
+              id="stock"
+              name="stock"
+              min="0"
+              max="2147483647"
+              step="1"
+              required
+              value={formData.stock}
+              onChange={handleChange}
+            />
+            <span className="text-xs text-gray-400 mt-1 block">
+              Unidades en stock del material, sumando todas las tallas. Se descuentan al registrar entregas.
+            </span>
           </div>
 
           {/* Vida útil en meses */}
@@ -196,24 +229,17 @@ export default function FormMaterial() {
             </span>
           </div>
 
-          {/* Requiere Talla (Toggle sin bordes) */}
-          <div className="col-span-full sm:col-span-1 flex flex-col justify-center pt-2">
-            <label className="inline-flex items-center gap-3.5 cursor-pointer p-4 rounded-2xl bg-gray-100/80 hover:bg-gray-200/70 dark:bg-gray-800/60 dark:hover:bg-gray-800 transition-all border-0">
-              <input
-                type="checkbox"
-                id="requiereTalla"
-                name="requiereTalla"
-                checked={formData.requiereTalla}
-                onChange={handleChange}
-                className="w-5 h-5 rounded text-brand-600 focus:ring-brand-500 border-0"
-              />
-              <div className="flex flex-col">
-                <span className="text-sm font-bold text-gray-800 dark:text-gray-200">¿Requiere especificar talla?</span>
-                <span className="text-xs text-gray-500 dark:text-gray-400">
-                  Marca si este artículo necesita número de calzado o talla (S, M, L, XL, 42, etc.)
-                </span>
-              </div>
+          <div className="col-span-full sm:col-span-1">
+            <label className="block text-sm font-medium text-gray-700" htmlFor="tipoTallaje">
+              Talla *
             </label>
+            <CustomSelect id="tipoTallaje" name="tipoTallaje" value={formData.tipoTallaje} onChange={handleChange} required disabled={cargandoInicial || cargando}>
+              <option value="" disabled>Selecciona una opción</option>
+              {Object.entries(tiposTallaje).map(([valor, texto]) => <option key={valor} value={valor}>{texto}</option>)}
+            </CustomSelect>
+            <span className="text-xs text-gray-400 mt-1 block">
+              Si necesita talla, será obligatorio indicarla al registrar cada entrega.
+            </span>
           </div>
 
           {/* Descripción */}

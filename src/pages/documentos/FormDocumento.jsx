@@ -5,7 +5,6 @@ import {
   tiposDocumentoVehiculo,
   tiposDocumentoConductor,
   tiposDocumentoTransportista,
-  tiposDocumentoTrabajador,
   tiposDocumento,
   fechaDocumentoParaBack
 } from '../../services/documentos';
@@ -189,18 +188,14 @@ export default function FormDocumento() {
   const tiposDisponibles =
     entidadTipo === 'vehiculo'
       ? tiposDocumentoVehiculo
-      : (entidadTipo === 'transportista' || entidadTipo === 'conductor')
-      ? tiposDocumentoTransportista
-      : tiposDocumentoTrabajador;
+      : tiposDocumentoTransportista
 
   const handleCambiarEntidad = (nuevaEntidad) => {
     setEntidadTipo(nuevaEntidad);
     const tipos =
       nuevaEntidad === 'vehiculo'
         ? tiposDocumentoVehiculo
-        : (nuevaEntidad === 'transportista' || nuevaEntidad === 'conductor')
-        ? tiposDocumentoTransportista
-        : tiposDocumentoTrabajador;
+        :  tiposDocumentoTransportista 
 
     setFormData(prev => ({
       ...prev,

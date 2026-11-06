@@ -27,7 +27,10 @@ export default function CustomDatePicker({
 }) {
   const [abierto, setAbierto] = useState(false);
   const [abrirHaciaArriba, setAbrirHaciaArriba] = useState(false);
+  const [menuAbierto, setMenuAbierto] = useState(null); // null | 'mes' | 'anyo'
   const containerRef = useRef(null);
+  const menuHeaderRef = useRef(null);
+  const yearItemRef = useRef(null);
   const generadoId = useId();
   const inputId = id || generadoId;
 
@@ -60,6 +63,24 @@ export default function CustomDatePicker({
   const anyoVista = vistaFecha.getFullYear();
   const mesVista = vistaFecha.getMonth();
 
+  // Lista de años disponibles para salto rápido
+  const aniosDisponibles = useMemo(() => {
+    const anioActual = new Date().getFullYear();
+    const minParsed = min ? parseInt(String(min).slice(0, 4), 10) : NaN;
+    const minCalculado = !isNaN(minParsed) ? minParsed : anioActual - 50;
+    const maxParsed = max ? parseInt(String(max).slice(0, 4), 10) : NaN;
+    const maxCalculado = !isNaN(maxParsed) ? maxParsed : anioActual + 25;
+
+    const minFinal = Math.min(minCalculado, anyoVista, anioActual);
+    const maxFinal = Math.max(maxCalculado, anyoVista, anioActual);
+
+    const lista = [];
+    for (let a = minFinal; a <= maxFinal; a++) {
+      lista.push(a);
+    }
+    return lista;
+  }, [min, max, anyoVista]);
+
   // Cerrar al hacer clic fuera
   useEffect(() => {
     if (!abierto) return;
@@ -67,12 +88,17 @@ export default function CustomDatePicker({
     const manejarClickFuera = (e) => {
       if (containerRef.current && !containerRef.current.contains(e.target)) {
         setAbierto(false);
+        setMenuAbierto(null);
       }
     };
 
     const manejarEscape = (e) => {
       if (e.key === 'Escape') {
-        setAbierto(false);
+        if (menuAbierto) {
+          setMenuAbierto(null);
+        } else {
+          setAbierto(false);
+        }
       }
     };
 
@@ -110,6 +136,13 @@ export default function CustomDatePicker({
       window.removeEventListener('scroll', calcularPosicion, true);
     };
   }, [abierto]);
+
+  // Centrar el año seleccionado cuando se abre el desplegable de año
+  useEffect(() => {
+    if (menuAbierto === 'anyo' && yearItemRef.current) {
+      yearItemRef.current.scrollIntoView({ block: 'nearest' });
+    }
+  }, [menuAbierto]);
 
   // Celdas del calendario para el mes actual
   const celdas = useMemo(() => {
@@ -207,6 +240,18 @@ export default function CustomDatePicker({
     setVistaFecha(new Date(anyoVista, mesVista + 1, 1));
   };
 
+  const manejarCambioMes = (e) => {
+    e.stopPropagation();
+    const nuevoMes = parseInt(e.target.value, 10);
+    setVistaFecha(new Date(anyoVista, nuevoMes, 1));
+  };
+
+  const manejarCambioAnyo = (e) => {
+    e.stopPropagation();
+    const nuevoAnyo = parseInt(e.target.value, 10);
+    setVistaFecha(new Date(nuevoAnyo, mesVista, 1));
+  };
+
   const alturaClasses = size === 'sm' ? 'py-1.5 px-3 text-xs' : 'py-2.5 px-3.5 text-sm';
 
   return (
@@ -272,36 +317,169 @@ export default function CustomDatePicker({
         <div
           role="dialog"
           aria-label="Selector de fecha"
-          className={`absolute left-0 z-50 w-72 max-w-[calc(100vw-32px)] bg-white dark:bg-gray-900 rounded-3xl border-0 shadow-2xl p-3.5 select-none ring-1 ring-black/5 dark:ring-white/10 ${
+          className={`absolute left-0 z-50 w-80 max-w-[calc(100vw-32px)] bg-white dark:bg-gray-900 rounded-3xl border-0 shadow-2xl p-3.5 select-none ring-1 ring-black/5 dark:ring-white/10 ${
             abrirHaciaArriba
               ? 'bottom-full mb-1.5 animate-in fade-in slide-in-from-bottom-2 duration-150'
               : 'top-full mt-1.5 animate-in fade-in slide-in-from-top-2 duration-150'
           }`}
         >
-          {/* Cabecera del mes con flechas */}
-          <div className="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-gray-800 mb-2.5">
+          {/* Cabecera del calendario: flechas < >, mes y año con desplegables estilizados */}
+          <div ref={menuHeaderRef} className="relative flex items-center justify-between pb-3 border-b border-gray-100 dark:border-gray-800 mb-2.5">
             <button
               type="button"
               onClick={mesAnterior}
-              className="p-1.5 text-gray-500 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-gray-800 rounded-lg transition-colors cursor-pointer"
+              className="w-8 h-8 flex items-center justify-center shrink-0 text-gray-500 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-gray-800 rounded-xl transition-colors cursor-pointer"
+              title="Mes anterior"
               aria-label="Mes anterior"
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                 <polyline points="15 18 9 12 15 6" />
               </svg>
             </button>
 
-            <span className="text-sm font-bold text-gray-800 dark:text-gray-100">
-              {MESES[mesVista]} <span className="text-brand-600 font-semibold">{anyoVista}</span>
-            </span>
+            <div className="flex items-center gap-2">
+              {/* Desplegable estilizado de Mes con ancho fijo */}
+              <div className="relative shrink-0">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setMenuAbierto((prev) => (prev === 'mes' ? null : 'mes'));
+                  }}
+                  className={`w-32 flex items-center justify-center gap-1.5 bg-gray-100/90 hover:bg-gray-200/80 dark:bg-gray-800 dark:hover:bg-gray-750 text-gray-800 dark:text-gray-100 font-bold text-sm py-1.5 px-2 rounded-2xl transition-colors cursor-pointer ${
+                    menuAbierto === 'mes' ? 'bg-white dark:bg-gray-950 ring-2 ring-brand-500 shadow-xs' : ''
+                  }`}
+                  aria-haspopup="listbox"
+                  aria-expanded={menuAbierto === 'mes'}
+                >
+                  <span className="truncate">{MESES[mesVista]}</span>
+                  <svg
+                    className={`w-3.5 h-3.5 text-brand-500 shrink-0 transition-transform duration-200 ${
+                      menuAbierto === 'mes' ? 'rotate-180' : 'rotate-0'
+                    }`}
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </button>
+
+                {menuAbierto === 'mes' && (
+                  <div
+                    role="listbox"
+                    className="absolute left-0 top-full mt-1.5 z-60 w-44 bg-white dark:bg-gray-900 rounded-2xl border-0 shadow-2xl p-1.5 max-h-56 overflow-y-auto ring-1 ring-black/5 dark:ring-white/10 animate-in fade-in duration-100"
+                  >
+                    {MESES.map((m, idx) => {
+                      const activo = idx === mesVista;
+                      return (
+                        <div
+                          key={m}
+                          role="option"
+                          aria-selected={activo}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setVistaFecha(new Date(anyoVista, idx, 1));
+                            setMenuAbierto(null);
+                          }}
+                          className={`flex items-center justify-between px-3 py-1.5 text-xs rounded-xl transition-all cursor-pointer select-none ${
+                            activo
+                              ? 'bg-brand-50 dark:bg-brand-950/40 text-brand-600 dark:text-brand-400 font-bold'
+                              : 'text-gray-700 dark:text-gray-200 hover:bg-brand-50/70 dark:hover:bg-gray-800 hover:text-brand-600'
+                          }`}
+                        >
+                          <span className="truncate">{m}</span>
+                          {activo && (
+                            <svg className="w-3.5 h-3.5 text-brand-500 shrink-0 ml-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Desplegable estilizado de Año con ancho fijo */}
+              <div className="relative shrink-0">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setMenuAbierto((prev) => (prev === 'anyo' ? null : 'anyo'));
+                  }}
+                  className={`w-20 flex items-center justify-center gap-1.5 bg-brand-50 hover:bg-brand-100/90 dark:bg-brand-950/60 dark:hover:bg-brand-900/60 text-brand-600 dark:text-brand-400 font-black text-sm py-1.5 px-2 rounded-2xl transition-colors cursor-pointer ${
+                    menuAbierto === 'anyo' ? 'bg-white dark:bg-gray-950 ring-2 ring-brand-500 shadow-xs' : ''
+                  }`}
+                  aria-haspopup="listbox"
+                  aria-expanded={menuAbierto === 'anyo'}
+                >
+                  <span>{anyoVista}</span>
+                  <svg
+                    className={`w-3.5 h-3.5 text-brand-500 shrink-0 transition-transform duration-200 ${
+                      menuAbierto === 'anyo' ? 'rotate-180' : 'rotate-0'
+                    }`}
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </button>
+
+                {menuAbierto === 'anyo' && (
+                  <div
+                    role="listbox"
+                    className="absolute right-0 top-full mt-1.5 z-60 w-32 bg-white dark:bg-gray-900 rounded-2xl border-0 shadow-2xl p-1.5 max-h-56 overflow-y-auto ring-1 ring-black/5 dark:ring-white/10 animate-in fade-in duration-100"
+                  >
+                    {aniosDisponibles.map((a) => {
+                      const activo = a === anyoVista;
+                      return (
+                        <div
+                          key={a}
+                          ref={activo ? yearItemRef : null}
+                          role="option"
+                          aria-selected={activo}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setVistaFecha(new Date(a, mesVista, 1));
+                            setMenuAbierto(null);
+                          }}
+                          className={`flex items-center justify-between px-3 py-1.5 text-xs rounded-xl transition-all cursor-pointer select-none ${
+                            activo
+                              ? 'bg-brand-50 dark:bg-brand-950/40 text-brand-600 dark:text-brand-400 font-bold'
+                              : 'text-gray-700 dark:text-gray-200 hover:bg-brand-50/70 dark:hover:bg-gray-800 hover:text-brand-600'
+                          }`}
+                        >
+                          <span>{a}</span>
+                          {activo && (
+                            <svg className="w-3.5 h-3.5 text-brand-500 shrink-0 ml-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
 
             <button
               type="button"
               onClick={mesSiguiente}
-              className="p-1.5 text-gray-500 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-gray-800 rounded-lg transition-colors cursor-pointer"
+              className="p-1.5 text-gray-500 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-gray-800 rounded-xl transition-all cursor-pointer"
+              title="Mes siguiente"
               aria-label="Mes siguiente"
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                 <polyline points="9 18 15 12 9 6" />
               </svg>
             </button>

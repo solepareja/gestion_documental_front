@@ -15,6 +15,13 @@ export default function NotificationBell() {
   const [cargando, setCargando] = useState(false);
   const [filtro, setFiltro] = useState('TODAS'); // 'TODAS' | 'CADUCADAS' | 'POR_VENCER'
   const menuRef = useRef(null);
+  const [renovacionTick, setRenovacionTick] = useState(0);
+
+  useEffect(() => {
+    const actualizar = () => setRenovacionTick(tick => tick + 1);
+    window.addEventListener('renovacion-vestuario-actualizada', actualizar);
+    return () => window.removeEventListener('renovacion-vestuario-actualizada', actualizar);
+  }, []);
 
   // Cerrar al hacer clic fuera
   useEffect(() => {
@@ -44,9 +51,10 @@ export default function NotificationBell() {
     const cargarNotificaciones = async () => {
       setCargando(true);
       try {
-        const [resDocs, resCond] = await Promise.all([
+        const [resDocs, resCond, resVestuario] = await Promise.all([
           api.get('/documentos').catch(() => ({ data: [] })),
           api.get('/transportistas').catch(() => api.get('/conductores')).catch(() => ({ data: [] })),
+          api.get('/materiales/renovacion-vestuario'),
         ]);
 
         if (!activo) return;
@@ -160,6 +168,27 @@ export default function NotificationBell() {
           }
         }
 
+        // Una sola notificación para la renovación general de vestuario.
+        const fechaVestuario = resVestuario.data?.proximaFecha;
+        const diasVestuario = calcularDiasParaCaducidad(fechaVestuario);
+        if (diasVestuario !== null && diasVestuario <= 30) {
+          items.push({
+            id: 'renovacion-vestuario',
+            categoria: 'Vestuario',
+            titulo: 'Renovación general de vestuario',
+            descripcion: 'Todo el vestuario · Cada 6 meses',
+            fechaLimite: fechaDocumentoVisible(fechaVestuario),
+            dias: diasVestuario,
+            esCaducado: diasVestuario < 0,
+            estadoTexto: diasVestuario < 0
+              ? `Renovación pendiente desde hace ${Math.abs(diasVestuario)} días`
+              : diasVestuario === 0 ? 'Renovación prevista hoy'
+              : diasVestuario === 1 ? 'Renovación prevista mañana'
+              : `Renovación en ${diasVestuario} días`,
+            enlace: '/materiales?tipo=VESTUARIO',
+          });
+        }
+
         // Ordenar: primero los caducados (más urgentes) y luego los que están más próximos a vencer
         items.sort((a, b) => a.dias - b.dias);
 
@@ -175,7 +204,7 @@ export default function NotificationBell() {
     return () => {
       activo = false;
     };
-  }, [location.pathname]);
+  }, [location.pathname, renovacionTick, abierto]);
 
   const caducadas = notificaciones.filter((n) => n.esCaducado);
   const porVencer = notificaciones.filter((n) => !n.esCaducado);

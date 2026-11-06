@@ -19,6 +19,21 @@ export const opcionesTallasComunes = [
   'Única'
 ];
 
+export const tiposTallaje = {
+  UNICA: 'Talla única',
+  OTRO: 'Necesita talla',
+};
+
+export function obtenerTipoTallaje(material) {
+  if (material?.tipoTallaje) return material.tipoTallaje === 'UNICA' ? 'UNICA' : 'OTRO';
+  return material?.requiereTalla ? 'OTRO' : 'UNICA';
+}
+
+export function obtenerTallasMaterial(material) {
+  return obtenerTipoTallaje(material) === 'UNICA'
+    ? ['Única'] : opcionesTallasComunes.filter(talla => talla !== 'Única');
+}
+
 export async function obtenerMateriales(tipo = null) {
   const url = tipo ? `/materiales?tipo=${tipo}` : '/materiales';
   const response = await api.get(url);

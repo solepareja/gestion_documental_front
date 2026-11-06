@@ -31,7 +31,7 @@ export default function ListFilters({ id, busqueda, onSearch, placeholder, filte
       </div>)}
       <Button variant="secondary" onClick={onClear} disabled={!active}>Limpiar filtros</Button>
     </div>
-    {!loading && !error && Number.isFinite(count) && Number.isFinite(total) && <p role="status" aria-live="polite" className="mt-4 text-xs text-gray-500">
+    {!loading && !error && Number.isFinite(count) && Number.isFinite(total) && <p role="status" aria-live="polite" className="mt-4 text-xs font-light text-gray-500">
       Mostrando <span className="font-semibold text-gray-700">{count}</span> de {total} resultados
     </p>}
   </section>;

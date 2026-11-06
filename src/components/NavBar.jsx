@@ -39,9 +39,9 @@ export default function Navbar() {
     };
   }, []);
 
-  const linkBaseClass = "inline-flex items-center px-3.5 py-1.5 rounded-xl text-sm font-semibold transition-all duration-150 select-none border-0";
+  const linkBaseClass = "inline-flex items-center px-3.5 py-1.5 rounded-xl text-sm font-medium transition-all duration-150 select-none border-0";
   const linkActiveClass = "bg-brand-500/10 text-brand-600 font-bold border-0 shadow-none dark:bg-brand-500/20 dark:text-brand-300";
-  const linkInactiveClass = "text-gray-600 hover:text-gray-900 hover:bg-gray-100/80 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-800/60 border-0";
+  const linkInactiveClass = "text-gray-500 hover:text-gray-900 hover:bg-gray-100/80 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-800/60 border-0";
 
   return (
     <nav className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-md shadow-xs border-b border-gray-200/70 dark:border-gray-800 sticky top-0 z-50 print:hidden transition-all duration-200">

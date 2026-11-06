@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
-import { obtenerMateriales, crearEntrega, opcionesTallasComunes, tiposMaterial } from '../../services/materiales';
+import { obtenerMateriales, crearEntrega, obtenerTallasMaterial, tiposTallaje, obtenerTipoTallaje, tiposMaterial } from '../../services/materiales';
 import SignaturePad from '../../components/SignaturePad';
+import CustomSelect from '../../components/CustomSelect';
 import { validarDniNie, normalizarDni } from '../../utils/dniValidator';
 import { imprimirOdescargarPdfEntrega } from '../../utils/pdfGenerator';
 import { useAuth } from '../../context/useAuth';
@@ -295,6 +296,12 @@ export default function KioskoEntregas() {
       };
 
       const entregaCreada = await crearEntrega(payload);
+      setMateriales((actuales) => actuales.map((material) => ({
+        ...material,
+        stock: Math.max(0, (material.stock ?? 0) - lineas
+          .filter((linea) => String(linea.materialId) === String(material.id))
+          .reduce((total, linea) => total + Number(linea.cantidad), 0)),
+      })));
       setEntregaGuardada({
         ...entregaCreada,
         trabajadorNombre: trabajadorSeleccionado.nombre,
@@ -366,7 +373,7 @@ export default function KioskoEntregas() {
           <button
             onClick={() => setMostrarModalSalir(true)}
             className="p-2 sm:px-3 sm:py-2 rounded-xl bg-gray-100 hover:bg-red-500/10 text-gray-600 hover:text-red-600 border-0 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
-            title="Salir del modo kiosko"
+            title="Salir del modo tablet"
           >
             <svg className="w-4 h-4 text-gray-500 hover:text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -662,7 +669,7 @@ export default function KioskoEntregas() {
                           </div>
 
                           <div className="flex items-center justify-between text-xs text-gray-500 mt-2">
-                            <span>{m.requiereTalla ? 'Requiere talla' : 'Talla única'}</span>
+                            <span>{tiposTallaje[obtenerTipoTallaje(m)]} · Stock: {m.stock ?? 0}</span>
                             <span className="font-bold text-brand-600 group-hover:underline">+ Añadir</span>
                           </div>
                         </button>
@@ -920,7 +927,7 @@ export default function KioskoEntregas() {
             </div>
 
             <div className="grid grid-cols-4 sm:grid-cols-6 gap-2.5 max-h-64 overflow-y-auto p-1">
-              {opcionesTallasComunes.map((talla) => (
+              {obtenerTallasMaterial(materialParaTalla).map((talla) => (
                 <button
                   key={talla}
                   onClick={() => agregarMaterialConTalla(materialParaTalla, talla)}
@@ -930,6 +937,15 @@ export default function KioskoEntregas() {
                 </button>
               ))}
             </div>
+
+            <form className="flex gap-2" onSubmit={e => {
+              e.preventDefault();
+              const talla = new FormData(e.currentTarget).get('talla').trim();
+              if (talla) agregarMaterialConTalla(materialParaTalla, talla);
+            }}>
+              <input name="talla" aria-label="Otra talla" placeholder="Otra talla" required maxLength={50} className="min-w-0 flex-1 p-3 rounded-xl bg-gray-100 text-gray-900" />
+              <button type="submit" className="px-4 py-3 rounded-xl bg-brand-600 text-white font-bold cursor-pointer">Añadir</button>
+            </form>
 
             <button
               onClick={() => setMaterialParaTalla(null)}
@@ -1008,17 +1024,17 @@ export default function KioskoEntregas() {
 
                 <div>
                   <label className="block text-xs font-bold uppercase text-gray-700 mb-1">Departamento</label>
-                  <select
+                  <CustomSelect
                     value={nuevoTrabajador.departamento}
                     onChange={(e) => setNuevoTrabajador({ ...nuevoTrabajador, departamento: e.target.value })}
-                    className="w-full p-3 rounded-xl bg-white border border-gray-300 text-gray-900 text-sm focus:outline-none focus:border-brand-500"
+
                   >
                     {DEPARTAMENTOS_SUGERIDOS.map((d) => (
                       <option key={d} value={d}>
                         {d}
                       </option>
                     ))}
-                  </select>
+                  </CustomSelect>
                 </div>
               </div>
 
