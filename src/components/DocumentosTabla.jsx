@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import api from '../services/api';
 import { filtrarDocumentos, filtrarDocumentosPorEntidad } from '../services/filtros';
 import {
@@ -82,6 +82,7 @@ export default function DocumentosTabla({
   grupoEntidad = 'todos'
 }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const [state, setState] = useState(null);
   const [retry, setRetry] = useState(0);
   const [modalDoc, setModalDoc] = useState({ abierto: false, archivo: null, archivoNombre: '', titulo: '' });
@@ -310,19 +311,15 @@ export default function DocumentosTabla({
         const nombreAsignado = documento.vehiculoMatricula || documento.transportistaNombre || documento.conductorNombre || documento.trabajadorNombre || '';
 
         return (
-          <div className="flex items-center gap-1.5">
-            {documento.archivo && (
+          <div className="flex flex-wrap items-center gap-1.5">
               <Button
                 size="sm"
                 variant="secondary"
                 className="p-2 text-brand-700 bg-brand-500/15 hover:bg-brand-500/25 border-0"
-                title={`Ver ${documento.archivo.startsWith('data:application/pdf') || documento.archivoNombre?.toLowerCase().endsWith('.pdf') ? 'PDF' : 'imagen'} del documento`}
-                aria-label={`Ver archivo adjunto de ${nombreTipo} de ${nombreAsignado}`}
-                onClick={() => setModalDoc({
-                  abierto: true,
-                  archivo: documento.archivo,
-                  archivoNombre: documento.archivoNombre,
-                  titulo: `${nombreTipo} — ${nombreAsignado}`
+                title={`Ver detalle de ${nombreTipo}`}
+                aria-label={`Ver detalle de ${nombreTipo} de ${nombreAsignado}`}
+                onClick={() => navigate(`/documentos/${documento.id}${contexto}`, {
+                  state: { volver: location.pathname + location.search }
                 })}
                 icon={
                   <svg aria-hidden="true" className="w-4 h-4 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -331,7 +328,6 @@ export default function DocumentosTabla({
                   </svg>
                 }
               />
-            )}
             <Button
               size="sm"
               variant="secondary"

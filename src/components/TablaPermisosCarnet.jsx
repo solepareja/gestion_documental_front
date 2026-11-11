@@ -109,7 +109,7 @@ export default function TablaPermisosCarnet({
               <th className="py-3 px-3 w-28 min-w-[110px] text-center">Estado</th>
             </tr>
           </thead>
-          <tbody className="border-0 font-medium">
+          <tbody className="bg-white dark:bg-gray-900 border-0 font-medium">
             {modoCompleto ? (
               // Vista carnet completo (muestra las 15 categorías como la tarjeta física de la DGT)
               CATEGORIAS_CARNET.map((cat) => {
@@ -256,7 +256,7 @@ export default function TablaPermisosCarnet({
                 const estado = calcularEstadoPermiso(p.fechaCaducidad);
 
                 return (
-                  <tr key={p.tipo} className="even:bg-gray-50/70 hover:bg-brand-500/10 transition-colors border-0">
+                  <tr key={p.tipo} className="even:bg-gray-50/70 dark:even:bg-gray-800/35 hover:bg-brand-500/10 dark:hover:bg-brand-500/15 transition-colors border-0">
                     {/* Col 9 */}
                     <td className="py-2 px-3 align-middle">
                       <div className="flex items-center gap-2">

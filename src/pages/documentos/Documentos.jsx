@@ -9,7 +9,6 @@ const GRUPOS = [
   { id: 'todos', label: 'Todos los documentos' },
   { id: 'vehiculos', label: 'Vehículos', campo: 'vehiculoId', singular: 'Vehículo', todos: 'Todos los vehículos', origen: 'vehiculo' },
   { id: 'transportistas', label: 'Transportistas', campo: 'transportistaId', singular: 'Transportista', todos: 'Todos los transportistas', origen: 'transportista' },
-  { id: 'trabajadores', label: 'Trabajadores', campo: 'trabajadorId', singular: 'Trabajador', todos: 'Todos los trabajadores', origen: 'trabajador' },
 ];
 
 export default function Documentos() {
@@ -17,7 +16,7 @@ export default function Documentos() {
   const [params, setParams] = useSearchParams();
   const [busqueda, setBusqueda] = useState('');
   const [soloVigentes, setSoloVigentes] = useState(true);
-  const [datos, setDatos] = useState({ vehiculos: [], transportistas: [], trabajadores: [] });
+  const [datos, setDatos] = useState({ vehiculos: [], transportistas: [] });
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
   const [retry, setRetry] = useState(0);
@@ -29,10 +28,10 @@ export default function Documentos() {
 
   useEffect(() => {
     let active = true;
-    Promise.allSettled(['vehiculos', 'transportistas', 'trabajadores'].map(recurso => api.get('/' + recurso)))
+    Promise.allSettled(['vehiculos', 'transportistas'].map(recurso => api.get('/' + recurso)))
       .then(results => {
         if (!active) return;
-        setDatos(Object.fromEntries(['vehiculos', 'transportistas', 'trabajadores'].map((key, index) =>
+        setDatos(Object.fromEntries(['vehiculos', 'transportistas'].map((key, index) =>
           [key, results[index].status === 'fulfilled' ? results[index].value.data || [] : []])));
         setError(results.some(result => result.status === 'rejected') ? 'No se han podido cargar todos los selectores. Puedes seguir buscando por categoría.' : null);
         setCargando(false);
@@ -95,6 +94,6 @@ export default function Documentos() {
     </div>}    <DocumentosTabla busqueda={busqueda} soloVigentes={soloVigentes} grupoEntidad={grupo.id}
       vehiculoId={grupo.id === 'vehiculos' ? entidadId : ''}
       transportistaId={grupo.id === 'transportistas' ? entidadId : ''}
-      trabajadorId={grupo.id === 'trabajadores' ? entidadId : ''} enEntidad={false} />
+      enEntidad={false} />
   </div>;
 }

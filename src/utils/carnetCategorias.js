@@ -65,10 +65,10 @@ export function calcularEstadoPermiso(fechaCaducidad) {
   const diffDias = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
 
   if (diffDias < 0) {
-    return { estado: 'CADUCADO', label: 'Caducado', color: 'red', clase: 'bg-red-50 text-red-700 border border-red-200', dias: diffDias };
+    return { estado: 'CADUCADO', label: 'Caducado', color: 'red', clase: 'bg-red-50 text-red-700', dias: diffDias };
   }
   if (diffDias <= 30) {
-    return { estado: 'POR_CADUCAR', label: `Caduca en ${diffDias} d`, color: 'amber', clase: 'bg-amber-50 text-amber-700 border border-amber-200', dias: diffDias };
+    return { estado: 'POR_CADUCAR', label: `Caduca en ${diffDias} d`, color: 'amber', clase: 'bg-amber-50 text-amber-700', dias: diffDias };
   }
-  return { estado: 'VIGENTE', label: 'En vigor', color: 'emerald', clase: 'bg-emerald-50 text-emerald-700 border border-emerald-200', dias: diffDias };
+  return { estado: 'VIGENTE', label: 'En vigor', color: 'emerald', clase: 'bg-emerald-50 text-emerald-700', dias: diffDias };
 }

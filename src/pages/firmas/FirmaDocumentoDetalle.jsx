@@ -142,7 +142,7 @@ export default function FirmaDocumentoDetalle() {
       <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 border border-gray-200/80 dark:border-gray-700/80 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-6">
         
         {/* Título y descripción */}
-        <div className="space-y-1">
+        <div className="space-y-1 min-w-0 [overflow-wrap:anywhere]">
           <div className="inline-flex items-center gap-2">
             <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200/60 dark:border-blue-900/50">
               {detalle.colectivo}
@@ -160,7 +160,7 @@ export default function FirmaDocumentoDetalle() {
         </div>
 
         {/* Métricas rápidas y Barra de Progreso */}
-        <div className="flex flex-wrap items-center gap-4">
+        <div className="flex flex-wrap items-center gap-4 shrink-0">
           <div className="px-4 py-2.5 rounded-2xl bg-gray-50 dark:bg-gray-900/60 border border-gray-200/80 dark:border-gray-700/80">
             <BarraProgreso actual={detalle.firmadosCount} total={detalle.totalRequeridos} />
           </div>
@@ -255,11 +255,13 @@ export default function FirmaDocumentoDetalle() {
                     </th>
                   </tr>
                 </thead>
-                <tbody className="border-0">
+                <tbody className="bg-white dark:bg-gray-900 border-0">
                   {pendientesFiltrados.map((t) => (
-                    <tr key={t.id} className="even:bg-gray-50/70 dark:even:bg-gray-750/30 hover:bg-brand-500/10 dark:hover:bg-brand-500/15 transition-colors border-0">
+                    <tr key={t.id} className="even:bg-gray-50/70 dark:even:bg-gray-800/35 hover:bg-brand-500/10 dark:hover:bg-brand-500/15 transition-colors border-0">
                       <td className="px-6 py-4 font-semibold text-gray-900 dark:text-white border-0">
-                        {t.nombre} {t.apellidos}
+                        <Link to={`/trabajadores/${t.id}`} className="text-brand-600 dark:text-brand-400 hover:underline focus-visible:underline">
+                          {t.nombre} {t.apellidos}
+                        </Link>
                       </td>
                       <td className="px-6 py-4 text-xs font-mono text-gray-600 dark:text-gray-300 border-0">
                         {t.dni}
@@ -311,12 +313,14 @@ export default function FirmaDocumentoDetalle() {
                     </th>
                   </tr>
                 </thead>
-                <tbody className="border-0">
+                <tbody className="bg-white dark:bg-gray-900 border-0">
                   {firmadosFiltrados.map((f) => (
-                    <tr key={f.id} className="even:bg-gray-50/70 dark:even:bg-gray-750/30 hover:bg-brand-500/10 dark:hover:bg-brand-500/15 transition-colors border-0">
+                    <tr key={f.id} className="even:bg-gray-50/70 dark:even:bg-gray-800/35 hover:bg-brand-500/10 dark:hover:bg-brand-500/15 transition-colors border-0">
                       <td className="px-6 py-4">
                         <div className="font-semibold text-gray-900 dark:text-white">
-                          {f.trabajadorNombre} {f.trabajadorApellidos}
+                          <Link to={`/trabajadores/${f.trabajadorId}`} className="text-brand-600 dark:text-brand-400 hover:underline focus-visible:underline">
+                            {f.trabajadorNombre} {f.trabajadorApellidos}
+                          </Link>
                         </div>
                         <div className="text-xs font-mono text-gray-400">{f.trabajadorDni}</div>
                       </td>

@@ -15,7 +15,6 @@ export function filtrarDocumentosPorEntidad(documentos, grupo = 'todos') {
     vehiculos: 'vehiculoId',
     transportistas: 'transportistaId',
     conductores: 'transportistaId',
-    trabajadores: 'trabajadorId'
   }[grupo];
   return campo ? documentos.filter(documento => Boolean(documento[campo] || (campo === 'transportistaId' && documento.conductorId))) : documentos;
 }
@@ -34,13 +33,12 @@ export function opcionesFiltro(datos, campo) {
   return [...opciones.values()].sort((a, b) => a.localeCompare(b, 'es', { numeric: true }));
 }
 
-export function filtrarVehiculos(vehiculos, { busqueda = '', marca = '', tipo = '', anyo = '', combustible = '', estado = '' }) {
+export function filtrarVehiculos(vehiculos, { busqueda = '', marca = '', tipo = '', anyo = '', estado = '' }) {
   return vehiculos.filter(vehiculo =>
-    coincideBusqueda(busqueda, [vehiculo.matricula, vehiculo.marca, vehiculo.modelo, vehiculo.tipo, vehiculo.anyo, vehiculo.combustible]) &&
+    coincideBusqueda(busqueda, [vehiculo.matricula, vehiculo.marca, vehiculo.modelo, vehiculo.tipo, vehiculo.anyo]) &&
     (!marca || normalizarTexto(vehiculo.marca) === normalizarTexto(marca)) &&
     (!tipo || normalizarTexto(vehiculo.tipo) === normalizarTexto(tipo)) &&
     (!anyo || String(vehiculo.anyo) === anyo) &&
-    (!combustible || normalizarTexto(vehiculo.combustible) === normalizarTexto(combustible)) &&
     (!estado || (estado === 'activo' ? vehiculo.activo !== false : vehiculo.activo === false)));
 }
 

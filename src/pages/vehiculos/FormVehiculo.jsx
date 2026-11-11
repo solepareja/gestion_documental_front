@@ -17,7 +17,6 @@ export default function FormVehiculo() {
         anyo: '',
         tipo: '',
         km: '',
-        combustible: '',
         activo: true
     });
 
@@ -49,7 +48,6 @@ export default function FormVehiculo() {
                 tipo: formData.tipo.trim(),
                 anyo: Number(formData.anyo),
                 km: Number(formData.km),
-                combustible: formData.combustible || 'Sin especificar',
                 activo: formData.activo !== false
             };
 
@@ -72,7 +70,7 @@ export default function FormVehiculo() {
             title={id ? "Editar vehículo" : "Añadir vehículo"}
             category="Vehículos"
             backTo={id ? "/vehiculos/" + id : "/vehiculos"}
-            description="Registra los datos del vehículo, su motorización y estado operativo."
+            description="Registra los datos del vehículo y su estado operativo."
         >
             {(error || loadError) && <p role="alert" className="create-error">{error || loadError}</p>}
 
@@ -130,24 +128,6 @@ export default function FormVehiculo() {
                             placeholder="Ej: Furgoneta, Camión, Turismo…"
                             required
                         />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700" htmlFor="combustible">Combustible *</label>
-                        <CustomSelect
-                            id="combustible"
-                            name="combustible"
-                            value={formData.combustible || 'Sin especificar'}
-                            onChange={handleChange}
-                            required
-                        >
-                            <option value="Diésel">Diésel</option>
-                            <option value="Gasolina">Gasolina</option>
-                            <option value="Híbrido">Híbrido</option>
-                            <option value="Híbrido enchufable">Híbrido enchufable</option>
-                            <option value="Eléctrico">Eléctrico</option>
-                            <option value="GLP / GNC">GLP / GNC</option>
-                        </CustomSelect>
                     </div>
 
                     <div>

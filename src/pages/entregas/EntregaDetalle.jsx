@@ -109,17 +109,17 @@ export default function EntregaDetalle() {
       </div>
 
       {/* Justificante Formal (Documento Imprimible) */}
-      <div className="bg-white rounded-3xl border border-gray-200 shadow-sm p-6 sm:p-10 print:p-0 print:border-none print:shadow-none space-y-8">
+      <div className="entrega-justificante bg-white rounded-3xl border border-gray-200 shadow-sm p-6 sm:p-10 print:p-0 print:border-none print:shadow-none space-y-8">
         
         {/* Cabecera del Documento */}
-        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6 border-b border-gray-200 pb-6">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-start justify-between gap-6 border-b border-gray-200 pb-6">
+          <div className="flex flex-wrap items-center gap-4 flex-1 basis-96">
             <img
               src="/logo.png"
               alt="Sofás Valencia"
               className="h-10 sm:h-12 w-auto object-contain shrink-0"
             />
-            <div>
+            <div className="flex-1 basis-48">
               <span className="text-xl sm:text-2xl font-black text-brand-800 tracking-tight block">
                 Fábrica Sofás Valencia S.L.
               </span>
@@ -132,7 +132,7 @@ export default function EntregaDetalle() {
             </div>
           </div>
 
-          <div className="text-left sm:text-right bg-gray-50 sm:bg-transparent p-4 sm:p-0 rounded-2xl border border-gray-100 sm:border-none">
+          <div className="max-w-full text-left sm:text-right bg-gray-50 sm:bg-transparent p-4 sm:p-0 rounded-2xl border border-gray-100 sm:border-none">
             <span className="text-xs font-bold uppercase tracking-wider text-gray-400 block">
               Justificante Oficial
             </span>
@@ -178,7 +178,7 @@ export default function EntregaDetalle() {
             Detalle de material entregado
           </h3>
           <div className="overflow-x-auto rounded-2xl border-0 shadow-xs">
-            <table className="w-full min-w-[620px] text-left text-xs border-collapse border-0">
+            <table className="w-full table-fixed min-w-[620px] text-left text-xs border-collapse border-0">
               <thead className="bg-gray-100/75 text-gray-500 font-bold uppercase tracking-wider text-[11px] border-0">
                 <tr>
                   <th className="p-3.5 border-0">Material</th>
@@ -189,11 +189,17 @@ export default function EntregaDetalle() {
                   <th className="p-3.5 text-right border-0">Estado</th>
                 </tr>
               </thead>
-              <tbody className="border-0">
+              <tbody className="bg-white dark:bg-gray-900 border-0">
                 {(entrega.lineas || []).map((l) => (
-                  <tr key={l.id} className="even:bg-gray-50/70 hover:bg-brand-500/10 transition-colors border-0">
+                  <tr key={l.id} className="even:bg-gray-50/70 dark:even:bg-gray-800/35 hover:bg-brand-500/10 dark:hover:bg-brand-500/15 transition-colors border-0">
                     <td className="p-3.5 font-bold text-gray-900 text-sm">
-                      {l.materialNombre}
+                      {l.materialId ? (
+                        <Link to={`/materiales/${l.materialId}`} className="text-brand-600 hover:text-brand-800 hover:underline">
+                          {l.materialNombre}
+                        </Link>
+                      ) : (
+                        l.materialNombre
+                      )}
                     </td>
                     <td className="p-3.5">
                       <span className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-bold ${
@@ -242,7 +248,7 @@ export default function EntregaDetalle() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2">
             {/* Firma del Emisor */}
-            <div className="p-4 rounded-2xl border border-gray-200 bg-gray-50/50 flex flex-col justify-between h-44 text-xs">
+            <div className="p-4 rounded-2xl border border-gray-200 bg-gray-50/50 flex flex-col justify-between min-h-44 gap-3 text-xs">
               <div>
                 <span className="font-bold text-gray-800 block">Por la Empresa:</span>
                 <span className="text-gray-500 block text-[11px]">Fábrica Sofás Valencia S.L.</span>
@@ -253,8 +259,8 @@ export default function EntregaDetalle() {
             </div>
 
             {/* Firma Digital del Trabajador */}
-            <div className="p-4 rounded-2xl border border-brand-200 bg-brand-50/20 flex flex-col justify-between h-44 text-xs">
-              <div className="flex justify-between items-start">
+            <div className="p-4 rounded-2xl border border-brand-200 bg-brand-50/20 flex flex-col justify-between min-h-44 gap-3 text-xs">
+              <div className="flex flex-wrap justify-between items-start gap-2">
                 <div>
                   <span className="font-bold text-gray-900 block">Conforme el trabajador receptor:</span>
                   <span className="text-gray-600 block text-[11px]">
@@ -267,7 +273,7 @@ export default function EntregaDetalle() {
               </div>
 
               {/* Imagen de la firma */}
-              <div className="flex items-center justify-center h-20 my-1 overflow-hidden">
+              <div className="flex items-center justify-center h-20 shrink-0 my-1 overflow-hidden">
                 {entrega.firma ? (
                   <img
                     src={entrega.firma}

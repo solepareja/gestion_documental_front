@@ -13,12 +13,12 @@ export default function BarraProgreso({ actual = 0, total = 0 }) {
   const textPorcentaje = estilo.split(' ').slice(1).join(' ');
 
   return (
-    <div className="w-full max-w-[120px]">
-      <div className="flex justify-between items-center text-[11px] font-semibold mb-1">
-        <span className="text-gray-700 dark:text-gray-300">
+    <div className="w-[120px] max-w-full">
+      <div className="flex flex-wrap justify-between items-center gap-x-3 gap-y-1 text-[11px] font-semibold mb-1 tabular-nums">
+        <span className="text-gray-700 dark:text-gray-300 whitespace-nowrap">
           {actual}/{total}
         </span>
-        <span className={textPorcentaje}>{porcentaje}%</span>
+        <span className={`whitespace-nowrap ${textPorcentaje}`}>{porcentaje}%</span>
       </div>
       <div className="w-full bg-gray-200/90 dark:bg-gray-700/80 rounded-full h-2 overflow-hidden">
         <div

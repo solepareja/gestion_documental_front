@@ -21,7 +21,6 @@ const MAPA_RUTAS = {
   vehiculo: 'vehiculos',
   transportista: 'transportistas',
   conductor: 'transportistas',
-  trabajador: 'trabajadores',
 };
 
 export default function DocumentacionEntidad({ entidadTipo, entidadId }) {

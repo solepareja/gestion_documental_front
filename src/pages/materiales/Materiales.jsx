@@ -71,7 +71,7 @@ export default function Materiales() {
       render: (m) => (
         <div className="flex flex-col">
           <Link
-            to={`/materiales/${m.id}/editar`}
+            to={`/materiales/${m.id}`}
             className="text-brand-600 hover:text-brand-800 hover:underline font-bold"
           >
             {m.nombre}
@@ -105,7 +105,7 @@ export default function Materiales() {
     {
       header: 'Stock',
       render: (m) => (
-        <span className={(m.stock ?? 0) === 0 ? 'font-semibold text-amber-700' : 'font-semibold text-gray-700'}>
+        <span>
           {m.stock ?? 0} uds.
         </span>
       ),
@@ -113,13 +113,7 @@ export default function Materiales() {
     {
       header: 'Talla',
       render: (m) => (
-        <span
-          className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold ${
-            m.requiereTalla
-              ? 'bg-emerald-50 text-emerald-700'
-              : 'bg-gray-100 text-gray-500'
-          }`}
-        >
+        <span>
           {tiposTallaje[obtenerTipoTallaje(m)]}
         </span>
       ),
@@ -127,7 +121,7 @@ export default function Materiales() {
     {
       header: 'Vida útil estimada',
       render: (m) => (
-        <span className="text-xs font-medium text-gray-600">
+        <span>
           {m.vidaUtilMeses ? `${m.vidaUtilMeses} mes${m.vidaUtilMeses > 1 ? 'es' : ''}` : 'Sin definir'}
         </span>
       ),

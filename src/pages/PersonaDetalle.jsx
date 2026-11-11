@@ -221,7 +221,7 @@ export default function PersonaDetalle({ tipo }) {
                           <th className="py-3 px-4 text-center border-0">Estado</th>
                         </tr>
                       </thead>
-                      <tbody className="border-0">
+                      <tbody className="bg-white dark:bg-gray-900 border-0">
                         {listaPermisos.map((p, idx) => {
                           const cat = MAPA_CATEGORIAS[p.tipo?.toUpperCase()] || {
                             codigo: p.tipo,
@@ -230,7 +230,7 @@ export default function PersonaDetalle({ tipo }) {
                           };
                           const est = calcularEstadoPermiso(p.fechaCaducidad);
                           return (
-                            <tr key={idx} className="even:bg-gray-50/70 dark:even:bg-gray-800/30 hover:bg-brand-500/10 dark:hover:bg-brand-500/15 transition-colors border-0">
+                            <tr key={idx} className="even:bg-gray-50/70 dark:even:bg-gray-800/35 hover:bg-brand-500/10 dark:hover:bg-brand-500/15 transition-colors border-0">
                               <td className="py-2.5 px-3">
                                 <div className="flex items-center gap-2">
                                   <span className="w-8 text-center font-black bg-gray-900 text-white py-0.5 rounded text-xs shadow-2xs shrink-0">
@@ -508,8 +508,17 @@ export default function PersonaDetalle({ tipo }) {
                                   : 'bg-blue-100/70 text-blue-900'
                               }`}
                             >
-                              <strong>{l.cantidad}x</strong> {l.materialNombre}
-                              {l.talla && ` (T.${l.talla})`}
+                              <span>{l.materialNombre}</span>
+                              {l.cantidad > 1 && (
+                                <span className="ml-1.5 px-1.5 py-0.5 rounded bg-black/10 text-[11px] font-bold whitespace-nowrap">
+                                  {l.cantidad} uds.
+                                </span>
+                              )}
+                              {l.talla && (
+                                <span className="ml-1 px-1.5 py-0.5 rounded bg-white text-gray-800 text-[11px] font-bold shadow-2xs whitespace-nowrap">
+                                  {l.talla}
+                                </span>
+                              )}
                               {l.fechaRenovacion && (
                                 <span className="text-[10px] text-gray-500 ml-1">
                                   · Renovar: {fechaVisible(l.fechaRenovacion)}

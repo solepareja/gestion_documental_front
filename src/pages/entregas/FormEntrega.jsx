@@ -23,6 +23,7 @@ export default function FormEntrega() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const trabajadorIdParam = searchParams.get('trabajadorId');
+  const materialIdParam = searchParams.get('materialId');
 
   const hoyStr = new Date().toISOString().slice(0, 10);
 
@@ -64,6 +65,19 @@ export default function FormEntrega() {
         if (trabajadorIdParam && resTrab.data?.some((t) => String(t.id) === String(trabajadorIdParam))) {
           setTrabajadorId(trabajadorIdParam);
         }
+
+        if (materialIdParam && dataMat?.some((m) => String(m.id) === String(materialIdParam))) {
+          const mat = dataMat.find((m) => String(m.id) === String(materialIdParam));
+          setLineas([
+            {
+              idTemp: 1,
+              materialId: String(mat.id),
+              cantidad: 1,
+              talla: '',
+              fechaRenovacion: mat?.tipo !== 'VESTUARIO' && mat?.vidaUtilMeses && hoyStr ? sumarMesesAFecha(hoyStr, mat.vidaUtilMeses) : '',
+            },
+          ]);
+        }
       })
       .catch((err) => {
         console.error('Error al cargar datos auxiliares:', err);
@@ -76,7 +90,7 @@ export default function FormEntrega() {
     return () => {
       activo = false;
     };
-  }, [trabajadorIdParam]);
+  }, [trabajadorIdParam, materialIdParam]);
 
   // Manejar cambio en selección de material de una línea
   const handleMaterialChange = (index, nuevoMaterialId) => {

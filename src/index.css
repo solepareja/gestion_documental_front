@@ -368,6 +368,11 @@ html.dark .bg-white {
   background-color: #111827;
 }
 
+html.dark .bg-slate-50,
+html.dark .bg-slate-50\/60,
+html.dark .bg-slate-50\/70,
+html.dark .bg-slate-50\/80,
+html.dark .bg-slate-50\/90,
 html.dark .bg-gray-50,
 html.dark .bg-gray-50\/60,
 html.dark .bg-gray-50\/70,
@@ -641,4 +646,21 @@ html.dark .shadow-xs {
 html.dark .shadow-xl,
 html.dark .shadow-2xl {
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.8), 0 8px 10px -6px rgba(0, 0, 0, 0.8);
+}
+
+/* El justificante crece con sus datos, incluso con palabras sin espacios. */
+.entrega-justificante {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.entrega-justificante :where(div, span, p, h3, th, td) {
+  min-width: 0;
+  white-space: normal;
+}
+
+@media print {
+  .entrega-justificante table {
+    min-width: 0;
+  }
 }

@@ -197,26 +197,32 @@ export default function Entregas() {
     {
       header: 'Materiales entregados',
       render: (e) => (
-        <div className="flex flex-wrap gap-1.5 max-w-md py-1">
+        <div className="flex flex-col gap-1.5 py-1">
           {(e.lineas || []).map((l) => {
             const esEPI = l.materialTipo === 'EPI';
             return (
-              <span
+              <div
                 key={l.id}
-                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium border-0 ${
+                className={`inline-flex items-center justify-between gap-2.5 px-3 py-1.5 rounded-xl text-xs font-medium border-0 w-fit max-w-full ${
                   esEPI
                     ? 'bg-amber-100/70 text-amber-900'
                     : 'bg-blue-100/70 text-blue-900'
                 }`}
               >
-                <span className="font-bold">{l.cantidad}x</span>
-                <span>{l.materialNombre}</span>
-                {l.talla && (
-                  <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-white/80 border-0">
-                    T.{l.talla}
-                  </span>
-                )}
-              </span>
+                <span className="font-semibold">{l.materialNombre}</span>
+                <div className="inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap">
+                  {l.cantidad > 1 && (
+                    <span className="px-2 py-0.5 rounded-md bg-black/10 text-[11px] font-bold whitespace-nowrap">
+                      {l.cantidad} uds.
+                    </span>
+                  )}
+                  {l.talla && (
+                    <span className="px-2 py-0.5 rounded-md bg-white text-gray-800 text-[11px] font-bold shadow-2xs whitespace-nowrap">
+                      {l.talla}
+                    </span>
+                  )}
+                </div>
+              </div>
             );
           })}
         </div>

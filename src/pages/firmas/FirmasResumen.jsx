@@ -205,12 +205,12 @@ export default function FirmasResumen() {
                   </th>
                 </tr>
               </thead>
-              <tbody className="border-0">
+              <tbody className="bg-white dark:bg-gray-900 border-0">
                 {documentosFiltrados.map((doc) => (
                   <tr
                     key={doc.plantillaId}
                     onClick={() => navigate(`/firmas/${doc.plantillaId}`)}
-                    className="even:bg-gray-50/70 dark:even:bg-gray-750/30 hover:bg-brand-500/10 dark:hover:bg-brand-500/15 cursor-pointer transition-colors group border-0"
+                    className="even:bg-gray-50/70 dark:even:bg-gray-800/35 hover:bg-brand-500/10 dark:hover:bg-brand-500/15 cursor-pointer transition-colors group border-0"
                   >
                     {/* Nombre */}
                     <td className="px-4 py-3.5 border-0">

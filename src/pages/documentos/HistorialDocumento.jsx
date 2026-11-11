@@ -10,8 +10,8 @@ export default function HistorialDocumento({ entidadTipo }) {
   const navigate = useNavigate();
   const tipo = params.tipo;
 
-  const tipoEntidadEfectivo = entidadTipo || (params.vehiculoId ? 'vehiculo' : (params.transportistaId || params.conductorId) ? 'transportista' : 'trabajador');
-  const entidadId = params.vehiculoId || params.transportistaId || params.conductorId || params.trabajadorId;
+  const tipoEntidadEfectivo = entidadTipo || (params.vehiculoId ? 'vehiculo' : 'transportista');
+  const entidadId = params.vehiculoId || params.transportistaId || params.conductorId;
 
   const [state, setState] = useState(null);
   const tipoValido = Boolean(tiposDocumento[tipo]);
@@ -20,21 +20,15 @@ export default function HistorialDocumento({ entidadTipo }) {
 
   const endpoint = tipoEntidadEfectivo === 'vehiculo'
     ? `/vehiculos/${entidadId}`
-    : esTransportista
-    ? `/transportistas/${entidadId}`
-    : `/trabajadores/${entidadId}`;
+    : `/transportistas/${entidadId}`;
 
   const rutaFicha = tipoEntidadEfectivo === 'vehiculo'
     ? `/vehiculos/${entidadId}`
-    : esTransportista
-    ? `/transportistas/${entidadId}`
-    : `/trabajadores/${entidadId}`;
+    : `/transportistas/${entidadId}`;
 
   const etiquetaVolver = tipoEntidadEfectivo === 'vehiculo'
     ? 'la ficha del vehículo'
-    : esTransportista
-    ? 'la ficha del transportista'
-    : 'la ficha del trabajador';
+    : 'la ficha del transportista';
 
   useEffect(() => {
     if (!tipoValido || !entidadId) return;
@@ -42,7 +36,7 @@ export default function HistorialDocumento({ entidadTipo }) {
     api.get(endpoint).then(({ data }) => {
       if (active) setState({ entidadId, data });
     }).catch(() => {
-      if (active) setState({ entidadId, error: 'No se pudo cargar la información.' });
+      if (active) setState({ entidadId, error: 'No se pudo cargar la informaciÃ³n.' });
     });
     return () => { active = false; };
   }, [endpoint, entidadId, tipoValido]);
@@ -54,7 +48,7 @@ export default function HistorialDocumento({ entidadTipo }) {
   let subtexto = '';
   if (data) {
     if (tipoEntidadEfectivo === 'vehiculo') {
-      identificador = data.matricula || 'Vehículo';
+      identificador = data.matricula || 'VehÃ­culo';
       subtexto = `${data.marca || ''} ${data.modelo || ''}`.trim();
     } else {
       identificador = [data.nombre, data.apellidos].filter(Boolean).join(' ');
@@ -70,7 +64,7 @@ export default function HistorialDocumento({ entidadTipo }) {
         to={rutaFicha}
         className="inline-flex items-center text-sm font-medium text-gray-500 hover:text-brand-600 transition-colors mb-5"
       >
-        ← Volver a {etiquetaVolver}
+        â† Volver a {etiquetaVolver}
       </Link>
 
       {!tipoValido ? (
@@ -78,7 +72,7 @@ export default function HistorialDocumento({ entidadTipo }) {
       ) : current?.error ? (
         <p role="alert" className="create-error">{current.error}</p>
       ) : !current ? (
-        <p role="status" className="text-sm text-gray-500">Cargando historial…</p>
+        <p role="status" className="text-sm text-gray-500">Cargando historialâ€¦</p>
       ) : (
         <>
           <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
@@ -87,11 +81,11 @@ export default function HistorialDocumento({ entidadTipo }) {
                 Historial de {tiposDocumento[tipo] || tipo}
               </h1>
               <p className="text-sm text-gray-500 mt-1">
-                {identificador} {subtexto ? `· ${subtexto}` : ''} — Última versión y documentos históricos renovados
+                {identificador} {subtexto ? `Â· ${subtexto}` : ''} â€” Ãšltima versiÃ³n y documentos histÃ³ricos renovados
               </p>
             </div>
             <Button onClick={() => navigate(`/documentos/nuevo${queryNuevo}`)}>
-              + Añadir documento
+              + AÃ±adir documento
             </Button>
           </div>
 

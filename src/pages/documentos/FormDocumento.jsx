@@ -22,7 +22,7 @@ const DESCRIPCIONES_DOCUMENTO = {
   SEGURO: 'Póliza del vehículo / seguro en vigor. Caducidad obligatoria.',
   TARJETA_TRANSPORTE: 'Tarjeta / Autorización de transporte del vehículo.',
 
-  // Conductores y Trabajadores
+  // Transportistas / Conductores
   CONTRATO_FIRMADO: 'Contrato laboral o mercantil firmado.',
   ALTA_TRABAJADOR: 'Alta de trabajador/es en la Seguridad Social (Modelo TA.2/S).',
   SEGURO_RESPONSABILIDAD_CIVIL: 'Seguro de responsabilidad civil. Caducidad obligatoria.',
@@ -41,15 +41,12 @@ export default function FormDocumento() {
   // Parámetros de origen desde URL
   const paramVehiculoId = params.get('vehiculoId') || '';
   const paramTransportistaId = params.get('transportistaId') || params.get('conductorId') || '';
-  const paramTrabajadorId = params.get('trabajadorId') || '';
   const paramOrigen = params.get('origen') || '';
   const paramTipo = params.get('tipo') || '';
 
   // Determinar entidad inicial
   const entidadInicial = paramTransportistaId || paramOrigen === 'transportista' || paramOrigen === 'conductor'
     ? 'transportista'
-    : paramTrabajadorId || paramOrigen === 'trabajador'
-    ? 'trabajador'
     : 'vehiculo';
 
   const [entidadTipo, setEntidadTipo] = useState(entidadInicial);
@@ -61,7 +58,6 @@ export default function FormDocumento() {
     vehiculoId: paramVehiculoId,
     transportistaId: paramTransportistaId,
     conductorId: paramTransportistaId,
-    trabajadorId: paramTrabajadorId,
     numeroReferencia: '',
     companiaAseguradora: '',
     estado: 'VIGENTE',
@@ -72,7 +68,6 @@ export default function FormDocumento() {
 
   const [vehiculos, setVehiculos] = useState(null);
   const [transportistas, setTransportistas] = useState(null);
-  const [trabajadores, setTrabajadores] = useState(null);
   const [cargandoListas, setCargandoListas] = useState(true);
   const [listasError, setListasError] = useState(null);
   const [retry, setRetry] = useState(0);
@@ -114,7 +109,6 @@ export default function FormDocumento() {
         if (!active) return;
         let tipoEnt = 'vehiculo';
         if (data.transportistaId || data.conductorId) tipoEnt = 'transportista';
-        else if (data.trabajadorId) tipoEnt = 'trabajador';
         setEntidadTipo(tipoEnt);
 
         const idTransp = data.transportistaId || data.conductorId;
@@ -125,7 +119,6 @@ export default function FormDocumento() {
           vehiculoId: data.vehiculoId ? String(data.vehiculoId) : '',
           transportistaId: idTransp ? String(idTransp) : '',
           conductorId: idTransp ? String(idTransp) : '',
-          trabajadorId: data.trabajadorId ? String(data.trabajadorId) : '',
           numeroReferencia: data.numeroReferencia || '',
           companiaAseguradora: data.companiaAseguradora || '',
           estado: data.estado || 'VIGENTE',
@@ -157,13 +150,11 @@ export default function FormDocumento() {
     Promise.all([
       api.get('/vehiculos').catch(() => ({ data: [] })),
       api.get('/transportistas').catch(() => api.get('/conductores')).catch(() => ({ data: [] })),
-      api.get('/trabajadores').catch(() => ({ data: [] })),
     ])
-      .then(([resVeh, resTransp, resTrab]) => {
+      .then(([resVeh, resTransp]) => {
         if (active) {
           setVehiculos(resVeh.data || []);
           setTransportistas(resTransp.data || []);
-          setTrabajadores(resTrab.data || []);
           setListasError(null);
         }
       })
@@ -188,14 +179,14 @@ export default function FormDocumento() {
   const tiposDisponibles =
     entidadTipo === 'vehiculo'
       ? tiposDocumentoVehiculo
-      : tiposDocumentoTransportista
+      : tiposDocumentoTransportista;
 
   const handleCambiarEntidad = (nuevaEntidad) => {
     setEntidadTipo(nuevaEntidad);
     const tipos =
       nuevaEntidad === 'vehiculo'
         ? tiposDocumentoVehiculo
-        :  tiposDocumentoTransportista 
+        : tiposDocumentoTransportista;
 
     setFormData(prev => ({
       ...prev,
@@ -203,7 +194,6 @@ export default function FormDocumento() {
       vehiculoId: nuevaEntidad === 'vehiculo' ? prev.vehiculoId : '',
       transportistaId: (nuevaEntidad === 'transportista' || nuevaEntidad === 'conductor') ? (prev.transportistaId || prev.conductorId) : '',
       conductorId: (nuevaEntidad === 'transportista' || nuevaEntidad === 'conductor') ? (prev.transportistaId || prev.conductorId) : '',
-      trabajadorId: nuevaEntidad === 'trabajador' ? prev.trabajadorId : '',
     }));
   };
 
@@ -234,16 +224,12 @@ export default function FormDocumento() {
     if (paramOrigen === 'historial') {
       if (paramVehiculoId) return `/vehiculos/${paramVehiculoId}/documentos/${encodeURIComponent(paramTipo || formData.tipo)}`;
       if (paramTransportistaId) return `/transportistas/${paramTransportistaId}/documentos/${encodeURIComponent(paramTipo || formData.tipo)}`;
-      if (paramTrabajadorId) return `/trabajadores/${paramTrabajadorId}/documentos/${encodeURIComponent(paramTipo || formData.tipo)}`;
     }
     if (paramOrigen === 'vehiculo' && (formData.vehiculoId || paramVehiculoId)) {
       return `/vehiculos/${formData.vehiculoId || paramVehiculoId}`;
     }
     if ((paramOrigen === 'transportista' || paramOrigen === 'conductor') && (formData.transportistaId || formData.conductorId || paramTransportistaId)) {
       return `/transportistas/${formData.transportistaId || formData.conductorId || paramTransportistaId}`;
-    }
-    if (paramOrigen === 'trabajador' && (formData.trabajadorId || paramTrabajadorId)) {
-      return `/trabajadores/${formData.trabajadorId || paramTrabajadorId}`;
     }
     return '/documentos';
   };
@@ -265,10 +251,6 @@ export default function FormDocumento() {
     }
     if ((entidadTipo === 'transportista' || entidadTipo === 'conductor') && !formData.transportistaId && !formData.conductorId) {
       setError('Selecciona el transportista al que pertenece el documento.');
-      return;
-    }
-    if (entidadTipo === 'trabajador' && !formData.trabajadorId) {
-      setError('Selecciona el trabajador al que pertenece el documento.');
       return;
     }
 
@@ -304,7 +286,6 @@ export default function FormDocumento() {
         vehiculoId: entidadTipo === 'vehiculo' ? Number(formData.vehiculoId) : null,
         transportistaId: (entidadTipo === 'transportista' || entidadTipo === 'conductor') ? Number(formData.transportistaId || formData.conductorId) : null,
         conductorId: (entidadTipo === 'transportista' || entidadTipo === 'conductor') ? Number(formData.transportistaId || formData.conductorId) : null,
-        trabajadorId: entidadTipo === 'trabajador' ? Number(formData.trabajadorId) : null,
         numeroReferencia: (formData.numeroReferencia || '').trim() || null,
         companiaAseguradora: esSeguro && formData.companiaAseguradora ? formData.companiaAseguradora.trim() : null,
         estado: estadoAjustado,
@@ -358,11 +339,9 @@ export default function FormDocumento() {
           ? 'la ficha del vehículo'
           : (paramOrigen === 'transportista' || paramOrigen === 'conductor')
           ? 'la ficha del transportista'
-          : paramOrigen === 'trabajador'
-          ? 'la ficha del trabajador'
           : 'documentos'
       }
-      description="Registra la documentación correspondiente a vehículos, transportistas o trabajadores con fechas de control y archivo digital."
+      description="Registra la documentación correspondiente a vehículos y transportistas con fechas de control y archivo digital."
     >
       {(error || loadError) && <p role="alert" className="create-error">{error || loadError}</p>}
       {listasError && (
@@ -378,7 +357,7 @@ export default function FormDocumento() {
           className="create-form disabled:opacity-60 space-y-6"
           disabled={saving || loadingDoc || Boolean(loadError) || cargandoListas}
         >
-          {/* Selector de Entidad: Vehículo / Transportista / Trabajador (Segmented Control sin bordes) */}
+          {/* Selector de Entidad: Vehículo / Transportista (Segmented Control sin bordes) */}
           <div className="col-span-full">
             <label className="block text-[11px] font-extrabold text-gray-500 uppercase tracking-wider mb-2">
               ¿A quién corresponde este documento?
@@ -387,7 +366,6 @@ export default function FormDocumento() {
               {[
                 { id: 'vehiculo', label: 'Vehículo' },
                 { id: 'transportista', label: 'Transportista' },
-                { id: 'trabajador', label: 'Trabajador' },
               ].map((ent) => {
                 const activo = (entidadTipo === ent.id || (ent.id === 'transportista' && entidadTipo === 'conductor'));
                 return (
@@ -451,27 +429,6 @@ export default function FormDocumento() {
                 {transportistas?.map(c => (
                   <option key={c.id} value={c.id}>
                     {c.nombre} {c.apellidos || ''} {c.dni ? `(${c.dni})` : ''}
-                  </option>
-                ))}
-              </CustomSelect>
-            </div>
-          )}
-
-          {entidadTipo === 'trabajador' && (
-            <div>
-              <label htmlFor="trabajadorId">Trabajador asignado <span className="text-red-500">*</span></label>
-              <CustomSelect
-                id="trabajadorId"
-                name="trabajadorId"
-                value={formData.trabajadorId}
-                onChange={handleChange}
-                placeholder="Selecciona un trabajador"
-                required
-              >
-                <option value="">Selecciona un trabajador</option>
-                {trabajadores?.map(t => (
-                  <option key={t.id} value={t.id}>
-                    {t.nombre} {t.apellidos || ''} {t.dni ? `(${t.dni})` : ''}
                   </option>
                 ))}
               </CustomSelect>

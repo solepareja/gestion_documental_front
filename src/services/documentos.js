@@ -1,7 +1,6 @@
 // Tipos de documentación organizados por entidad:
 // - Vehículos: Documentación del vehículo, Póliza del vehículo, Permiso de circulación, ITV, Tarjeta de transporte.
-// - Conductores: Contrato firmado, Alta de trabajador/es, Alta de autónomo (RETA), Seguro de responsabilidad civil, Modelo 036/037, Certificado corriente AEAT, Certificado corriente Seg. Social.
-// - Trabajadores: Contrato firmado, Alta de trabajador/es, Certificado corriente Seg. Social, Certificado corriente AEAT, Modelo 036/037, Alta de autónomo (RETA), Seguro de responsabilidad civil.
+// - Transportistas / Conductores: Contrato firmado, Alta de trabajador/es, Alta de autónomo (RETA), Seguro de responsabilidad civil, Modelo 036/037, Certificado corriente AEAT, Certificado corriente Seg. Social.
 
 export const tiposDocumentoVehiculo = {
   PERMISO_CIRCULACION: 'Permiso de circulación',

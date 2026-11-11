@@ -18,10 +18,12 @@ import PersonaDetalle from './pages/PersonaDetalle';
 import FormUsuario from './pages/usuarios/FormUsuario';
 import Documentos from './pages/documentos/Documentos';
 import FormDocumento from './pages/documentos/FormDocumento';
+import DocumentoDetalle from './pages/documentos/DocumentoDetalle';
 import HistorialDocumentoVehiculo from './pages/documentos/HistorialDocumentoVehiculo';
 import HistorialDocumento from './pages/documentos/HistorialDocumento';
 import Materiales from './pages/materiales/Materiales';
 import FormMaterial from './pages/materiales/FormMaterial';
+import MaterialDetalle from './pages/materiales/MaterialDetalle';
 import Entregas from './pages/entregas/Entregas';
 import FormEntrega from './pages/entregas/FormEntrega';
 import EntregaDetalle from './pages/entregas/EntregaDetalle';
@@ -53,13 +55,13 @@ export default function App() {
               <Route path="/usuarios/:id/editar" element={<FormUsuario key="editar-usuario" />} />
               <Route path="/documentos" element={<Documentos />} />
               <Route path="/documentos/nuevo" element={<FormDocumento />} />
+              <Route path="/documentos/:id" element={<DocumentoDetalle />} />
               <Route path="/documentos/:id/editar" element={<FormDocumento key="editar-documento" />} />
               <Route path="/vehiculos" element={<Vehiculos />} />
               <Route path="/vehiculos/:id" element={<VehiculoDetalle />} />
               <Route path="/vehiculos/:vehiculoId/documentos/:tipo" element={<HistorialDocumentoVehiculo />} />
               <Route path="/transportistas/:transportistaId/documentos/:tipo" element={<HistorialDocumento entidadTipo="transportista" />} />
               <Route path="/conductores/:conductorId/documentos/:tipo" element={<HistorialDocumento entidadTipo="transportista" />} />
-              <Route path="/trabajadores/:trabajadorId/documentos/:tipo" element={<HistorialDocumento entidadTipo="trabajador" />} />
               <Route path="/transportistas" element={<Transportistas />} />
               <Route path="/conductores" element={<Navigate to="/transportistas" replace />} />
               <Route path="/trabajadores" element={<Trabajadores />} />
@@ -78,6 +80,7 @@ export default function App() {
               {/* Rutas del módulo de Materiales (EPIS / Vestuario) */}
               <Route path="/materiales" element={<Materiales />} />
               <Route path="/materiales/nuevo" element={<FormMaterial />} />
+              <Route path="/materiales/:id" element={<MaterialDetalle />} />
               <Route path="/materiales/:id/editar" element={<FormMaterial key="editar-material" />} />
 
               {/* Rutas del módulo de Entregas de EPIS / Vestuario */}

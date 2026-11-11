@@ -11,7 +11,7 @@ export default function Vehiculos() {
     const [cargando, setCargando] = useState(true);
     const [error, setError] = useState(null);
     const navigate = useNavigate();
-    const [filtros, setFiltros] = useState({ busqueda: '', marca: '', tipo: '', anyo: '', combustible: '', estado: '' });
+    const [filtros, setFiltros] = useState({ busqueda: '', marca: '', tipo: '', anyo: '', estado: '' });
     const cambiarFiltro = (key, value) => setFiltros(current => ({ ...current, [key]: value }));
     const filtrados = filtrarVehiculos(vehiculos, filtros);
     const hayFiltros = Object.values(filtros).some(value => value.trim());
@@ -46,10 +46,6 @@ export default function Vehiculos() {
         {
             header: 'Marca / Modelo',
             accessor: (vehiculo) => `${vehiculo.marca || ''} ${vehiculo.modelo || ''}`.trim()
-        },
-        {
-            header: 'Combustible',
-            accessor: (vehiculo) => vehiculo.combustible || '—'
         },
         {
             header: 'Año',
@@ -88,12 +84,11 @@ export default function Vehiculos() {
             {error && <p className="text-red-500 mb-4">{error}</p>}
 
             <ListFilters id="vehiculos" busqueda={filtros.busqueda} onSearch={value => cambiarFiltro('busqueda', value)}
-                placeholder="Matrícula, marca, modelo, combustible…" active={hayFiltros} count={filtrados.length} total={vehiculos.length} loading={cargando} error={error}
-                onClear={() => setFiltros({ busqueda: '', marca: '', tipo: '', anyo: '', combustible: '', estado: '' })}
+                placeholder="Matrícula, marca, modelo…" active={hayFiltros} count={filtrados.length} total={vehiculos.length} loading={cargando} error={error}
+                onClear={() => setFiltros({ busqueda: '', marca: '', tipo: '', anyo: '', estado: '' })}
                 filters={[
                     { key: 'marca', label: 'Marca', allLabel: 'Todas las marcas' },
                     { key: 'tipo', label: 'Tipo', allLabel: 'Todos los tipos' },
-                    { key: 'combustible', label: 'Combustible', allLabel: 'Todos los combustibles' },
                     { key: 'anyo', label: 'Año', allLabel: 'Todos los años' },
                 ].map(filter => ({ ...filter, value: filtros[filter.key], onChange: value => cambiarFiltro(filter.key, value),
                     options: opcionesFiltro(vehiculos, filter.key).map(value => ({ value, label: value })) }))} />

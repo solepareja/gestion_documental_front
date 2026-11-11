@@ -82,7 +82,7 @@ export default function FormUsuario() {
             >
               <option value="USUARIO">Usuario general</option>
               <option value="ADMIN">Administrador</option>
-              <option value="KIOSKO">Kiosko</option>
+              <option value="KIOSKO">Kiosko (Tablet)</option>
             </CustomSelect>
             <p className="mt-1.5 text-xs text-gray-500">
               Los usuarios con rol <strong>Kiosko</strong> solo verán la pantalla táctil de entrega de material y no podrán navegar por el resto del sistema.

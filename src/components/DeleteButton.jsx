@@ -69,6 +69,11 @@ export default function DeleteButton({
         onConfirmar={handleConfirmDelete}
         titulo={titulo}
         nombreElemento={name}
+        mensaje={resource === 'vehiculos'
+          ? `¿Estás seguro de que deseas eliminar «${name}»? Se eliminará también su documentación y el transportista quedará sin este vehículo asignado. Esta acción no se puede deshacer.`
+          : resource === 'trabajadores'
+            ? `¿Estás seguro de que deseas eliminar «${name}»? Se eliminarán también su documentación, sus firmas y su historial de entregas. Esta acción no se puede deshacer.`
+          : undefined}
         cargando={deleting}
         error={error}
         textoConfirmar="Sí, eliminar"

@@ -317,11 +317,6 @@ export default function VehiculoDetalle() {
             </div>
 
             <div>
-              <span className="block text-xs font-medium text-gray-400 mb-1">Combustible</span>
-              <span className="text-sm font-semibold text-gray-800">{vehiculo.combustible || 'Sin definir'}</span>
-            </div>
-
-            <div>
               <span className="block text-xs font-medium text-gray-400 mb-1">Estado</span>
               <span className={`text-sm font-semibold ${vehiculo.activo !== false ? 'text-emerald-600' : 'text-gray-500'}`}>
                 {vehiculo.activo !== false ? 'Activo' : 'Inactivo'}

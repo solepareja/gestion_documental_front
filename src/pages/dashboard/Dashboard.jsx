@@ -201,7 +201,7 @@ export default function Dashboard() {
           tipo: 'material',
           categoria: 'MATERIAL',
           titulo: `Renovar ${linea.materialNombre || 'Material'} · ${ent.trabajadorNombre || 'Trabajador'}`,
-          subtitulo: `${linea.cantidad}x ${linea.materialNombre || 'Material'}${linea.talla ? ` (T.${linea.talla})` : ''}`,
+          subtitulo: `${linea.materialNombre || 'Material'}${linea.cantidad > 1 ? ` (${linea.cantidad} uds.)` : ''}${linea.talla ? ` (T.${linea.talla})` : ''}`,
           fecha: clave,
           rawFecha: linea.fechaRenovacion,
           enlace: `/entregas/${ent.id}`,
@@ -317,12 +317,6 @@ export default function Dashboard() {
             </svg>
             <span>Añadir documento</span>
           </Link>
-          <Link
-            to="/vehiculos/nuevo"
-            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200/80 active:scale-[0.98] border-0 text-gray-700 font-semibold text-xs sm:text-sm shadow-2xs hover:shadow-xs transition-all"
-          >
-            <span>Nuevo vehículo</span>
-          </Link>
         </div>
       </div>
 
@@ -352,12 +346,6 @@ export default function Dashboard() {
               Documentos y carnets que requieren atención en las próximas semanas
             </p>
           </div>
-          <Link
-            to="/documentos"
-            className="text-xs font-semibold text-brand-600 hover:text-brand-700 hover:underline"
-          >
-            Ver todos los documentos →
-          </Link>
         </div>
 
         {proximosVencimientos.length === 0 ? (
