@@ -7,55 +7,83 @@ export default function useEditRecord(resource, id, setFormData) {
   useEffect(() => {
     if (!id) return;
     let active = true;
-    api.get(`/${resource}/${id}`).then(({ data }) => {
-      if (!active) return;
-      setFormData(current => Object.fromEntries(Object.keys(current).map(key => {
-        let value = data[key] ?? '';
-        if (key === 'activo') {
-          value = data[key] !== undefined && data[key] !== null ? Boolean(data[key]) : true;
-        }
-        if (key === 'rol') {
-          value = data['rol'] || (data['admin'] ? 'ADMIN' : 'USUARIO');
-        }
-        if (key === 'permisos') {
-          if (Array.isArray(data[key]) && data[key].length > 0) {
-            value = data[key].flatMap(p => {
-              if (!p.tipo) return [];
-              const tipos = String(p.tipo).split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
-              if (tipos.length <= 1) return [{ ...p, tipo: tipos[0] || p.tipo }];
-              return tipos.map(t => ({
-                id: null,
-                tipo: t,
-                fechaEmision: p.fechaEmision || '',
-                fechaCaducidad: p.fechaCaducidad || '',
-                observaciones: p.observaciones || ''
-              }));
-            });
-          } else if (data['tipoCarnet']) {
-            const tipos = String(data['tipoCarnet']).split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
-            value = tipos.map(tipo => ({
-              tipo,
-              fechaEmision: '',
-              fechaCaducidad: data['cadCarnet'] || '',
-              observaciones: ''
-            }));
-          } else {
-            value = [];
-          }
-        }
-        if (['cadCarnet', 'fechaEmision', 'fechaCaducidad'].includes(key) && value) {
-          value = Array.isArray(value)
-            ? value.map((part, index) => index === 0 ? part : String(part).padStart(2, '0')).join('-')
-            : value.includes('/') ? value.split('/').reverse().join('-') : value.slice(0, 10);
-        }
-        return [key, value];
-      })));
-      setState({ id, error: null });
-    }).catch(err => {
-      if (active) setState({ id, error: err.response?.status === 404
-        ? 'No se ha encontrado esta ficha.' : 'No se pudo cargar la ficha. Vuelve a intentarlo.' });
-    });
-    return () => { active = false; };
+    api
+      .get(`/${resource}/${id}`)
+      .then(({ data }) => {
+        if (!active) return;
+        setFormData((current) =>
+          Object.fromEntries(
+            Object.keys(current).map((key) => {
+              let value = data[key] ?? '';
+              if (key === 'activo') {
+                value = data[key] !== undefined && data[key] !== null ? Boolean(data[key]) : true;
+              }
+              if (key === 'rol') {
+                value = data['rol'] || (data['admin'] ? 'ADMIN' : 'USUARIO');
+              }
+              if (key === 'permisos') {
+                if (Array.isArray(data[key]) && data[key].length > 0) {
+                  value = data[key].flatMap((p) => {
+                    if (!p.tipo) return [];
+                    const tipos = String(p.tipo)
+                      .split(',')
+                      .map((s) => s.trim().toUpperCase())
+                      .filter(Boolean);
+                    if (tipos.length <= 1) return [{ ...p, tipo: tipos[0] || p.tipo }];
+                    return tipos.map((t) => ({
+                      id: null,
+                      tipo: t,
+                      fechaEmision: p.fechaEmision || '',
+                      fechaCaducidad: p.fechaCaducidad || '',
+                      observaciones: p.observaciones || '',
+                    }));
+                  });
+                } else if (data['tipoCarnet']) {
+                  const tipos = String(data['tipoCarnet'])
+                    .split(',')
+                    .map((s) => s.trim().toUpperCase())
+                    .filter(Boolean);
+                  value = tipos.map((tipo) => ({
+                    tipo,
+                    fechaEmision: '',
+                    fechaCaducidad: data['cadCarnet'] || '',
+                    observaciones: '',
+                  }));
+                } else {
+                  value = [];
+                }
+              }
+              if (['cadCarnet', 'fechaEmision', 'fechaCaducidad'].includes(key) && value) {
+                value = Array.isArray(value)
+                  ? value
+                      .map((part, index) => (index === 0 ? part : String(part).padStart(2, '0')))
+                      .join('-')
+                  : value.includes('/')
+                    ? value.split('/').reverse().join('-')
+                    : value.slice(0, 10);
+              }
+              return [key, value];
+            }),
+          ),
+        );
+        setState({ id, error: null });
+      })
+      .catch((err) => {
+        if (active)
+          setState({
+            id,
+            error:
+              err.response?.status === 404
+                ? 'No se ha encontrado esta ficha.'
+                : 'No se pudo cargar la ficha. Vuelve a intentarlo.',
+          });
+      });
+    return () => {
+      active = false;
+    };
   }, [resource, id, setFormData]);
-  return { loading: Boolean(id) && state.id !== id, loadError: state.id === id ? state.error : null };
+  return {
+    loading: Boolean(id) && state.id !== id,
+    loadError: state.id === id ? state.error : null,
+  };
 }

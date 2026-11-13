@@ -1,57 +1,38 @@
-import { useState, useEffect, useMemo } from 'react';
-import api from '../../services/api';
+import usePagedList from '../../components/usePagedList';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Button from '../../components/Button';
 import Table from '../../components/Table';
 import ListFilters from '../../components/ListFilters';
-import { filtrarTrabajadores, opcionesFiltro } from '../../services/filtros';
 
 export default function Trabajadores() {
-  const [trabajadores, setTrabajadores] = useState([]);
-  const [cargando, setCargando] = useState(true);
-  const [error, setError] = useState(null);
   const navigate = useNavigate();
 
   const [filtros, setFiltros] = useState({ busqueda: '', departamento: '' });
   const cambiarFiltro = (key, value) => setFiltros((prev) => ({ ...prev, [key]: value }));
-  const filtrados = filtrarTrabajadores(trabajadores, filtros);
+  const recarga = 0;
+  const {
+    data: trabajadores,
+    cargando,
+    error,
+    total,
+    opciones,
+    pagination,
+  } = usePagedList('trabajadores', filtros, recarga);
+  const filtrados = trabajadores;
   const hayFiltros = Boolean(filtros.busqueda.trim() || filtros.departamento);
 
-  const opcionesDepartamento = useMemo(() => {
-    const deps = opcionesFiltro(trabajadores, 'departamento').map((dep) => ({
-      value: dep,
-      label: dep,
-    }));
-    const haySinDepartamento = trabajadores.some(
-      (t) => !t.departamento || !t.departamento.trim()
-    );
-    if (haySinDepartamento) {
-      deps.push({ value: 'SIN_DEPARTAMENTO', label: 'Sin departamento' });
-    }
-    return deps;
-  }, [trabajadores]);
-
-  useEffect(() => {
-    const cargarTrabajadores = async () => {
-      try {
-        const response = await api.get("/trabajadores");
-        setTrabajadores(response.data || []);
-      } catch (err) {
-        console.error("Error al cargar los trabajadores", err);
-        setError("Error al cargar los trabajadores");
-      } finally {
-        setCargando(false);
-      }
-    };
-    cargarTrabajadores();
-  }, []);
+  const opcionesDepartamento = (opciones.departamento || []).map((value) => ({
+    value,
+    label: value === 'SIN_DEPARTAMENTO' ? 'Sin departamento' : value,
+  }));
 
   const columns = [
     {
       header: 'Nombre',
       render: (persona) => (
         <Link
-          to={"/trabajadores/" + persona.id}
+          to={'/trabajadores/' + persona.id}
           className="text-brand-600 hover:text-brand-800 hover:underline font-bold"
         >
           {persona.nombre}
@@ -63,9 +44,7 @@ export default function Trabajadores() {
     {
       header: 'Departamento',
       render: (p) => (
-        <span className="text-sm font-medium text-gray-700">
-          {p.departamento || '—'}
-        </span>
+        <span className="text-sm font-medium text-gray-700">{p.departamento || '—'}</span>
       ),
     },
     { header: 'Correo', width: '250px', accessor: 'correo' },
@@ -98,17 +77,25 @@ export default function Trabajadores() {
         <div className="flex items-center gap-2">
           <Link
             to="/entregas"
-            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200/80 active:scale-[0.98] border-0 text-gray-700 dark:text-gray-200 dark:bg-gray-800 dark:hover:bg-gray-750 font-semibold text-xs sm:text-sm transition-colors"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200/80 active:scale-[0.98] border-0 text-gray-700 font-semibold text-xs sm:text-sm transition-colors"
           >
-            <svg className="w-4 h-4 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <svg
+              className="w-4 h-4 text-brand-600"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
             <span>Ver entregas de EPIS</span>
           </Link>
 
-          <Button onClick={() => navigate('/trabajadores/nuevo')}>
-            + Añadir trabajador
-          </Button>
+          <Button onClick={() => navigate('/trabajadores/nuevo')}>+ Añadir trabajador</Button>
         </div>
       </div>
 
@@ -117,11 +104,11 @@ export default function Trabajadores() {
       <ListFilters
         id="trabajadores"
         busqueda={filtros.busqueda}
-        onSearch={value => cambiarFiltro('busqueda', value)}
+        onSearch={(value) => cambiarFiltro('busqueda', value)}
         placeholder="Buscar por nombre, apellidos, DNI, departamento o correo…"
         active={hayFiltros}
-        count={filtrados.length}
-        total={trabajadores.length}
+        count={total}
+        total={total}
         loading={cargando}
         error={error}
         onClear={() => setFiltros({ busqueda: '', departamento: '' })}
@@ -131,13 +118,14 @@ export default function Trabajadores() {
             label: 'Departamento',
             allLabel: 'Todos los departamentos',
             value: filtros.departamento,
-            onChange: value => cambiarFiltro('departamento', value),
+            onChange: (value) => cambiarFiltro('departamento', value),
             options: opcionesDepartamento,
           },
         ]}
       />
 
       <Table
+        pagination={pagination}
         columns={columns}
         data={filtrados}
         isLoading={cargando}

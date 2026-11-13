@@ -5,7 +5,6 @@ import { tiposDocumento, procesarDocumentosConHistorial } from '../../services/d
 import { useAuth } from '../../context/useAuth';
 import CalendarioVencimientos from '../../components/CalendarioVencimientos';
 
-
 function normalizarFechaAClave(fecha) {
   if (!fecha) return null;
   if (Array.isArray(fecha)) {
@@ -44,7 +43,7 @@ export default function Dashboard() {
       try {
         const [resDocs, resCond, resVeh, resEnt, resAvisos, resVestuario] = await Promise.all([
           api.get('/documentos').catch(() => ({ data: [] })),
-          api.get('/transportistas').catch(() => api.get('/conductores')).catch(() => ({ data: [] })),
+          api.get('/conductores').catch(() => ({ data: [] })),
           api.get('/vehiculos').catch(() => ({ data: [] })),
           api.get('/entregas').catch(() => ({ data: [] })),
           api.get('/avisos').catch(() => ({ data: [] })),
@@ -58,7 +57,11 @@ export default function Dashboard() {
           setEntregas(resEnt.data || []);
           setAvisos(resAvisos.data || []);
           setRenovacionVestuario(resVestuario.data);
-          setError(resVestuario.fallo ? 'No se pudo cargar el aviso general de vestuario. Recarga la página.' : null);
+          setError(
+            resVestuario.fallo
+              ? 'No se pudo cargar el aviso general de vestuario. Recarga la página.'
+              : null,
+          );
         }
       } catch {
         if (activo) setError('No se pudieron cargar todos los datos del panel.');
@@ -88,28 +91,41 @@ export default function Dashboard() {
       const esSeguro = doc.tipo === 'SEGURO';
 
       let categoria = 'DOCUMENTO';
-      let estiloClase = 'bg-brand-100/80 text-brand-800 border-0 dark:bg-brand-950/60 dark:text-brand-300';
+      let estiloClase = 'bg-brand-100/80 text-brand-800 border-0';
       if (esITV) {
         categoria = 'ITV';
-        estiloClase = 'bg-amber-100/90 text-amber-900 border-0 dark:bg-amber-950/60 dark:text-amber-300';
+        estiloClase = 'bg-amber-100/90 text-amber-900 border-0';
       } else if (esSeguro) {
         categoria = 'SEGURO';
-        estiloClase = 'bg-blue-100/90 text-blue-900 border-0 dark:bg-blue-950/60 dark:text-blue-300';
+        estiloClase = 'bg-blue-100/90 text-blue-900 border-0';
       }
 
       const subtituloPartes = [];
       if (doc.companiaAseguradora) subtituloPartes.push(doc.companiaAseguradora);
-      if (doc.numeroReferencia) subtituloPartes.push(esSeguro ? `Póliza: ${doc.numeroReferencia}` : `Ref: ${doc.numeroReferencia}`);
+      if (doc.numeroReferencia)
+        subtituloPartes.push(
+          esSeguro ? `Póliza: ${doc.numeroReferencia}` : `Ref: ${doc.numeroReferencia}`,
+        );
 
       let nombreEntidad = 'Vehículo';
-      let enlace = '/documentos';
-      if (doc.vehiculoId) {
+      let enlace = doc.id ? `/documentos/${doc.id}` : '/documentos';
+      if (doc.vehiculoId && doc.tipo) {
+        nombreEntidad = doc.vehiculoMatricula || 'Vehículo';
+        enlace = `/vehiculos/${doc.vehiculoId}/documentos/${doc.tipo}`;
+      } else if ((doc.transportistaId || doc.conductorId) && doc.tipo) {
+        const idTransportista = doc.transportistaId || doc.conductorId;
+        nombreEntidad = doc.transportistaNombre || doc.conductorNombre || 'Transportista';
+        enlace = `/${doc.conductorId ? 'conductores' : 'transportistas'}/${idTransportista}/documentos/${doc.tipo}`;
+      } else if (doc.trabajadorId && doc.tipo) {
+        nombreEntidad = doc.trabajadorNombre || 'Trabajador';
+        enlace = `/trabajadores/${doc.trabajadorId}/documentos/${doc.tipo}`;
+      } else if (doc.vehiculoId) {
         nombreEntidad = doc.vehiculoMatricula || 'Vehículo';
         enlace = `/vehiculos/${doc.vehiculoId}`;
       } else if (doc.transportistaId || doc.conductorId) {
         const idTransportista = doc.transportistaId || doc.conductorId;
         nombreEntidad = doc.transportistaNombre || doc.conductorNombre || 'Transportista';
-        enlace = `/transportistas/${idTransportista}`;
+        enlace = `/${doc.conductorId ? 'conductores' : 'transportistas'}/${idTransportista}`;
       } else if (doc.trabajadorId) {
         nombreEntidad = doc.trabajadorNombre || 'Trabajador';
         enlace = `/trabajadores/${doc.trabajadorId}`;
@@ -140,7 +156,10 @@ export default function Dashboard() {
       if (Array.isArray(cond.permisos) && cond.permisos.length > 0) {
         for (const p of cond.permisos) {
           if (!p.fechaCaducidad) continue;
-          const tipos = String(p.tipo || '').split(/[,;/]+/).map(s => s.trim()).filter(Boolean);
+          const tipos = String(p.tipo || '')
+            .split(/[,;/]+/)
+            .map((s) => s.trim())
+            .filter(Boolean);
           for (const t of tipos) {
             listaPermisos.push({
               id: p.id ? `${p.id}-${t}` : t,
@@ -150,7 +169,10 @@ export default function Dashboard() {
           }
         }
       } else if (cond.cadCarnet) {
-        const tipos = String(cond.tipoCarnet || '').split(/[,;/]+/).map(s => s.trim()).filter(Boolean);
+        const tipos = String(cond.tipoCarnet || '')
+          .split(/[,;/]+/)
+          .map((s) => s.trim())
+          .filter(Boolean);
         if (tipos.length > 0) {
           for (const t of tipos) {
             listaPermisos.push({
@@ -180,8 +202,8 @@ export default function Dashboard() {
           subtitulo: p.tipo ? `Tipo ${p.tipo}` : 'Carnet de conducir',
           fecha: clave,
           rawFecha: p.fechaCaducidad,
-          enlace: `/transportistas/${cond.id}`,
-          estiloClase: 'bg-purple-100/90 text-purple-900 border-0 dark:bg-purple-950/60 dark:text-purple-300',
+          enlace: `/conductores/${cond.id}`,
+          estiloClase: 'bg-purple-100/90 text-purple-900 border-0',
           estado: 'VIGENTE',
         });
       }
@@ -191,10 +213,14 @@ export default function Dashboard() {
     for (const ent of entregas) {
       if (!ent.lineas) continue;
       for (const linea of ent.lineas) {
-        if (linea.materialTipo === 'VESTUARIO' || !linea.fechaRenovacion || linea.estado === 'DEVUELTO') continue;
+        if (
+          linea.materialTipo === 'VESTUARIO' ||
+          !linea.fechaRenovacion ||
+          linea.estado === 'DEVUELTO'
+        )
+          continue;
         const clave = normalizarFechaAClave(linea.fechaRenovacion);
         if (!clave) continue;
-
 
         lista.push({
           id: `linea-${linea.id}`,
@@ -205,7 +231,7 @@ export default function Dashboard() {
           fecha: clave,
           rawFecha: linea.fechaRenovacion,
           enlace: `/entregas/${ent.id}`,
-          estiloClase: 'bg-teal-100/90 text-teal-900 border-0 dark:bg-teal-950/60 dark:text-teal-300',
+          estiloClase: 'bg-teal-100/90 text-teal-900 border-0',
           estado: 'VIGENTE',
         });
       }
@@ -213,13 +239,15 @@ export default function Dashboard() {
 
     if (renovacionVestuario?.proximaFecha) {
       lista.push({
-        id: 'renovacion-vestuario', tipo: 'vestuario', categoria: 'MATERIAL',
+        id: 'renovacion-vestuario',
+        tipo: 'vestuario',
+        categoria: 'MATERIAL',
         titulo: 'Renovación general de vestuario',
         subtitulo: 'Todo el vestuario · Cada 6 meses',
         fecha: normalizarFechaAClave(renovacionVestuario.proximaFecha),
         rawFecha: renovacionVestuario.proximaFecha,
         enlace: '/materiales?tipo=VESTUARIO',
-        estiloClase: 'bg-teal-100/90 text-teal-900 border-0 dark:bg-teal-950/60 dark:text-teal-300',
+        estiloClase: 'bg-teal-100/90 text-teal-900 border-0',
         estado: 'VIGENTE',
       });
     }
@@ -230,15 +258,15 @@ export default function Dashboard() {
       const clave = normalizarFechaAClave(av.fecha);
       if (!clave) continue;
 
-      let estiloClase = 'bg-blue-100/90 text-blue-900 border-0 dark:bg-blue-950/60 dark:text-blue-300';
+      let estiloClase = 'bg-blue-100/90 text-blue-900 border-0';
       if (av.prioridad === 'URGENTE') {
-        estiloClase = 'bg-rose-100/90 text-rose-900 border-0 dark:bg-rose-950/60 dark:text-rose-300';
+        estiloClase = 'bg-rose-100/90 text-rose-900 border-0';
       } else if (av.prioridad === 'IMPORTANTE') {
-        estiloClase = 'bg-amber-100/90 text-amber-900 border-0 dark:bg-amber-950/60 dark:text-amber-300';
+        estiloClase = 'bg-amber-100/90 text-amber-900 border-0';
       } else if (av.tipo === 'RECORDATORIO') {
-        estiloClase = 'bg-purple-100/90 text-purple-900 border-0 dark:bg-purple-950/60 dark:text-purple-300';
+        estiloClase = 'bg-purple-100/90 text-purple-900 border-0';
       } else if (av.tipo === 'EVENTO') {
-        estiloClase = 'bg-teal-100/90 text-teal-900 border-0 dark:bg-teal-950/60 dark:text-teal-300';
+        estiloClase = 'bg-teal-100/90 text-teal-900 border-0';
       }
 
       lista.push({
@@ -270,7 +298,11 @@ export default function Dashboard() {
   const proximosVencimientos = useMemo(() => {
     const hoyStr = new Date().toISOString().slice(0, 10);
     return eventos
-      .filter((ev) => (ev.fecha >= hoyStr || ev.tipo === 'vestuario') && (ev.tipo !== 'documento' || ev.avisos !== false))
+      .filter(
+        (ev) =>
+          (ev.fecha >= hoyStr || ev.tipo === 'vestuario') &&
+          (ev.tipo !== 'documento' || ev.avisos !== false),
+      )
       .sort((a, b) => a.fecha.localeCompare(b.fecha))
       .slice(0, 6);
   }, [eventos]);
@@ -284,7 +316,9 @@ export default function Dashboard() {
 
     const eventosConAviso = eventos.filter((ev) => ev.tipo !== 'documento' || ev.avisos !== false);
     const caducados = eventosConAviso.filter((ev) => ev.fecha < hoyStr).length;
-    const proximos = eventosConAviso.filter((ev) => ev.fecha >= hoyStr && ev.fecha <= limiteStr).length;
+    const proximos = eventosConAviso.filter(
+      (ev) => ev.fecha >= hoyStr && ev.fecha <= limiteStr,
+    ).length;
 
     return {
       totalVehiculos: vehiculos.length,
@@ -299,23 +333,24 @@ export default function Dashboard() {
       {/* Cabecera del Panel */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
-            Panel de Control
-          </h1>
-          <p className="text-sm font-light text-gray-500 mt-1">
-            Bienvenido/a, <span className="font-semibold text-gray-500">{usuario?.nombre || 'Usuario'}</span>. Calendario de control de flota y vencimientos.
-          </p>
+          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Calendario</h1>
+          <p className="text-sm font-light text-gray-500 mt-1">Calendario de vencimientos.</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
           <Link
-            to="/documentos/nuevo"
+            to="/entregas/nueva"
             className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 active:scale-[0.98] text-white font-semibold text-xs sm:text-sm shadow-xs hover:shadow-sm transition-all"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 4v16m8-8H4"
+              />
             </svg>
-            <span>Añadir documento</span>
+            <span>Entrega material</span>
           </Link>
         </div>
       </div>
@@ -326,7 +361,6 @@ export default function Dashboard() {
         </div>
       )}
 
-
       {/* Sección principal: Calendario de Vencimientos */}
       <section className="space-y-4">
         <CalendarioVencimientos
@@ -336,13 +370,11 @@ export default function Dashboard() {
         />
       </section>
 
-      <section className="bg-white dark:bg-gray-900 rounded-2xl sm:rounded-3xl border-0 p-6 shadow-xs">
+      <section className="bg-white rounded-2xl sm:rounded-3xl border-0 p-6 shadow-xs">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-base font-bold text-gray-900 dark:text-gray-100">
-              Próximos vencimientos
-            </h2>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+            <h2 className="text-base font-bold text-gray-900">Próximos vencimientos</h2>
+            <p className="text-xs text-gray-500 mt-0.5">
               Documentos y carnets que requieren atención en las próximas semanas
             </p>
           </div>
@@ -357,17 +389,21 @@ export default function Dashboard() {
             {proximosVencimientos.map((ev) => (
               <div
                 key={ev.id}
-                className="p-4 rounded-2xl border-0 bg-gray-50/80 dark:bg-gray-800/60 hover:bg-gray-100/80 dark:hover:bg-gray-800 transition-all flex flex-col justify-between gap-3 shadow-2xs"
+                className="p-4 rounded-2xl border-0 bg-gray-50/80 hover:bg-gray-100/80 transition-all flex flex-col justify-between gap-3 shadow-2xs"
               >
                 <div className="flex items-start justify-between gap-2">
-                  <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${ev.estiloClase}`}>
+                  <span
+                    className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${ev.estiloClase}`}
+                  >
                     {ev.categoria}
                   </span>
-                  <span className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full ${
-                    ev.tipo === 'material' 
-                      ? 'bg-teal-50 text-teal-800' 
-                      : 'bg-amber-50 text-amber-800'
-                  }`}>
+                  <span
+                    className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full ${
+                      ev.tipo === 'material'
+                        ? 'bg-teal-50 text-teal-800'
+                        : 'bg-amber-50 text-amber-800'
+                    }`}
+                  >
                     {ev.tipo === 'material' ? 'Renovación' : 'Por vencer'}
                   </span>
                 </div>
@@ -376,18 +412,32 @@ export default function Dashboard() {
                   <h3 className="text-sm font-bold text-gray-900">{ev.titulo}</h3>
                   <p className="text-xs text-gray-500 mt-0.5">{ev.subtitulo}</p>
                   <p className="text-xs text-gray-400 mt-1 font-medium">
-                    Fecha límite: <span className="text-gray-700 font-semibold">{ev.fecha.split('-').reverse().join('/')}</span>
+                    Fecha límite:{' '}
+                    <span className="text-gray-700 font-semibold">
+                      {ev.fecha.split('-').reverse().join('/')}
+                    </span>
                   </p>
                 </div>
 
                 {ev.enlace && (
                   <Link
                     to={ev.enlace}
+                    state={{ volver: '/calendario', volverTexto: 'Volver al Calendario' }}
                     className="text-xs font-semibold text-brand-600 hover:text-brand-700 hover:underline inline-flex items-center gap-1 pt-1"
                   >
                     <span>Ir al detalle</span>
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    <svg
+                      className="w-3.5 h-3.5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5l7 7-7 7"
+                      />
                     </svg>
                   </Link>
                 )}

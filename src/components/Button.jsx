@@ -33,13 +33,13 @@ export default function Button({
 
     // Botón secundario / acción (Superficie suave por contraste sin bordes)
     secondary:
-      'bg-gray-100 hover:bg-gray-200/80 active:scale-[0.98] text-gray-700 dark:text-gray-200 dark:bg-gray-800 dark:hover:bg-gray-750 border-0 shadow-none focus:ring-gray-300',
+      'bg-gray-100 hover:bg-gray-200/80 active:scale-[0.98] text-gray-700 border-0 shadow-none focus:ring-gray-300',
     outline:
-      'bg-gray-100 hover:bg-gray-200/80 active:scale-[0.98] text-gray-700 dark:text-gray-200 dark:bg-gray-800 dark:hover:bg-gray-750 border-0 shadow-none focus:ring-gray-300',
+      'bg-gray-100 hover:bg-gray-200/80 active:scale-[0.98] text-gray-700 border-0 shadow-none focus:ring-gray-300',
 
     // Botón de peligro (Suave por contraste sin bordes)
     danger:
-      'bg-red-500/10 text-red-600 hover:bg-red-500/20 active:scale-[0.98] border-0 dark:bg-red-950/40 dark:text-red-300 shadow-none focus:ring-red-300',
+      'bg-red-500/10 text-red-600 hover:bg-red-500/20 active:scale-[0.98] border-0 shadow-none focus:ring-red-300',
 
     // Peligro sólido
     'danger-solid':

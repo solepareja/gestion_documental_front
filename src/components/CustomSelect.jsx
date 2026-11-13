@@ -32,7 +32,7 @@ export default function CustomSelect({
   const opciones = React.useMemo(() => {
     if (Array.isArray(optionsProp) && optionsProp.length > 0) {
       return optionsProp.map((opt) =>
-        typeof opt === 'object' ? opt : { value: opt, label: String(opt) }
+        typeof opt === 'object' ? opt : { value: opt, label: String(opt) },
       );
     }
 
@@ -68,9 +68,7 @@ export default function CustomSelect({
   }, [optionsProp, children]);
 
   // Opción actualmente seleccionada
-  const opcionSeleccionada = opciones.find(
-    (o) => String(o.value) === String(value)
-  );
+  const opcionSeleccionada = opciones.find((o) => String(o.value) === String(value));
 
   // Cerrar al hacer clic fuera
   useEffect(() => {
@@ -153,13 +151,13 @@ export default function CustomSelect({
         onClick={() => setAbierto((prev) => !prev)}
         aria-haspopup="listbox"
         aria-expanded={abierto}
-        className={`w-full flex items-center justify-between gap-2 bg-gray-100/80 hover:bg-gray-200/60 dark:bg-gray-800 dark:hover:bg-gray-750 border-0 rounded-2xl ${alturaClasses} text-gray-800 dark:text-gray-100 shadow-none transition-all cursor-pointer ${
-          abierto
-            ? 'bg-white dark:bg-gray-950 ring-2 ring-brand-500 shadow-xs'
-            : ''
+        className={`w-full flex items-center justify-between gap-2 bg-gray-100/80 hover:bg-gray-200/60 border-0 rounded-2xl ${alturaClasses} text-gray-800 shadow-none transition-all cursor-pointer ${
+          abierto ? 'bg-white ring-2 ring-brand-500 shadow-xs' : ''
         } ${className}`}
       >
-        <span className={`truncate ${!opcionSeleccionada ? 'text-gray-400 dark:text-gray-500 font-normal' : 'font-medium'}`}>
+        <span
+          className={`truncate ${!opcionSeleccionada ? 'text-gray-400 font-normal' : 'font-medium'}`}
+        >
           {opcionSeleccionada ? opcionSeleccionada.label : placeholder}
         </span>
 
@@ -184,7 +182,7 @@ export default function CustomSelect({
         <div
           role="listbox"
           tabIndex={-1}
-          className={`absolute left-0 z-50 w-full min-w-[160px] bg-white dark:bg-gray-900 rounded-2xl border-0 shadow-2xl p-1.5 max-h-60 overflow-y-auto ring-1 ring-black/5 dark:ring-white/10 ${
+          className={`absolute left-0 z-50 w-full min-w-[160px] bg-white rounded-2xl border-0 shadow-2xl p-1.5 max-h-60 overflow-y-auto ring-1 ring-black/5 ${
             abrirHaciaArriba
               ? 'bottom-full mb-1.5 animate-in fade-in slide-in-from-bottom-2 duration-150'
               : 'top-full mt-1.5 animate-in fade-in slide-in-from-top-2 duration-150'
@@ -200,7 +198,7 @@ export default function CustomSelect({
                 return (
                   <div
                     key={`group-${opt.label}-${idx}`}
-                    className="px-3 pt-2.5 pb-1 text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 select-none border-t first:border-t-0 border-gray-100 dark:border-gray-800"
+                    className="px-3 pt-2.5 pb-1 text-[11px] font-bold uppercase tracking-wider text-gray-400 select-none border-t first:border-t-0 border-gray-100"
                   >
                     {opt.label}
                   </div>
@@ -218,8 +216,8 @@ export default function CustomSelect({
                     opt.disabled
                       ? 'opacity-40 cursor-not-allowed text-gray-400'
                       : estaSeleccionado
-                      ? 'bg-brand-50 dark:bg-brand-950/40 text-brand-600 dark:text-brand-400 font-semibold'
-                      : 'text-gray-700 dark:text-gray-200 hover:bg-brand-50/70 dark:hover:bg-gray-800 hover:text-brand-600'
+                        ? 'bg-brand-50 text-brand-600 font-semibold'
+                        : 'text-gray-700 hover:bg-brand-50/70 hover:text-brand-600'
                   }`}
                 >
                   <span className="truncate">{opt.label}</span>

@@ -18,7 +18,7 @@ export default function NotificationBell() {
   const [renovacionTick, setRenovacionTick] = useState(0);
 
   useEffect(() => {
-    const actualizar = () => setRenovacionTick(tick => tick + 1);
+    const actualizar = () => setRenovacionTick((tick) => tick + 1);
     window.addEventListener('renovacion-vestuario-actualizada', actualizar);
     return () => window.removeEventListener('renovacion-vestuario-actualizada', actualizar);
   }, []);
@@ -53,7 +53,7 @@ export default function NotificationBell() {
       try {
         const [resDocs, resCond, resVestuario] = await Promise.all([
           api.get('/documentos').catch(() => ({ data: [] })),
-          api.get('/transportistas').catch(() => api.get('/conductores')).catch(() => ({ data: [] })),
+          api.get('/conductores').catch(() => ({ data: [] })),
           api.get('/materiales/renovacion-vestuario'),
         ]);
 
@@ -89,19 +89,39 @@ export default function NotificationBell() {
 
             const descPartes = [];
             if (doc.companiaAseguradora) descPartes.push(doc.companiaAseguradora);
-            if (doc.numeroReferencia) descPartes.push(doc.tipo === 'SEGURO' ? `Póliza: ${doc.numeroReferencia}` : `Ref: ${doc.numeroReferencia}`);
-            const descripcion = descPartes.length > 0 ? descPartes.join(' · ') : `Vehículo ${matricula}`;
+            if (doc.numeroReferencia)
+              descPartes.push(
+                doc.tipo === 'SEGURO'
+                  ? `Póliza: ${doc.numeroReferencia}`
+                  : `Ref: ${doc.numeroReferencia}`,
+              );
+            const descripcion =
+              descPartes.length > 0 ? descPartes.join(' · ') : `Vehículo ${matricula}`;
+
+            let enlace = '/documentos';
+            if (doc.vehiculoId && doc.tipo) {
+              enlace = `/vehiculos/${doc.vehiculoId}/documentos/${doc.tipo}`;
+            } else if ((doc.transportistaId || doc.conductorId) && doc.tipo) {
+              enlace = `/${doc.conductorId ? 'conductores' : 'transportistas'}/${doc.transportistaId || doc.conductorId}/documentos/${doc.tipo}`;
+            } else if (doc.trabajadorId && doc.tipo) {
+              enlace = `/trabajadores/${doc.trabajadorId}/documentos/${doc.tipo}`;
+            } else if (doc.vehiculoId) {
+              enlace = `/vehiculos/${doc.vehiculoId}`;
+            } else if (doc.id) {
+              enlace = `/documentos/${doc.id}`;
+            }
 
             items.push({
               id: `doc-${doc.id}`,
-              categoria: doc.tipo === 'ITV' ? 'ITV' : doc.tipo === 'SEGURO' ? 'Seguro' : 'Documento',
+              categoria:
+                doc.tipo === 'ITV' ? 'ITV' : doc.tipo === 'SEGURO' ? 'Seguro' : 'Documento',
               titulo: `${nombreTipo} · ${matricula}`,
               descripcion,
               fechaLimite: fechaDocumentoVisible(doc.fechaCaducidad),
               dias,
               esCaducado,
               estadoTexto,
-              enlace: doc.vehiculoId ? `/vehiculos/${doc.vehiculoId}` : '/documentos',
+              enlace,
             });
           }
         }
@@ -114,7 +134,10 @@ export default function NotificationBell() {
           if (Array.isArray(cond.permisos) && cond.permisos.length > 0) {
             for (const p of cond.permisos) {
               if (!p.fechaCaducidad) continue;
-              const tipos = String(p.tipo || '').split(/[,;/]+/).map(s => s.trim()).filter(Boolean);
+              const tipos = String(p.tipo || '')
+                .split(/[,;/]+/)
+                .map((s) => s.trim())
+                .filter(Boolean);
               for (const t of tipos) {
                 listaPermisos.push({
                   id: p.id ? `${p.id}-${t}` : t,
@@ -124,7 +147,10 @@ export default function NotificationBell() {
               }
             }
           } else if (cond.cadCarnet) {
-            const tipos = String(cond.tipoCarnet || '').split(/[,;/]+/).map(s => s.trim()).filter(Boolean);
+            const tipos = String(cond.tipoCarnet || '')
+              .split(/[,;/]+/)
+              .map((s) => s.trim())
+              .filter(Boolean);
             if (tipos.length > 0) {
               for (const t of tipos) {
                 listaPermisos.push({
@@ -163,7 +189,7 @@ export default function NotificationBell() {
               dias,
               esCaducado,
               estadoTexto,
-              enlace: `/transportistas/${cond.id}`,
+              enlace: `/conductores/${cond.id}`,
             });
           }
         }
@@ -180,11 +206,14 @@ export default function NotificationBell() {
             fechaLimite: fechaDocumentoVisible(fechaVestuario),
             dias: diasVestuario,
             esCaducado: diasVestuario < 0,
-            estadoTexto: diasVestuario < 0
-              ? `Renovación pendiente desde hace ${Math.abs(diasVestuario)} días`
-              : diasVestuario === 0 ? 'Renovación prevista hoy'
-              : diasVestuario === 1 ? 'Renovación prevista mañana'
-              : `Renovación en ${diasVestuario} días`,
+            estadoTexto:
+              diasVestuario < 0
+                ? `Renovación pendiente desde hace ${Math.abs(diasVestuario)} días`
+                : diasVestuario === 0
+                  ? 'Renovación prevista hoy'
+                  : diasVestuario === 1
+                    ? 'Renovación prevista mañana'
+                    : `Renovación en ${diasVestuario} días`,
             enlace: '/materiales?tipo=VESTUARIO',
           });
         }
@@ -227,11 +256,16 @@ export default function NotificationBell() {
         aria-expanded={abierto}
         className={`relative p-2 rounded-xl transition-all focus:outline-none cursor-pointer ${
           abierto
-            ? 'bg-brand-50 text-brand-600 ring-2 ring-brand-200 dark:bg-brand-950 dark:text-brand-300 dark:ring-brand-700'
-            : 'text-gray-500 hover:text-brand-600 hover:bg-brand-50/60 dark:text-gray-400 dark:hover:text-brand-400 dark:hover:bg-gray-800'
+            ? 'bg-brand-50 text-brand-600 ring-2 ring-brand-200'
+            : 'text-gray-500 hover:text-brand-600 hover:bg-brand-50/60'
         }`}
       >
-        <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg
+          className="w-5 h-5 sm:w-6 sm:h-6"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -254,14 +288,14 @@ export default function NotificationBell() {
 
       {/* Menú desplegable flotante */}
       {abierto && (
-        <div className="fixed inset-x-3 top-18 sm:absolute sm:top-full sm:right-0 sm:inset-x-auto sm:mt-2 sm:w-96 rounded-3xl bg-white dark:bg-gray-900 shadow-2xl border-0 z-50 overflow-hidden max-h-[calc(100vh-80px)] flex flex-col animate-in fade-in zoom-in-95 duration-150">
+        <div className="fixed inset-x-3 top-18 sm:absolute sm:top-full sm:right-0 sm:inset-x-auto sm:mt-2 sm:w-96 rounded-3xl bg-white shadow-2xl border-0 z-50 overflow-hidden max-h-[calc(100vh-80px)] flex flex-col animate-in fade-in zoom-in-95 duration-150">
           {/* Cabecera del desplegable */}
-          <div className="p-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+          <div className="p-4 bg-white border-b border-gray-200">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <h3 className="text-sm font-bold text-gray-900 dark:text-white">Notificaciones</h3>
+                <h3 className="text-sm font-bold text-gray-900">Notificaciones</h3>
                 {total > 0 && (
-                  <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-brand-100 dark:bg-brand-950 text-brand-800 dark:text-brand-300">
+                  <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-brand-100 text-brand-800">
                     {total}
                   </span>
                 )}
@@ -273,14 +307,14 @@ export default function NotificationBell() {
 
             {/* Selector de pestañas / filtro */}
             {total > 0 && (
-              <div className="flex items-center gap-1 mt-3 bg-gray-100/80 dark:bg-gray-800 p-1 rounded-xl text-xs font-semibold">
+              <div className="flex items-center gap-1 mt-3 bg-gray-100/80 p-1 rounded-xl text-xs font-semibold">
                 <button
                   type="button"
                   onClick={() => setFiltro('TODAS')}
                   className={`flex-1 py-1 text-center rounded-lg transition-all cursor-pointer ${
                     filtro === 'TODAS'
-                      ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-xs font-bold'
-                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                      ? 'bg-white text-gray-900 shadow-xs font-bold'
+                      : 'text-gray-500 hover:text-gray-800'
                   }`}
                 >
                   Todas ({total})
@@ -290,8 +324,8 @@ export default function NotificationBell() {
                   onClick={() => setFiltro('CADUCADAS')}
                   className={`flex-1 py-1 text-center rounded-lg transition-all cursor-pointer ${
                     filtro === 'CADUCADAS'
-                      ? 'bg-white dark:bg-gray-700 text-red-700 dark:text-red-400 shadow-xs font-bold'
-                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                      ? 'bg-white text-red-700 shadow-xs font-bold'
+                      : 'text-gray-500 hover:text-gray-800'
                   }`}
                 >
                   Caducadas ({caducadas.length})
@@ -301,8 +335,8 @@ export default function NotificationBell() {
                   onClick={() => setFiltro('POR_VENCER')}
                   className={`flex-1 py-1 text-center rounded-lg transition-all cursor-pointer ${
                     filtro === 'POR_VENCER'
-                      ? 'bg-white dark:bg-gray-700 text-amber-700 dark:text-amber-400 shadow-xs font-bold'
-                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                      ? 'bg-white text-amber-700 shadow-xs font-bold'
+                      : 'text-gray-500 hover:text-gray-800'
                   }`}
                 >
                   Próximas ({porVencer.length})
@@ -312,21 +346,26 @@ export default function NotificationBell() {
           </div>
 
           {/* Lista de Notificaciones */}
-          <div className="max-h-88 overflow-y-auto divide-y divide-gray-200 dark:divide-gray-700">
+          <div className="max-h-88 overflow-y-auto divide-y divide-gray-200">
             {notificacionesFiltradas.length === 0 ? (
               <div className="p-8 text-center">
-                <div className="w-12 h-12 mx-auto rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-2.5">
+                <div className="w-12 h-12 mx-auto rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-2.5">
                   <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
                   </svg>
                 </div>
-                <p className="text-sm font-bold text-gray-800 dark:text-gray-200">¡Todo al día!</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <p className="text-sm font-bold text-gray-800">¡Todo al día!</p>
+                <p className="text-xs text-gray-500 mt-1">
                   {filtro === 'CADUCADAS'
                     ? 'No hay ningún documento ni carnet caducado.'
                     : filtro === 'POR_VENCER'
-                    ? 'No hay vencimientos programados para los próximos 30 días.'
-                    : 'No tienes documentos caducados ni vencimientos pendientes este mes.'}
+                      ? 'No hay vencimientos programados para los próximos 30 días.'
+                      : 'No tienes documentos caducados ni vencimientos pendientes este mes.'}
                 </p>
               </div>
             ) : (
@@ -334,28 +373,47 @@ export default function NotificationBell() {
                 <Link
                   key={item.id}
                   to={item.enlace}
+                  state={{ volver: '/calendario', volverTexto: 'Volver al Calendario' }}
                   onClick={() => setAbierto(false)}
                   className={`group p-3.5 flex items-start gap-3 transition-colors ${
                     item.esCaducado
-                      ? 'hover:bg-red-50/40 dark:hover:bg-red-950/30 bg-red-50/10'
-                      : 'hover:bg-amber-50/40 dark:hover:bg-gray-800/60 bg-white dark:bg-gray-900'
+                      ? 'hover:bg-red-50/40 bg-red-50/10'
+                      : 'hover:bg-amber-50/40 bg-white'
                   }`}
                 >
                   {/* Icono de tipo / severidad */}
                   <div
                     className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border-0 mt-0.5 ${
-                      item.esCaducado
-                        ? 'bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-400'
-                        : 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400'
+                      item.esCaducado ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-700'
                     }`}
                   >
                     {item.esCaducado ? (
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                        />
                       </svg>
                     ) : (
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
                       </svg>
                     )}
                   </div>
@@ -367,21 +425,20 @@ export default function NotificationBell() {
                       </span>
                       <span
                         className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border-0 ${
-                          item.esCaducado
-                            ? 'bg-red-50 dark:bg-red-950/60 text-red-700 dark:text-red-400'
-                            : 'bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-400'
+                          item.esCaducado ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-800'
                         }`}
                       >
                         {item.estadoTexto}
                       </span>
                     </div>
 
-                    <h4 className="text-xs font-bold text-gray-900 dark:text-gray-100 group-hover:text-brand-700 dark:group-hover:text-brand-400 truncate">
+                    <h4 className="text-xs font-bold text-gray-900 group-hover:text-brand-700 truncate">
                       {item.titulo}
                     </h4>
-                    <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate mt-0.5">{item.descripcion}</p>
+                    <p className="text-[11px] text-gray-500 truncate mt-0.5">{item.descripcion}</p>
                     <p className="text-[11px] text-gray-400 mt-1">
-                      Fecha límite: <span className="font-semibold text-gray-600 dark:text-gray-300">{item.fechaLimite}</span>
+                      Fecha límite:{' '}
+                      <span className="font-semibold text-gray-600">{item.fechaLimite}</span>
                     </p>
                   </div>
                 </Link>
@@ -390,18 +447,18 @@ export default function NotificationBell() {
           </div>
 
           {/* Pie de navegación rápida */}
-          <div className="p-3 bg-gray-50/80 dark:bg-gray-950 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between text-xs">
+          <div className="p-3 bg-gray-50/80 border-t border-gray-200 flex items-center justify-between text-xs">
             <Link
               to="/"
               onClick={() => setAbierto(false)}
-              className="text-brand-700 dark:text-brand-400 hover:text-brand-800 font-semibold hover:underline"
+              className="text-brand-700 hover:text-brand-800 font-semibold hover:underline"
             >
               Ver en el calendario →
             </Link>
             <Link
               to="/documentos"
               onClick={() => setAbierto(false)}
-              className="text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 font-medium"
+              className="text-gray-500 hover:text-gray-800 font-medium"
             >
               Documentación
             </Link>

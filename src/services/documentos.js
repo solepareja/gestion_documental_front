@@ -20,8 +20,25 @@ export const tiposDocumentoConductor = {
   AEAT: 'Certificado corriente de pago AEAT',
 };
 
+// El autónomo conserva todos los tipos que ya tenía disponibles.
 export const tiposDocumentoTransportista = tiposDocumentoConductor;
 
+export const tiposDocumentoEmpresa = {
+  MODELO_036_037: tiposDocumentoConductor.MODELO_036_037,
+  CERTIFICADO_SEG_SOCIAL: tiposDocumentoConductor.CERTIFICADO_SEG_SOCIAL,
+  AEAT: tiposDocumentoConductor.AEAT,
+};
+
+export const tiposDocumentoEmpleado = {
+  ALTA_TRABAJADOR: 'Alta del trabajador en la Seguridad Social',
+};
+
+export function documentosPorTipoTransportista(tipo) {
+  if (tipo === 'EMPRESA') return tiposDocumentoEmpresa;
+  if (tipo === 'CONDUCTOR') return tiposDocumentoEmpleado;
+  if (tipo === 'AUTONOMO') return { RETA: tiposDocumentoConductor.RETA, ...tiposDocumentoEmpresa };
+  return tiposDocumentoTransportista;
+}
 
 export const tiposDocumento = {
   ...tiposDocumentoVehiculo,
@@ -39,7 +56,8 @@ export const estadosDocumento = {
 
 export function fechaDocumentoVisible(fecha) {
   if (!fecha) return '—';
-  if (Array.isArray(fecha)) return `${String(fecha[2]).padStart(2, '0')}/${String(fecha[1]).padStart(2, '0')}/${fecha[0]}`;
+  if (Array.isArray(fecha))
+    return `${String(fecha[2]).padStart(2, '0')}/${String(fecha[1]).padStart(2, '0')}/${fecha[0]}`;
   return fecha.includes('-') ? fecha.slice(0, 10).split('-').reverse().join('/') : fecha;
 }
 
@@ -108,13 +126,16 @@ export function procesarDocumentosConHistorial(documentos) {
     if (doc.estado === 'ANULADO') continue;
     const entidadId = doc.vehiculoId
       ? `v_${doc.vehiculoId}`
-      : (doc.transportistaId || doc.conductorId)
-      ? `c_${doc.transportistaId || doc.conductorId}`
-      : doc.trabajadorId
-      ? `t_${doc.trabajadorId}`
-      : `d_${doc.id || 0}`;
+      : doc.transportistaId
+        ? `t_${doc.transportistaId}`
+        : doc.conductorId
+          ? `c_${doc.conductorId}`
+          : doc.trabajadorId
+            ? `t_${doc.trabajadorId}`
+            : `d_${doc.id || 0}`;
     const key = `${entidadId}_${doc.tipo}`;
-    const fechaVal = normalizarFechaValor(doc.fechaCaducidad) || normalizarFechaValor(doc.fechaEmision);
+    const fechaVal =
+      normalizarFechaValor(doc.fechaCaducidad) || normalizarFechaValor(doc.fechaEmision);
 
     if (!grupos.has(key)) {
       grupos.set(key, []);
@@ -140,11 +161,13 @@ export function procesarDocumentosConHistorial(documentos) {
 
     const entidadId = doc.vehiculoId
       ? `v_${doc.vehiculoId}`
-      : (doc.transportistaId || doc.conductorId)
-      ? `c_${doc.transportistaId || doc.conductorId}`
-      : doc.trabajadorId
-      ? `t_${doc.trabajadorId}`
-      : `d_${doc.id || 0}`;
+      : doc.transportistaId
+        ? `t_${doc.transportistaId}`
+        : doc.conductorId
+          ? `c_${doc.conductorId}`
+          : doc.trabajadorId
+            ? `t_${doc.trabajadorId}`
+            : `d_${doc.id || 0}`;
     const key = `${entidadId}_${doc.tipo}`;
     const idActivo = idActivoPorGrupo.get(key);
     const tieneVarios = gruposConHistorial.has(key);
@@ -163,8 +186,14 @@ export function procesarDocumentosConHistorial(documentos) {
 export function resumirDocumentosPorTipo(documentos, tiposMap = tiposDocumentoVehiculo) {
   const procesados = procesarDocumentosConHistorial(documentos);
   return Object.entries(tiposMap).map(([tipo, nombre]) => {
-    const historial = procesados.filter(documento => documento.tipo === tipo).sort((a, b) =>
-      Number(b.esUltimo) - Number(a.esUltimo) || normalizarFechaValor(b.fechaEmision) - normalizarFechaValor(a.fechaEmision) || b.id - a.id);
+    const historial = procesados
+      .filter((documento) => documento.tipo === tipo)
+      .sort(
+        (a, b) =>
+          Number(b.esUltimo) - Number(a.esUltimo) ||
+          normalizarFechaValor(b.fechaEmision) - normalizarFechaValor(a.fechaEmision) ||
+          b.id - a.id,
+      );
     return { tipo, nombre, ultimo: historial[0] || null, total: historial.length };
   });
 }

@@ -1,8 +1,27 @@
-import React, { useState, useRef, useEffect, useId, useMemo } from 'react';
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useLayoutEffect,
+  useId,
+  useMemo,
+  useCallback,
+} from 'react';
+import { createPortal } from 'react-dom';
 
 const MESES = [
-  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+  'Enero',
+  'Febrero',
+  'Marzo',
+  'Abril',
+  'Mayo',
+  'Junio',
+  'Julio',
+  'Agosto',
+  'Septiembre',
+  'Octubre',
+  'Noviembre',
+  'Diciembre',
 ];
 
 const DIAS_SEMANA = ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá', 'Do'];
@@ -24,11 +43,13 @@ export default function CustomDatePicker({
   max,
   className = '',
   size = 'md', // 'sm' | 'md'
+  align = 'auto', // 'auto' | 'left' | 'right'
 }) {
   const [abierto, setAbierto] = useState(false);
-  const [abrirHaciaArriba, setAbrirHaciaArriba] = useState(false);
+  const [posicionEstilo, setPosicionEstilo] = useState({ top: 0, left: 0 });
   const [menuAbierto, setMenuAbierto] = useState(null); // null | 'mes' | 'anyo'
   const containerRef = useRef(null);
+  const popupRef = useRef(null);
   const menuHeaderRef = useRef(null);
   const yearItemRef = useRef(null);
   const generadoId = useId();
@@ -81,12 +102,77 @@ export default function CustomDatePicker({
     return lista;
   }, [min, max, anyoVista]);
 
-  // Cerrar al hacer clic fuera
+  const calcularPosicion = useCallback(() => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+
+    // Si el input está completamente fuera de la pantalla por scroll
+    if (rect.bottom < 0 || rect.top > window.innerHeight) {
+      setAbierto(false);
+      setMenuAbierto(null);
+      return;
+    }
+
+    const alturaDatePicker = 350;
+    const anchoDatePicker = 320;
+
+    const espacioAbajo = window.innerHeight - rect.bottom;
+    const espacioArriba = rect.top;
+    const abrirArriba = espacioAbajo < alturaDatePicker && espacioArriba > espacioAbajo;
+
+    // Alinear naturalmente a la izquierda del input de origen
+    let posX = rect.left;
+    if (align === 'right') {
+      posX = rect.right - anchoDatePicker;
+    }
+
+    // Asegurar que no se desborde fuera de la ventana
+    if (posX + anchoDatePicker > window.innerWidth - 12) {
+      posX = window.innerWidth - anchoDatePicker - 12;
+    }
+    if (posX < 12) {
+      posX = 12;
+    }
+
+    const posY = abrirArriba
+      ? Math.max(12, rect.top - alturaDatePicker - 6)
+      : Math.min(window.innerHeight - alturaDatePicker - 12, rect.bottom + 6);
+
+    setPosicionEstilo({
+      top: posY,
+      left: posX,
+      abrirArriba,
+    });
+  }, [align]);
+
+  const alternarAbierto = () => {
+    if (disabled) return;
+    if (!abierto) {
+      calcularPosicion();
+      setAbierto(true);
+    } else {
+      setAbierto(false);
+      setMenuAbierto(null);
+    }
+  };
+
+  // Sincronizar posición de forma inmediata antes del repintado del navegador
+  useLayoutEffect(() => {
+    if (abierto) {
+      calcularPosicion();
+    }
+  }, [abierto, calcularPosicion]);
+
+  // Manejo de eventos cuando está abierto (click fuera, escape, resize, scroll)
   useEffect(() => {
     if (!abierto) return;
 
     const manejarClickFuera = (e) => {
-      if (containerRef.current && !containerRef.current.contains(e.target)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target) &&
+        (!popupRef.current || !popupRef.current.contains(e.target))
+      ) {
         setAbierto(false);
         setMenuAbierto(null);
       }
@@ -102,40 +188,22 @@ export default function CustomDatePicker({
       }
     };
 
+    const onScrollOrResize = () => {
+      calcularPosicion();
+    };
+
     document.addEventListener('mousedown', manejarClickFuera);
     document.addEventListener('keydown', manejarEscape);
+    window.addEventListener('resize', onScrollOrResize);
+    window.addEventListener('scroll', onScrollOrResize, true);
+
     return () => {
       document.removeEventListener('mousedown', manejarClickFuera);
       document.removeEventListener('keydown', manejarEscape);
+      window.removeEventListener('resize', onScrollOrResize);
+      window.removeEventListener('scroll', onScrollOrResize, true);
     };
-  }, [abierto]);
-
-  // Detección automática de orientación (abrir hacia arriba si no cabe abajo)
-  useEffect(() => {
-    if (!abierto || !containerRef.current) return;
-
-    const calcularPosicion = () => {
-      if (!containerRef.current) return;
-      const rect = containerRef.current.getBoundingClientRect();
-      const espacioAbajo = window.innerHeight - rect.bottom;
-      const espacioArriba = rect.top;
-      const alturaDatePicker = 320;
-
-      if (espacioAbajo < alturaDatePicker && espacioArriba > espacioAbajo) {
-        setAbrirHaciaArriba(true);
-      } else {
-        setAbrirHaciaArriba(false);
-      }
-    };
-
-    calcularPosicion();
-    window.addEventListener('resize', calcularPosicion);
-    window.addEventListener('scroll', calcularPosicion, true);
-    return () => {
-      window.removeEventListener('resize', calcularPosicion);
-      window.removeEventListener('scroll', calcularPosicion, true);
-    };
-  }, [abierto]);
+  }, [abierto, calcularPosicion]);
 
   // Centrar el año seleccionado cuando se abre el desplegable de año
   useEffect(() => {
@@ -257,23 +325,21 @@ export default function CustomDatePicker({
   return (
     <div
       ref={containerRef}
-      className={`relative inline-block w-full text-left font-sans ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
+      className={`relative inline-block w-full text-left font-sans ${disabled ? 'opacity-60 cursor-not-allowed' : ''} ${abierto ? 'z-50' : 'z-10'}`}
     >
       {/* Botón trigger principal que simula el input */}
       <button
         type="button"
         id={inputId}
         disabled={disabled}
-        onClick={() => setAbierto((prev) => !prev)}
+        onClick={alternarAbierto}
         aria-haspopup="dialog"
         aria-expanded={abierto}
-        className={`w-full flex items-center justify-between gap-2 bg-gray-100/80 hover:bg-gray-200/60 dark:bg-gray-800 dark:hover:bg-gray-750 border-0 rounded-2xl ${alturaClasses} text-gray-800 dark:text-gray-100 shadow-none transition-all cursor-pointer ${
-          abierto
-            ? 'bg-white dark:bg-gray-950 ring-2 ring-brand-500 shadow-xs'
-            : ''
+        className={`w-full flex items-center justify-between gap-2 bg-gray-100/80 hover:bg-gray-200/60 border-0 rounded-2xl ${alturaClasses} text-gray-800 shadow-none transition-all cursor-pointer ${
+          abierto ? 'bg-white ring-2 ring-brand-500 shadow-xs' : ''
         } ${className}`}
       >
-        <span className={`truncate ${!textoVisible ? 'text-gray-400 dark:text-gray-500 font-normal' : 'font-medium'}`}>
+        <span className={`truncate ${!textoVisible ? 'text-gray-400 font-normal' : 'font-medium'}`}>
           {textoVisible || placeholder}
         </span>
 
@@ -285,9 +351,15 @@ export default function CustomDatePicker({
               tabIndex={0}
               onClick={limpiar}
               title="Borrar fecha"
-              className="p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-md hover:bg-gray-200/50 dark:hover:bg-gray-700 transition-colors cursor-pointer"
+              className="p-0.5 text-gray-400 hover:text-gray-600 rounded-md hover:bg-gray-200/50 transition-colors cursor-pointer"
             >
-              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg
+                className="w-3.5 h-3.5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
                 <line x1="18" y1="6" x2="6" y2="18" />
                 <line x1="6" y1="6" x2="18" y2="18" />
               </svg>
@@ -312,250 +384,286 @@ export default function CustomDatePicker({
         </div>
       </button>
 
-      {/* Desplegable con calendario flotante */}
-      {abierto && (
-        <div
-          role="dialog"
-          aria-label="Selector de fecha"
-          className={`absolute left-0 z-50 w-80 max-w-[calc(100vw-32px)] bg-white dark:bg-gray-900 rounded-3xl border-0 shadow-2xl p-3.5 select-none ring-1 ring-black/5 dark:ring-white/10 ${
-            abrirHaciaArriba
-              ? 'bottom-full mb-1.5 animate-in fade-in slide-in-from-bottom-2 duration-150'
-              : 'top-full mt-1.5 animate-in fade-in slide-in-from-top-2 duration-150'
-          }`}
-        >
-          {/* Cabecera del calendario: flechas < >, mes y año con desplegables estilizados */}
-          <div ref={menuHeaderRef} className="relative flex items-center justify-between pb-3 border-b border-gray-100 dark:border-gray-800 mb-2.5">
-            <button
-              type="button"
-              onClick={mesAnterior}
-              className="w-8 h-8 flex items-center justify-center shrink-0 text-gray-500 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-gray-800 rounded-xl transition-colors cursor-pointer"
-              title="Mes anterior"
-              aria-label="Mes anterior"
+      {/* Desplegable con calendario flotante sobrepuesto en document.body */}
+      {abierto &&
+        createPortal(
+          <div
+            ref={popupRef}
+            role="dialog"
+            aria-label="Selector de fecha"
+            style={{
+              position: 'fixed',
+              top: `${posicionEstilo.top}px`,
+              left: `${posicionEstilo.left}px`,
+              zIndex: 9999,
+              transformOrigin: posicionEstilo.abrirArriba ? 'bottom left' : 'top left',
+            }}
+            className="w-80 max-w-[calc(100vw-24px)] bg-white rounded-3xl border-0 shadow-2xl p-3.5 select-none ring-1 ring-black/10 animate-in fade-in zoom-in-95 duration-100"
+          >
+            {/* Cabecera del calendario: flechas < >, mes y año con desplegables estilizados */}
+            <div
+              ref={menuHeaderRef}
+              className="relative flex items-center justify-between pb-3 border-b border-gray-100 mb-2.5"
             >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                <polyline points="15 18 9 12 15 6" />
-              </svg>
-            </button>
-
-            <div className="flex items-center gap-2">
-              {/* Desplegable estilizado de Mes con ancho fijo */}
-              <div className="relative shrink-0">
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setMenuAbierto((prev) => (prev === 'mes' ? null : 'mes'));
-                  }}
-                  className={`w-32 flex items-center justify-center gap-1.5 bg-gray-100/90 hover:bg-gray-200/80 dark:bg-gray-800 dark:hover:bg-gray-750 text-gray-800 dark:text-gray-100 font-bold text-sm py-1.5 px-2 rounded-2xl transition-colors cursor-pointer ${
-                    menuAbierto === 'mes' ? 'bg-white dark:bg-gray-950 ring-2 ring-brand-500 shadow-xs' : ''
-                  }`}
-                  aria-haspopup="listbox"
-                  aria-expanded={menuAbierto === 'mes'}
-                >
-                  <span className="truncate">{MESES[mesVista]}</span>
-                  <svg
-                    className={`w-3.5 h-3.5 text-brand-500 shrink-0 transition-transform duration-200 ${
-                      menuAbierto === 'mes' ? 'rotate-180' : 'rotate-0'
-                    }`}
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <polyline points="6 9 12 15 18 9" />
-                  </svg>
-                </button>
-
-                {menuAbierto === 'mes' && (
-                  <div
-                    role="listbox"
-                    className="absolute left-0 top-full mt-1.5 z-60 w-44 bg-white dark:bg-gray-900 rounded-2xl border-0 shadow-2xl p-1.5 max-h-56 overflow-y-auto ring-1 ring-black/5 dark:ring-white/10 animate-in fade-in duration-100"
-                  >
-                    {MESES.map((m, idx) => {
-                      const activo = idx === mesVista;
-                      return (
-                        <div
-                          key={m}
-                          role="option"
-                          aria-selected={activo}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setVistaFecha(new Date(anyoVista, idx, 1));
-                            setMenuAbierto(null);
-                          }}
-                          className={`flex items-center justify-between px-3 py-1.5 text-xs rounded-xl transition-all cursor-pointer select-none ${
-                            activo
-                              ? 'bg-brand-50 dark:bg-brand-950/40 text-brand-600 dark:text-brand-400 font-bold'
-                              : 'text-gray-700 dark:text-gray-200 hover:bg-brand-50/70 dark:hover:bg-gray-800 hover:text-brand-600'
-                          }`}
-                        >
-                          <span className="truncate">{m}</span>
-                          {activo && (
-                            <svg className="w-3.5 h-3.5 text-brand-500 shrink-0 ml-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                              <polyline points="20 6 9 17 4 12" />
-                            </svg>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-
-              {/* Desplegable estilizado de Año con ancho fijo */}
-              <div className="relative shrink-0">
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setMenuAbierto((prev) => (prev === 'anyo' ? null : 'anyo'));
-                  }}
-                  className={`w-20 flex items-center justify-center gap-1.5 bg-brand-50 hover:bg-brand-100/90 dark:bg-brand-950/60 dark:hover:bg-brand-900/60 text-brand-600 dark:text-brand-400 font-black text-sm py-1.5 px-2 rounded-2xl transition-colors cursor-pointer ${
-                    menuAbierto === 'anyo' ? 'bg-white dark:bg-gray-950 ring-2 ring-brand-500 shadow-xs' : ''
-                  }`}
-                  aria-haspopup="listbox"
-                  aria-expanded={menuAbierto === 'anyo'}
-                >
-                  <span>{anyoVista}</span>
-                  <svg
-                    className={`w-3.5 h-3.5 text-brand-500 shrink-0 transition-transform duration-200 ${
-                      menuAbierto === 'anyo' ? 'rotate-180' : 'rotate-0'
-                    }`}
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <polyline points="6 9 12 15 18 9" />
-                  </svg>
-                </button>
-
-                {menuAbierto === 'anyo' && (
-                  <div
-                    role="listbox"
-                    className="absolute right-0 top-full mt-1.5 z-60 w-32 bg-white dark:bg-gray-900 rounded-2xl border-0 shadow-2xl p-1.5 max-h-56 overflow-y-auto ring-1 ring-black/5 dark:ring-white/10 animate-in fade-in duration-100"
-                  >
-                    {aniosDisponibles.map((a) => {
-                      const activo = a === anyoVista;
-                      return (
-                        <div
-                          key={a}
-                          ref={activo ? yearItemRef : null}
-                          role="option"
-                          aria-selected={activo}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setVistaFecha(new Date(a, mesVista, 1));
-                            setMenuAbierto(null);
-                          }}
-                          className={`flex items-center justify-between px-3 py-1.5 text-xs rounded-xl transition-all cursor-pointer select-none ${
-                            activo
-                              ? 'bg-brand-50 dark:bg-brand-950/40 text-brand-600 dark:text-brand-400 font-bold'
-                              : 'text-gray-700 dark:text-gray-200 hover:bg-brand-50/70 dark:hover:bg-gray-800 hover:text-brand-600'
-                          }`}
-                        >
-                          <span>{a}</span>
-                          {activo && (
-                            <svg className="w-3.5 h-3.5 text-brand-500 shrink-0 ml-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                              <polyline points="20 6 9 17 4 12" />
-                            </svg>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={mesSiguiente}
-              className="p-1.5 text-gray-500 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-gray-800 rounded-xl transition-all cursor-pointer"
-              title="Mes siguiente"
-              aria-label="Mes siguiente"
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
-            </button>
-          </div>
-
-          {/* Días de la semana */}
-          <div className="grid grid-cols-7 text-center mb-1 text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
-            {DIAS_SEMANA.map((d) => (
-              <div key={d} className="py-1">
-                {d}
-              </div>
-            ))}
-          </div>
-
-          {/* Cuadrícula de días */}
-          <div className="grid grid-cols-7 gap-1">
-            {celdas.map((c, i) => {
-              if (!c.esMesActual) {
-                return (
-                  <div
-                    key={`vacio-${i}`}
-                    className="h-8 flex items-center justify-center text-xs text-gray-300 dark:text-gray-600 select-none"
-                  >
-                    {c.dia}
-                  </div>
-                );
-              }
-
-              const esSeleccionado = value && c.iso === value;
-              const deshabilitadoPorRango =
-                (min && c.iso < min) || (max && c.iso > max);
-
-              return (
-                <button
-                  key={c.iso}
-                  type="button"
-                  disabled={deshabilitadoPorRango}
-                  onClick={() => seleccionarDia(c)}
-                  className={`h-8 w-8 mx-auto flex items-center justify-center rounded-xl text-xs font-medium transition-all cursor-pointer ${
-                    deshabilitadoPorRango
-                      ? 'opacity-30 cursor-not-allowed text-gray-400'
-                      : esSeleccionado
-                      ? 'bg-brand-500 text-white font-bold shadow-xs scale-105'
-                      : c.esHoy
-                      ? 'border border-brand-300 text-brand-600 font-bold hover:bg-brand-50'
-                      : 'text-gray-700 dark:text-gray-200 hover:bg-brand-50 dark:hover:bg-gray-800 hover:text-brand-600'
-                  }`}
-                >
-                  {c.dia}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Pie con botón "Hoy" */}
-          <div className="pt-2.5 mt-2.5 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between text-xs">
-            <button
-              type="button"
-              onClick={irHoy}
-              className="text-brand-600 hover:text-brand-700 font-bold py-1 px-2 rounded-lg hover:bg-brand-50 transition-colors cursor-pointer"
-            >
-              Hoy
-            </button>
-
-            {value && (
               <button
                 type="button"
-                onClick={limpiar}
-                className="text-gray-400 hover:text-gray-600 py-1 px-2 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                onClick={mesAnterior}
+                className="w-8 h-8 flex items-center justify-center shrink-0 text-gray-500 hover:text-brand-600 hover:bg-brand-50 rounded-xl transition-colors cursor-pointer"
+                title="Mes anterior"
+                aria-label="Mes anterior"
               >
-                Limpiar
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                >
+                  <polyline points="15 18 9 12 15 6" />
+                </svg>
               </button>
-            )}
-          </div>
-        </div>
-      )}
+
+              <div className="flex items-center gap-2">
+                {/* Desplegable estilizado de Mes con ancho fijo */}
+                <div className="relative shrink-0">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setMenuAbierto((prev) => (prev === 'mes' ? null : 'mes'));
+                    }}
+                    className={`w-32 flex items-center justify-center gap-1.5 bg-gray-100/90 hover:bg-gray-200/80 text-gray-800 font-bold text-sm py-1.5 px-2 rounded-2xl transition-colors cursor-pointer ${
+                      menuAbierto === 'mes' ? 'bg-white ring-2 ring-brand-500 shadow-xs' : ''
+                    }`}
+                    aria-haspopup="listbox"
+                    aria-expanded={menuAbierto === 'mes'}
+                  >
+                    <span className="truncate">{MESES[mesVista]}</span>
+                    <svg
+                      className={`w-3.5 h-3.5 text-brand-500 shrink-0 transition-transform duration-200 ${
+                        menuAbierto === 'mes' ? 'rotate-180' : 'rotate-0'
+                      }`}
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </button>
+
+                  {menuAbierto === 'mes' && (
+                    <div
+                      role="listbox"
+                      className="absolute left-0 top-full mt-1.5 z-60 w-44 bg-white rounded-2xl border-0 shadow-2xl p-1.5 max-h-56 overflow-y-auto ring-1 ring-black/5 animate-in fade-in duration-100"
+                    >
+                      {MESES.map((m, idx) => {
+                        const activo = idx === mesVista;
+                        return (
+                          <div
+                            key={m}
+                            role="option"
+                            aria-selected={activo}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setVistaFecha(new Date(anyoVista, idx, 1));
+                              setMenuAbierto(null);
+                            }}
+                            className={`flex items-center justify-between px-3 py-1.5 text-xs rounded-xl transition-all cursor-pointer select-none ${
+                              activo
+                                ? 'bg-brand-50 text-brand-600 font-bold'
+                                : 'text-gray-700 hover:bg-brand-50/70 hover:text-brand-600'
+                            }`}
+                          >
+                            <span className="truncate">{m}</span>
+                            {activo && (
+                              <svg
+                                className="w-3.5 h-3.5 text-brand-500 shrink-0 ml-2"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2.5"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              >
+                                <polyline points="20 6 9 17 4 12" />
+                              </svg>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Desplegable estilizado de Año con ancho fijo */}
+                <div className="relative shrink-0">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setMenuAbierto((prev) => (prev === 'anyo' ? null : 'anyo'));
+                    }}
+                    className={`w-20 flex items-center justify-center gap-1.5 bg-brand-50 hover:bg-brand-100/90 text-brand-600 font-black text-sm py-1.5 px-2 rounded-2xl transition-colors cursor-pointer ${
+                      menuAbierto === 'anyo' ? 'bg-white ring-2 ring-brand-500 shadow-xs' : ''
+                    }`}
+                    aria-haspopup="listbox"
+                    aria-expanded={menuAbierto === 'anyo'}
+                  >
+                    <span>{anyoVista}</span>
+                    <svg
+                      className={`w-3.5 h-3.5 text-brand-500 shrink-0 transition-transform duration-200 ${
+                        menuAbierto === 'anyo' ? 'rotate-180' : 'rotate-0'
+                      }`}
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </button>
+
+                  {menuAbierto === 'anyo' && (
+                    <div
+                      role="listbox"
+                      className="absolute right-0 top-full mt-1.5 z-60 w-32 bg-white rounded-2xl border-0 shadow-2xl p-1.5 max-h-56 overflow-y-auto ring-1 ring-black/5 animate-in fade-in duration-100"
+                    >
+                      {aniosDisponibles.map((a) => {
+                        const activo = a === anyoVista;
+                        return (
+                          <div
+                            key={a}
+                            ref={activo ? yearItemRef : null}
+                            role="option"
+                            aria-selected={activo}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setVistaFecha(new Date(a, mesVista, 1));
+                              setMenuAbierto(null);
+                            }}
+                            className={`flex items-center justify-between px-3 py-1.5 text-xs rounded-xl transition-all cursor-pointer select-none ${
+                              activo
+                                ? 'bg-brand-50 text-brand-600 font-bold'
+                                : 'text-gray-700 hover:bg-brand-50/70 hover:text-brand-600'
+                            }`}
+                          >
+                            <span>{a}</span>
+                            {activo && (
+                              <svg
+                                className="w-3.5 h-3.5 text-brand-500 shrink-0 ml-2"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2.5"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              >
+                                <polyline points="20 6 9 17 4 12" />
+                              </svg>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={mesSiguiente}
+                className="p-1.5 text-gray-500 hover:text-brand-600 hover:bg-brand-50 rounded-xl transition-all cursor-pointer"
+                title="Mes siguiente"
+                aria-label="Mes siguiente"
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                >
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Días de la semana */}
+            <div className="grid grid-cols-7 text-center mb-1 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+              {DIAS_SEMANA.map((d) => (
+                <div key={d} className="py-1">
+                  {d}
+                </div>
+              ))}
+            </div>
+
+            {/* Cuadrícula de días */}
+            <div className="grid grid-cols-7 gap-1">
+              {celdas.map((c, i) => {
+                if (!c.esMesActual) {
+                  return (
+                    <div
+                      key={`vacio-${i}`}
+                      className="h-8 flex items-center justify-center text-xs text-gray-300 select-none"
+                    >
+                      {c.dia}
+                    </div>
+                  );
+                }
+
+                const esSeleccionado = value && c.iso === value;
+                const deshabilitadoPorRango = (min && c.iso < min) || (max && c.iso > max);
+
+                return (
+                  <button
+                    key={c.iso}
+                    type="button"
+                    disabled={deshabilitadoPorRango}
+                    onClick={() => seleccionarDia(c)}
+                    className={`h-8 w-8 mx-auto flex items-center justify-center rounded-xl text-xs font-medium transition-all cursor-pointer ${
+                      deshabilitadoPorRango
+                        ? 'opacity-30 cursor-not-allowed text-gray-400'
+                        : esSeleccionado
+                          ? 'bg-brand-500 text-white font-bold shadow-xs scale-105'
+                          : c.esHoy
+                            ? 'border border-brand-300 text-brand-600 font-bold hover:bg-brand-50'
+                            : 'text-gray-700 hover:bg-brand-50 hover:text-brand-600'
+                    }`}
+                  >
+                    {c.dia}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Pie con botón "Hoy" */}
+            <div className="pt-2.5 mt-2.5 border-t border-gray-100 flex items-center justify-between text-xs">
+              <button
+                type="button"
+                onClick={irHoy}
+                className="text-brand-600 hover:text-brand-700 font-bold py-1 px-2 rounded-lg hover:bg-brand-50 transition-colors cursor-pointer"
+              >
+                Hoy
+              </button>
+
+              {value && (
+                <button
+                  type="button"
+                  onClick={limpiar}
+                  className="text-gray-400 hover:text-gray-600 py-1 px-2 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                >
+                  Limpiar
+                </button>
+              )}
+            </div>
+          </div>,
+          document.body,
+        )}
 
       {/* Input nativo oculto para compatibilidad con validaciones */}
       {required && (

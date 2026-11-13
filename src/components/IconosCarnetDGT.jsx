@@ -4,50 +4,93 @@
  */
 
 // AM: Ciclomotor / Scooter
-export function IconoAM({ className = "w-8 h-4 text-gray-800" }) {
+export function IconoAM({ className = 'w-8 h-4 text-gray-800' }) {
   return (
     <svg viewBox="0 0 32 16" fill="currentColor" className={className} aria-label="Ciclomotor AM">
       <circle cx="6" cy="12" r="3" fill="none" stroke="currentColor" strokeWidth="1.6" />
       <circle cx="6" cy="12" r="1.1" />
       <circle cx="26" cy="12" r="3" fill="none" stroke="currentColor" strokeWidth="1.6" />
       <circle cx="26" cy="12" r="1.1" />
-      <path d="M6 12 L11 12 L14 13 L19 13 L22 8 L24 6.5 L23 4.5 L25 4.5 L26 6.5 L25 12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+      <path
+        d="M6 12 L11 12 L14 13 L19 13 L22 8 L24 6.5 L23 4.5 L25 4.5 L26 6.5 L25 12"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="none"
+      />
       <path d="M5 8.5 C7 7 12 7 14 9.5 L12 12 L8 12 Z" />
-      <path d="M22 4.5 L25 4.5 L26.5 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+      <path
+        d="M22 4.5 L25 4.5 L26.5 6"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        fill="none"
+      />
     </svg>
   );
 }
 
 // A1: Motocicleta ligera hasta 125cc
-export function IconoA1({ className = "w-8 h-4 text-gray-800" }) {
+export function IconoA1({ className = 'w-8 h-4 text-gray-800' }) {
   return (
     <svg viewBox="0 0 32 16" fill="currentColor" className={className} aria-label="Motocicleta A1">
       <circle cx="6" cy="12" r="3" fill="none" stroke="currentColor" strokeWidth="1.6" />
       <circle cx="26" cy="12" r="3" fill="none" stroke="currentColor" strokeWidth="1.6" />
-      <path d="M6 12 L11 9 L17 9 L22 6 L25 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" fill="none" />
-      <path d="M11 9 L14 12 L24 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+      <path
+        d="M6 12 L11 9 L17 9 L22 6 L25 5"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        fill="none"
+      />
+      <path
+        d="M11 9 L14 12 L24 12"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        fill="none"
+      />
       <path d="M10 7.5 C12 6.5 15 6.5 18 8 L16 10 L9 9.5 Z" />
-      <path d="M23 4 L26 6 L25 12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" fill="none" />
+      <path
+        d="M23 4 L26 6 L25 12"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        fill="none"
+      />
     </svg>
   );
 }
 
 // A2: Motocicleta media hasta 35kW
-export function IconoA2({ className = "w-8 h-4 text-gray-800" }) {
+export function IconoA2({ className = 'w-8 h-4 text-gray-800' }) {
   return (
     <svg viewBox="0 0 32 16" fill="currentColor" className={className} aria-label="Motocicleta A2">
       <circle cx="6" cy="12" r="3" fill="none" stroke="currentColor" strokeWidth="1.6" />
       <circle cx="26" cy="12" r="3" fill="none" stroke="currentColor" strokeWidth="1.6" />
-      <path d="M6 12 L12 8.5 L18 8.5 L22 5.5 L26 12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" fill="none" />
+      <path
+        d="M6 12 L12 8.5 L18 8.5 L22 5.5 L26 12"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        fill="none"
+      />
       <path d="M9 7 C12 5.5 16 5.5 19 7.5 L17 11 L10 9.5 Z" />
       <path d="M12 8.5 L14 12 L20 12" stroke="currentColor" strokeWidth="1.6" fill="none" />
-      <path d="M22 3.5 L25 5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" fill="none" />
+      <path
+        d="M22 3.5 L25 5"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        fill="none"
+      />
     </svg>
   );
 }
 
 // A: Motocicleta grande
-export function IconoA({ className = "w-8 h-4 text-gray-800" }) {
+export function IconoA({ className = 'w-8 h-4 text-gray-800' }) {
   return (
     <svg viewBox="0 0 32 16" fill="currentColor" className={className} aria-label="Motocicleta A">
       <circle cx="6" cy="12" r="3" fill="none" stroke="currentColor" strokeWidth="1.8" />
@@ -55,13 +98,19 @@ export function IconoA({ className = "w-8 h-4 text-gray-800" }) {
       <path d="M19 6.5 L24 3 L27 5.5 L26 12" stroke="currentColor" strokeWidth="1.6" fill="none" />
       <path d="M8 8 C11 5.5 17 5 21 6.5 L19 11.5 L10 10.5 Z" />
       <path d="M6 12 L12 9 L15 12 L21 12" stroke="currentColor" strokeWidth="1.6" fill="none" />
-      <path d="M22 2.5 L25 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" fill="none" />
+      <path
+        d="M22 2.5 L25 4"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        fill="none"
+      />
     </svg>
   );
 }
 
 // B1: Cuadriciclo / Micro-furgoneta (dibujo exacto del carnet)
-export function IconoB1({ className = "w-8 h-4 text-gray-800" }) {
+export function IconoB1({ className = 'w-8 h-4 text-gray-800' }) {
   return (
     <svg viewBox="0 0 32 16" fill="currentColor" className={className} aria-label="Cuadriciclo B1">
       <path d="M3 12 L3 5.5 C3 5 3.5 4.5 4 4.5 L18 4.5 L23 8 L28 8.5 C28.5 8.5 29 9 29 9.5 L29 12 L26.5 12 A 2.5 2.5 0 0 0 21.5 12 L10.5 12 A 2.5 2.5 0 0 0 5.5 12 Z" />
@@ -76,7 +125,7 @@ export function IconoB1({ className = "w-8 h-4 text-gray-800" }) {
 }
 
 // B: Turismo / Coche (hatchback exacto del carnet)
-export function IconoB({ className = "w-9 h-4 text-gray-800" }) {
+export function IconoB({ className = 'w-9 h-4 text-gray-800' }) {
   return (
     <svg viewBox="0 0 34 16" fill="currentColor" className={className} aria-label="Turismo B">
       <path d="M2 12 L3.5 9 L8 5.5 L20 5.5 L25 8.5 L31 9.5 C31.5 9.5 32 10 32 10.5 L32 12 L28.5 12 A 2.5 2.5 0 0 0 23.5 12 L10.5 12 A 2.5 2.5 0 0 0 5.5 12 Z" />
@@ -91,7 +140,7 @@ export function IconoB({ className = "w-9 h-4 text-gray-800" }) {
 }
 
 // C1: Camión ligero rígido (caja cerrada y cabina unida)
-export function IconoC1({ className = "w-9 h-4 text-gray-800" }) {
+export function IconoC1({ className = 'w-9 h-4 text-gray-800' }) {
   return (
     <svg viewBox="0 0 34 16" fill="currentColor" className={className} aria-label="Camión C1">
       <path d="M2 12 L2 4 C2 3.5 2.5 3.5 3 3.5 L21 3.5 L21 5.5 L25 5.5 L29 8.5 L29 12 L26.5 12 A 2.5 2.5 0 0 0 21.5 12 L10.5 12 A 2.5 2.5 0 0 0 5.5 12 Z" />
@@ -107,7 +156,7 @@ export function IconoC1({ className = "w-9 h-4 text-gray-800" }) {
 }
 
 // C: Camión pesado rígido (caja larga con doble eje trasero)
-export function IconoC({ className = "w-10 h-4 text-gray-800" }) {
+export function IconoC({ className = 'w-10 h-4 text-gray-800' }) {
   return (
     <svg viewBox="0 0 38 16" fill="currentColor" className={className} aria-label="Camión pesado C">
       <path d="M2 12 L2 3.5 C2 3 2.5 3 3 3 L24 3 L24 5 L28 5 L33 8.5 L33 12 L30.5 12 A 2.4 2.4 0 0 0 25.5 12 L16.5 12 A 2.4 2.4 0 0 0 11.5 12 A 2.4 2.4 0 0 0 6.5 12 Z" />
@@ -125,7 +174,7 @@ export function IconoC({ className = "w-10 h-4 text-gray-800" }) {
 }
 
 // D1: Minibús hasta 16 plazas
-export function IconoD1({ className = "w-9 h-4 text-gray-800" }) {
+export function IconoD1({ className = 'w-9 h-4 text-gray-800' }) {
   return (
     <svg viewBox="0 0 34 16" fill="currentColor" className={className} aria-label="Minibús D1">
       <path d="M2 12 L2 5.5 C2 4.5 3 4.5 4 4.5 L27 4.5 L30 7.5 L30 12 L27.5 12 A 2.5 2.5 0 0 0 22.5 12 L10.5 12 A 2.5 2.5 0 0 0 5.5 12 Z" />
@@ -142,7 +191,7 @@ export function IconoD1({ className = "w-9 h-4 text-gray-800" }) {
 }
 
 // D: Autobús grande
-export function IconoD({ className = "w-10 h-4 text-gray-800" }) {
+export function IconoD({ className = 'w-10 h-4 text-gray-800' }) {
   return (
     <svg viewBox="0 0 40 16" fill="currentColor" className={className} aria-label="Autobús D">
       <path d="M2 12 L2 5 C2 4 3 4 4 4 L33 4 L36 7 L36 12 L33.5 12 A 2.5 2.5 0 0 0 28.5 12 L10.5 12 A 2.5 2.5 0 0 0 5.5 12 Z" />
@@ -160,9 +209,14 @@ export function IconoD({ className = "w-10 h-4 text-gray-800" }) {
 }
 
 // BE: Turismo + Remolque (remolque a la izquierda, coche tirando a la derecha)
-export function IconoBE({ className = "w-12 h-4 text-gray-800" }) {
+export function IconoBE({ className = 'w-12 h-4 text-gray-800' }) {
   return (
-    <svg viewBox="0 0 50 16" fill="currentColor" className={className} aria-label="Turismo con remolque BE">
+    <svg
+      viewBox="0 0 50 16"
+      fill="currentColor"
+      className={className}
+      aria-label="Turismo con remolque BE"
+    >
       {/* Remolque izquierdo */}
       <path d="M2 12 L2 6 C2 5.5 2.5 5.5 3 5.5 L15 5.5 L15 12 L11.5 12 A 2.5 2.5 0 0 0 6.5 12 Z" />
       <circle cx="9" cy="12" r="2.5" fill="none" stroke="currentColor" strokeWidth="1.6" />
@@ -183,9 +237,14 @@ export function IconoBE({ className = "w-12 h-4 text-gray-800" }) {
 }
 
 // C1E: Camión ligero + Remolque
-export function IconoC1E({ className = "w-13 h-4 text-gray-800" }) {
+export function IconoC1E({ className = 'w-13 h-4 text-gray-800' }) {
   return (
-    <svg viewBox="0 0 52 16" fill="currentColor" className={className} aria-label="Camión C1 con remolque C1E">
+    <svg
+      viewBox="0 0 52 16"
+      fill="currentColor"
+      className={className}
+      aria-label="Camión C1 con remolque C1E"
+    >
       {/* Remolque izquierdo */}
       <path d="M2 12 L2 5 C2 4.5 2.5 4.5 3 4.5 L15 4.5 L15 12 L11.5 12 A 2.5 2.5 0 0 0 6.5 12 Z" />
       <circle cx="9" cy="12" r="2.5" fill="none" stroke="currentColor" strokeWidth="1.6" />
@@ -207,9 +266,14 @@ export function IconoC1E({ className = "w-13 h-4 text-gray-800" }) {
 }
 
 // CE: Tráiler / Semirremolque articulado
-export function IconoCE({ className = "w-13 h-4 text-gray-800" }) {
+export function IconoCE({ className = 'w-13 h-4 text-gray-800' }) {
   return (
-    <svg viewBox="0 0 52 16" fill="currentColor" className={className} aria-label="Tráiler articulado CE">
+    <svg
+      viewBox="0 0 52 16"
+      fill="currentColor"
+      className={className}
+      aria-label="Tráiler articulado CE"
+    >
       {/* Semirremolque articulado izquierdo con doble eje */}
       <path d="M2 12 L2 3.5 C2 3 2.5 3 3 3 L32 3 L32 9 L28 9 L28 12 L17.5 12 A 2.4 2.4 0 0 0 12.5 12 A 2.4 2.4 0 0 0 7.5 12 Z" />
       <line x1="4" y1="5.5" x2="30" y2="5.5" stroke="white" strokeWidth="0.8" />
@@ -230,9 +294,14 @@ export function IconoCE({ className = "w-13 h-4 text-gray-800" }) {
 }
 
 // D1E: Minibús con remolque
-export function IconoD1E({ className = "w-13 h-4 text-gray-800" }) {
+export function IconoD1E({ className = 'w-13 h-4 text-gray-800' }) {
   return (
-    <svg viewBox="0 0 52 16" fill="currentColor" className={className} aria-label="Minibús con remolque D1E">
+    <svg
+      viewBox="0 0 52 16"
+      fill="currentColor"
+      className={className}
+      aria-label="Minibús con remolque D1E"
+    >
       {/* Remolque izquierdo */}
       <path d="M2 12 L2 5.5 C2 5 2.5 5 3 5 L14 5 L14 12 L11.5 12 A 2.5 2.5 0 0 0 6.5 12 Z" />
       <circle cx="9" cy="12" r="2.5" fill="none" stroke="currentColor" strokeWidth="1.6" />
@@ -254,9 +323,14 @@ export function IconoD1E({ className = "w-13 h-4 text-gray-800" }) {
 }
 
 // DE: Autobús con remolque
-export function IconoDE({ className = "w-14 h-4 text-gray-800" }) {
+export function IconoDE({ className = 'w-14 h-4 text-gray-800' }) {
   return (
-    <svg viewBox="0 0 54 16" fill="currentColor" className={className} aria-label="Autobús con remolque DE">
+    <svg
+      viewBox="0 0 54 16"
+      fill="currentColor"
+      className={className}
+      aria-label="Autobús con remolque DE"
+    >
       {/* Remolque izquierdo */}
       <path d="M2 12 L2 5.5 C2 5 2.5 5 3 5 L14 5 L14 12 L11.5 12 A 2.5 2.5 0 0 0 6.5 12 Z" />
       <circle cx="9" cy="12" r="2.5" fill="none" stroke="currentColor" strokeWidth="1.6" />

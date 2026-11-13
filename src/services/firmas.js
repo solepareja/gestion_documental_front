@@ -34,4 +34,3 @@ export const eliminarPlantillaDocumento = async (plantillaId) => {
   const response = await api.delete(`/firmas/plantillas/${plantillaId}`);
   return response.data;
 };
-

@@ -1,6 +1,6 @@
 /**
  * Validador oficial de DNI y NIE español.
- * 
+ *
  * DNI: 8 números + 1 letra (número % 23 mapeado a TRWAGMYFPDXBNJZSQVHLCKE).
  * NIE: Letra inicial (X=0, Y=1, Z=2) + 7 números + 1 letra.
  */
@@ -33,7 +33,8 @@ export function validarDniNie(valor) {
   if (!regexDni.test(limpio) && !regexNie.test(limpio)) {
     return {
       valido: false,
-      mensaje: 'Formato no válido. Introduce 8 dígitos y una letra (ej: 12345678Z) o un NIE (ej: X1234567L).',
+      mensaje:
+        'Formato no válido. Introduce 8 dígitos y una letra (ej: 12345678Z) o un NIE (ej: X1234567L).',
     };
   }
 

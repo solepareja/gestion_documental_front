@@ -1,3 +1,6 @@
+import Pagination from '../../components/Pagination';
+import useLocalPagination from '../../components/useLocalPagination';
+import SearchInput from '../../components/SearchInput';
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { obtenerDetallePlantilla, registrarFirma, obtenerPdfFirmado } from '../../services/firmas';
@@ -46,9 +49,10 @@ export default function FirmaDocumentoDetalle() {
       if (!prev) return prev;
       const nuevoFirmados = prev.firmadosCount + 1;
       const nuevoPendientes = Math.max(0, prev.pendientesCount - 1);
-      const nuevoPorcentaje = prev.totalRequeridos > 0
-        ? Math.round((nuevoFirmados / prev.totalRequeridos) * 1000) / 10
-        : 0;
+      const nuevoPorcentaje =
+        prev.totalRequeridos > 0
+          ? Math.round((nuevoFirmados / prev.totalRequeridos) * 1000) / 10
+          : 0;
       return {
         ...prev,
         firmadosCount: nuevoFirmados,
@@ -86,7 +90,10 @@ export default function FirmaDocumentoDetalle() {
       if (res && res.pdfBase64) {
         const link = document.createElement('a');
         link.href = res.pdfBase64;
-        const nombreLimpio = `${firma.trabajadorNombre}_${firma.trabajadorApellidos}`.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ_-]/g, '_');
+        const nombreLimpio = `${firma.trabajadorNombre}_${firma.trabajadorApellidos}`.replace(
+          /[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ_-]/g,
+          '_',
+        );
         link.download = `Firma_${detalle?.titulo || 'Documento'}_${nombreLimpio}.pdf`;
         link.click();
       } else {
@@ -100,18 +107,23 @@ export default function FirmaDocumentoDetalle() {
 
   // Filtrado en memoria
   const pendientesFiltrados = pendientes.filter((t) => {
-    const texto = `${t.nombre || ''} ${t.apellidos || ''} ${t.dni || ''} ${t.departamento || ''}`.toLowerCase();
+    const texto =
+      `${t.nombre || ''} ${t.apellidos || ''} ${t.dni || ''} ${t.departamento || ''}`.toLowerCase();
     return texto.includes(filtro.toLowerCase());
   });
 
   const firmadosFiltrados = firmados.filter((f) => {
-    const texto = `${f.trabajadorNombre || ''} ${f.trabajadorApellidos || ''} ${f.trabajadorDni || ''} ${f.trabajadorDepartamento || ''}`.toLowerCase();
+    const texto =
+      `${f.trabajadorNombre || ''} ${f.trabajadorApellidos || ''} ${f.trabajadorDni || ''} ${f.trabajadorDepartamento || ''}`.toLowerCase();
     return texto.includes(filtro.toLowerCase());
   });
 
+  const pagPendientes = useLocalPagination(pendientesFiltrados, `${plantillaId}-${filtro}`);
+  const pagFirmados = useLocalPagination(firmadosFiltrados, `${plantillaId}-${filtro}`);
+
   if (cargando) {
     return (
-      <div className="py-20 text-center text-sm text-gray-500 dark:text-gray-400">
+      <div className="py-20 text-center text-sm text-gray-500">
         Cargando documento y firmas asociadas...
       </div>
     );
@@ -130,7 +142,7 @@ export default function FirmaDocumentoDetalle() {
       {/* Botón Volver */}
       <Link
         to="/firmas"
-        className="inline-flex items-center gap-2 text-xs font-semibold text-brand-600 dark:text-brand-400 hover:text-brand-700 transition"
+        className="inline-flex items-center gap-2 text-xs font-semibold text-brand-600 hover:text-brand-700 transition"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
@@ -139,52 +151,46 @@ export default function FirmaDocumentoDetalle() {
       </Link>
 
       {/* Cabecera Principal con Métricas y Botones de Utilidad */}
-      <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 border border-gray-200/80 dark:border-gray-700/80 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-        
+      <div className="bg-white rounded-3xl p-6 border border-gray-200/80 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-6">
         {/* Título y descripción */}
         <div className="space-y-1 min-w-0 [overflow-wrap:anywhere]">
           <div className="inline-flex items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200/60 dark:border-blue-900/50">
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200/60">
               {detalle.colectivo}
             </span>
-            <span className="text-xs text-gray-400">• Total requeridos: {detalle.totalRequeridos}</span>
+            <span className="text-xs text-gray-400">
+              • Total requeridos: {detalle.totalRequeridos}
+            </span>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            {detalle.titulo}
-          </h1>
+          <h1 className="text-2xl font-bold text-gray-900">{detalle.titulo}</h1>
           {detalle.descripcion && (
-            <p className="text-sm text-gray-500 dark:text-gray-400 max-w-2xl">
-              {detalle.descripcion}
-            </p>
+            <p className="text-sm text-gray-500 max-w-2xl">{detalle.descripcion}</p>
           )}
         </div>
 
         {/* Métricas rápidas y Barra de Progreso */}
         <div className="flex flex-wrap items-center gap-4 shrink-0">
-          <div className="px-4 py-2.5 rounded-2xl bg-gray-50 dark:bg-gray-900/60 border border-gray-200/80 dark:border-gray-700/80">
+          <div className="px-4 py-2.5 rounded-2xl bg-gray-50 border border-gray-200/80">
             <BarraProgreso actual={detalle.firmadosCount} total={detalle.totalRequeridos} />
           </div>
-
         </div>
       </div>
 
       {/* Selector de Pestañas (Tabs) */}
-      <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-800 pb-px">
+      <div className="flex items-center justify-between border-b border-gray-200 pb-px">
         <nav className="flex space-x-6">
           <button
             onClick={() => setTabActiva('pendientes')}
             className={`py-3 px-1 border-b-2 text-sm font-bold flex items-center gap-2 transition ${
               tabActiva === 'pendientes'
-                ? 'border-brand-500 text-brand-600 dark:text-brand-400'
-                : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'
+                ? 'border-brand-500 text-brand-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
             <span>Pendientes</span>
             <span
               className={`px-2 py-0.5 rounded-full text-xs font-bold ${
-                pendientes.length > 0
-                  ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400'
-                  : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
+                pendientes.length > 0 ? 'bg-rose-100 text-rose-700' : 'bg-gray-100 text-gray-600'
               }`}
             >
               {pendientes.length}
@@ -195,12 +201,12 @@ export default function FirmaDocumentoDetalle() {
             onClick={() => setTabActiva('firmados')}
             className={`py-3 px-1 border-b-2 text-sm font-bold flex items-center gap-2 transition ${
               tabActiva === 'firmados'
-                ? 'border-brand-500 text-brand-600 dark:text-brand-400'
-                : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'
+                ? 'border-brand-500 text-brand-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
             <span>Firmados</span>
-            <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400">
+            <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700">
               {firmados.length}
             </span>
           </button>
@@ -208,26 +214,18 @@ export default function FirmaDocumentoDetalle() {
 
         {/* Buscador en la pestaña */}
         <div className="relative w-64 hidden sm:block">
-          <input
+          <SearchInput
             type="text"
             value={filtro}
             onChange={(e) => setFiltro(e.target.value)}
             placeholder={`Buscar en ${tabActiva}...`}
-            className="w-full pl-9 pr-3.5 py-2 text-xs rounded-2xl bg-gray-100/80 hover:bg-gray-200/60 dark:bg-gray-800 dark:hover:bg-gray-750 border-0 focus:outline-none focus:bg-white dark:focus:bg-gray-950 focus:ring-2 focus:ring-brand-500 text-gray-900 dark:text-gray-100 placeholder-gray-400 font-medium transition-all"
+            className="w-full pl-4 pr-3.5 py-2 text-xs rounded-2xl bg-gray-100/80 hover:bg-gray-200/60 border-0 focus:outline-none focus:bg-white focus:ring-2 focus:ring-brand-500 text-gray-900 placeholder-gray-400 font-medium transition-all"
           />
-          <svg
-            className="w-3.5 h-3.5 text-gray-400 absolute left-3 top-2.5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
         </div>
       </div>
 
       {/* Contenido de la Pestaña Activa */}
-      <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xs border-0 overflow-hidden">
+      <div className="bg-white rounded-3xl shadow-xs border-0 overflow-hidden">
         {tabActiva === 'pendientes' ? (
           /* TABLA PENDIENTES */
           pendientesFiltrados.length === 0 ? (
@@ -239,34 +237,40 @@ export default function FirmaDocumentoDetalle() {
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full text-sm border-0 border-collapse">
-                <thead className="bg-gray-100/75 dark:bg-gray-900 border-0">
+                <thead className="bg-gray-100/75 border-0">
                   <tr>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider border-0">
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider border-0">
                       Nombre del Trabajador
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider border-0">
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider border-0">
                       DNI / NIE
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider border-0">
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider border-0">
                       Puesto / Departamento
                     </th>
-                    <th className="px-6 py-4 text-right text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider border-0">
+                    <th className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider border-0">
                       Acción Inmediata
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white dark:bg-gray-900 border-0">
-                  {pendientesFiltrados.map((t) => (
-                    <tr key={t.id} className="even:bg-gray-50/70 dark:even:bg-gray-800/35 hover:bg-brand-500/10 dark:hover:bg-brand-500/15 transition-colors border-0">
-                      <td className="px-6 py-4 font-semibold text-gray-900 dark:text-white border-0">
-                        <Link to={`/trabajadores/${t.id}`} className="text-brand-600 dark:text-brand-400 hover:underline focus-visible:underline">
+                <tbody className="bg-white border-0">
+                  {pagPendientes.visibles.map((t) => (
+                    <tr
+                      key={t.id}
+                      className="even:bg-gray-50/70 hover:bg-brand-500/10 transition-colors border-0"
+                    >
+                      <td className="px-6 py-4 font-semibold text-gray-900 border-0">
+                        <Link
+                          to={`/trabajadores/${t.id}`}
+                          className="text-brand-600 hover:underline focus-visible:underline"
+                        >
                           {t.nombre} {t.apellidos}
                         </Link>
                       </td>
-                      <td className="px-6 py-4 text-xs font-mono text-gray-600 dark:text-gray-300 border-0">
+                      <td className="px-6 py-4 text-xs font-mono text-gray-600 border-0">
                         {t.dni}
                       </td>
-                      <td className="px-6 py-4 text-xs text-gray-600 dark:text-gray-300 border-0">
+                      <td className="px-6 py-4 text-xs text-gray-600 border-0">
                         {t.departamento || 'General'}
                       </td>
                       <td className="px-6 py-4 text-right border-0">
@@ -274,8 +278,18 @@ export default function FirmaDocumentoDetalle() {
                           onClick={() => setTrabajadorAFirmar(t)}
                           className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs transition-all active:scale-95 border-0 cursor-pointer"
                         >
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                          <svg
+                            className="w-3.5 h-3.5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                            />
                           </svg>
                           <span>Firmar ahora</span>
                         </button>
@@ -284,76 +298,100 @@ export default function FirmaDocumentoDetalle() {
                   ))}
                 </tbody>
               </table>
+              <Pagination
+                mostrarRecuento={false}
+                {...(tabActiva === 'pendientes'
+                  ? pagPendientes.pagination
+                  : pagFirmados.pagination)}
+              />
             </div>
           )
+        ) : /* TABLA FIRMADOS */
+        firmadosFiltrados.length === 0 ? (
+          <div className="py-16 text-center text-sm text-gray-400">
+            {firmados.length === 0
+              ? 'Aún no se ha registrado ninguna firma para este documento.'
+              : 'No se encontraron firmas registradas con ese criterio de búsqueda.'}
+          </div>
         ) : (
-          /* TABLA FIRMADOS */
-          firmadosFiltrados.length === 0 ? (
-            <div className="py-16 text-center text-sm text-gray-400">
-              {firmados.length === 0
-                ? 'Aún no se ha registrado ninguna firma para este documento.'
-                : 'No se encontraron firmas registradas con ese criterio de búsqueda.'}
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-sm border-0 border-collapse">
-                <thead className="bg-gray-100/75 dark:bg-gray-900 border-0">
-                  <tr>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider border-0">
-                      Trabajador Firmante
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider border-0">
-                      Fecha y Hora Exacta (Timestamp)
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider border-0">
-                      IP / Auditoría
-                    </th>
-                    <th className="px-6 py-4 text-right text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider border-0">
-                      Documento Firmado
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white dark:bg-gray-900 border-0">
-                  {firmadosFiltrados.map((f) => (
-                    <tr key={f.id} className="even:bg-gray-50/70 dark:even:bg-gray-800/35 hover:bg-brand-500/10 dark:hover:bg-brand-500/15 transition-colors border-0">
-                      <td className="px-6 py-4">
-                        <div className="font-semibold text-gray-900 dark:text-white">
-                          <Link to={`/trabajadores/${f.trabajadorId}`} className="text-brand-600 dark:text-brand-400 hover:underline focus-visible:underline">
-                            {f.trabajadorNombre} {f.trabajadorApellidos}
-                          </Link>
-                        </div>
-                        <div className="text-xs font-mono text-gray-400">{f.trabajadorDni}</div>
-                      </td>
-                      <td className="px-6 py-4 text-xs text-gray-700 dark:text-gray-300">
-                        {new Date(f.fechaFirma).toLocaleString('es-ES', {
-                          day: '2-digit',
-                          month: '2-digit',
-                          year: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                          second: '2-digit',
-                        })}
-                      </td>
-                      <td className="px-6 py-4 text-xs font-mono text-gray-400">
-                        {f.ipAddress || 'Interna / Kiosko'}
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <button
-                          onClick={() => descargarPdfDeFirma(f)}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-xl border-0 bg-gray-100 hover:bg-gray-200/80 dark:bg-gray-800 dark:hover:bg-gray-750 text-gray-700 dark:text-gray-200 transition cursor-pointer"
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-sm border-0 border-collapse">
+              <thead className="bg-gray-100/75 border-0">
+                <tr>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider border-0">
+                    Trabajador Firmante
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider border-0">
+                    Fecha y Hora Exacta (Timestamp)
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider border-0">
+                    IP / Auditoría
+                  </th>
+                  <th className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider border-0">
+                    Documento Firmado
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white border-0">
+                {pagFirmados.visibles.map((f) => (
+                  <tr
+                    key={f.id}
+                    className="even:bg-gray-50/70 hover:bg-brand-500/10 transition-colors border-0"
+                  >
+                    <td className="px-6 py-4">
+                      <div className="font-semibold text-gray-900">
+                        <Link
+                          to={`/trabajadores/${f.trabajadorId}`}
+                          className="text-brand-600 hover:underline focus-visible:underline"
                         >
-                          <svg className="w-3.5 h-3.5 text-brand-600 dark:text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                          </svg>
-                          <span>Descargar PDF</span>
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )
+                          {f.trabajadorNombre} {f.trabajadorApellidos}
+                        </Link>
+                      </div>
+                      <div className="text-xs font-mono text-gray-400">{f.trabajadorDni}</div>
+                    </td>
+                    <td className="px-6 py-4 text-xs text-gray-700">
+                      {new Date(f.fechaFirma).toLocaleString('es-ES', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                      })}
+                    </td>
+                    <td className="px-6 py-4 text-xs font-mono text-gray-400">
+                      {f.ipAddress || 'Interna / Kiosko'}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <button
+                        onClick={() => descargarPdfDeFirma(f)}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-xl border-0 bg-gray-100 hover:bg-gray-200/80 text-gray-700 transition cursor-pointer"
+                      >
+                        <svg
+                          className="w-3.5 h-3.5 text-brand-600"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                          />
+                        </svg>
+                        <span>Descargar PDF</span>
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <Pagination
+              mostrarRecuento={false}
+              {...(tabActiva === 'pendientes' ? pagPendientes.pagination : pagFirmados.pagination)}
+            />
+          </div>
         )}
       </div>
 

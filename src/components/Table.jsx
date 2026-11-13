@@ -1,3 +1,4 @@
+import Pagination from './Pagination';
 /**
  * Componente de Tabla reutilizable con estilo moderno:
  * - Bordes exteriores redondeados (rounded-2xl) y sombra suave.
@@ -7,27 +8,19 @@
  */
 
 export function TableHead({ children, className = '' }) {
-  return (
-    <thead className={`bg-gray-100/75 dark:bg-gray-950/80 border-0 ${className}`}>
-      {children}
-    </thead>
-  );
+  return <thead className={`bg-gray-100/75 border-0 ${className}`}>{children}</thead>;
 }
 
 export function TableBody({ children, className = '' }) {
-  return (
-    <tbody className={`bg-white dark:bg-gray-900 border-0 ${className}`}>
-      {children}
-    </tbody>
-  );
+  return <tbody className={`bg-white border-0 ${className}`}>{children}</tbody>;
 }
 
 export function TableRow({ children, onClick, className = '', hoverable = true }) {
   return (
     <tr
       onClick={onClick}
-      className={`border-0 transition-colors duration-150 even:bg-gray-50/70 dark:even:bg-gray-800/35 ${
-        hoverable ? 'hover:bg-brand-500/10 dark:hover:bg-brand-500/15' : ''
+      className={`border-0 transition-colors duration-150 even:bg-gray-50/70 ${
+        hoverable ? 'hover:bg-brand-500/10' : ''
       } ${onClick ? 'cursor-pointer' : ''} ${className}`}
     >
       {children}
@@ -42,7 +35,7 @@ export function TableHeader({ children, align = 'left', className = '' }) {
   return (
     <th
       scope="col"
-      className={`px-6 py-4 ${alignClass} text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider border-0 ${className}`}
+      className={`px-6 py-4 ${alignClass} text-xs font-bold text-gray-500 uppercase tracking-wider border-0 ${className}`}
     >
       {children}
     </th>
@@ -54,7 +47,9 @@ export function TableCell({ children, align = 'left', className = '' }) {
     align === 'right' ? 'text-right' : align === 'center' ? 'text-center' : 'text-left';
 
   return (
-    <td className={`px-6 py-4 ${alignClass} text-sm text-gray-800 dark:text-gray-200 align-middle border-0 [overflow-wrap:anywhere] ${className}`}>
+    <td
+      className={`px-6 py-4 ${alignClass} text-sm text-gray-800 align-middle border-0 [overflow-wrap:anywhere] ${className}`}
+    >
       {children}
     </td>
   );
@@ -77,6 +72,7 @@ function getCellValue(item, column, index) {
 }
 
 export default function Table({
+  pagination,
   columns,
   data,
   children,
@@ -92,9 +88,14 @@ export default function Table({
   // Modo composición mediante children
   if (children) {
     return (
-      <div className={`w-full overflow-hidden rounded-3xl bg-white dark:bg-gray-900 shadow-xs border-0 ${className}`}>
+      <div
+        className={`w-full overflow-hidden rounded-3xl bg-white shadow-xs border-0 ${className}`}
+      >
         <div className="overflow-x-auto">
-          <table style={{ minWidth }} className={`w-full table-fixed border-collapse text-left ${tableClassName}`}>
+          <table
+            style={{ minWidth }}
+            className={`w-full table-fixed border-collapse text-left ${tableClassName}`}
+          >
             {children}
           </table>
         </div>
@@ -104,11 +105,16 @@ export default function Table({
 
   // Modo declarativo (props columns y data)
   return (
-    <div className={`w-full overflow-hidden rounded-3xl bg-white dark:bg-gray-900 shadow-xs border-0 ${className}`}>
+    <div className={`w-full overflow-hidden rounded-3xl bg-white shadow-xs border-0 ${className}`}>
       <div className="overflow-x-auto">
-        <table style={{ minWidth }} className={`w-full table-fixed border-collapse text-left ${tableClassName}`}>
+        <table
+          style={{ minWidth }}
+          className={`w-full table-fixed border-collapse text-left ${tableClassName}`}
+        >
           <colgroup>
-            {columns?.map((col, idx) => <col key={idx} style={{ width: col.width }} />)}
+            {columns?.map((col, idx) => (
+              <col key={idx} style={{ width: col.width }} />
+            ))}
           </colgroup>
           <TableHead>
             <TableRow hoverable={false}>
@@ -130,7 +136,9 @@ export default function Table({
                 <TableRow key={`skeleton-row-${rIdx}`} hoverable={false}>
                   {columns?.map((col, cIdx) => (
                     <TableCell key={`skeleton-cell-${cIdx}`} align={col.align || 'left'}>
-                      <div className={`h-4 bg-gray-100 rounded animate-pulse w-3/4 ${col.align === 'right' ? 'ml-auto' : ''}`} />
+                      <div
+                        className={`h-4 bg-gray-100 rounded animate-pulse w-3/4 ${col.align === 'right' ? 'ml-auto' : ''}`}
+                      />
                     </TableCell>
                   ))}
                 </TableRow>
@@ -181,6 +189,7 @@ export default function Table({
           </TableBody>
         </table>
       </div>
+      {pagination && <Pagination {...pagination} />}
     </div>
   );
 }

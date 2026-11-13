@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useLocation } from 'react-router-dom';
 import api from '../../services/api';
 import { tiposDocumento } from '../../services/documentos';
 import Button from '../../components/Button';
@@ -8,37 +8,66 @@ import DocumentosTabla from '../../components/DocumentosTabla';
 export default function HistorialDocumento({ entidadTipo }) {
   const params = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const tipo = params.tipo;
 
-  const tipoEntidadEfectivo = entidadTipo || (params.vehiculoId ? 'vehiculo' : 'transportista');
-  const entidadId = params.vehiculoId || params.transportistaId || params.conductorId;
+  const tipoEntidadEfectivo =
+    entidadTipo ||
+    (params.vehiculoId ? 'vehiculo' : params.trabajadorId ? 'trabajador' : 'transportista');
+  const entidadId =
+    params.vehiculoId || params.transportistaId || params.conductorId || params.trabajadorId;
 
   const [state, setState] = useState(null);
-  const tipoValido = Boolean(tiposDocumento[tipo]);
+  const tipoValido = Boolean(tiposDocumento[tipo] || tipo);
 
-  const esTransportista = tipoEntidadEfectivo === 'transportista' || tipoEntidadEfectivo === 'conductor';
+  const endpoint =
+    tipoEntidadEfectivo === 'vehiculo'
+      ? `/vehiculos/${entidadId}`
+      : tipoEntidadEfectivo === 'trabajador'
+        ? `/trabajadores/${entidadId}`
+        : tipoEntidadEfectivo === 'conductor'
+          ? `/conductores/${entidadId}`
+          : `/transportistas/${entidadId}`;
 
-  const endpoint = tipoEntidadEfectivo === 'vehiculo'
-    ? `/vehiculos/${entidadId}`
-    : `/transportistas/${entidadId}`;
+  const rutaFicha =
+    tipoEntidadEfectivo === 'vehiculo'
+      ? `/vehiculos/${entidadId}`
+      : tipoEntidadEfectivo === 'trabajador'
+        ? `/trabajadores/${entidadId}`
+        : tipoEntidadEfectivo === 'conductor'
+          ? `/conductores/${entidadId}`
+          : `/transportistas/${entidadId}`;
 
-  const rutaFicha = tipoEntidadEfectivo === 'vehiculo'
-    ? `/vehiculos/${entidadId}`
-    : `/transportistas/${entidadId}`;
+  const etiquetaVolver =
+    tipoEntidadEfectivo === 'vehiculo'
+      ? 'la ficha del vehículo'
+      : tipoEntidadEfectivo === 'trabajador'
+        ? 'la ficha del trabajador'
+        : tipoEntidadEfectivo === 'conductor'
+          ? 'la ficha del conductor'
+          : 'la ficha del transportista';
 
-  const etiquetaVolver = tipoEntidadEfectivo === 'vehiculo'
-    ? 'la ficha del vehículo'
-    : 'la ficha del transportista';
+  const rutaVolver = location.state?.volver || rutaFicha;
+  const textoVolver = location.state?.volverTexto
+    ? location.state.volverTexto.startsWith('Volver')
+      ? location.state.volverTexto
+      : `Volver ${location.state.volverTexto}`
+    : `Volver a ${etiquetaVolver}`;
 
   useEffect(() => {
     if (!tipoValido || !entidadId) return;
     let active = true;
-    api.get(endpoint).then(({ data }) => {
-      if (active) setState({ entidadId, data });
-    }).catch(() => {
-      if (active) setState({ entidadId, error: 'No se pudo cargar la informaciÃ³n.' });
-    });
-    return () => { active = false; };
+    api
+      .get(endpoint)
+      .then(({ data }) => {
+        if (active) setState({ entidadId, data });
+      })
+      .catch(() => {
+        if (active) setState({ entidadId, error: 'No se pudo cargar la información.' });
+      });
+    return () => {
+      active = false;
+    };
   }, [endpoint, entidadId, tipoValido]);
 
   const current = state?.entidadId === entidadId ? state : null;
@@ -48,7 +77,7 @@ export default function HistorialDocumento({ entidadTipo }) {
   let subtexto = '';
   if (data) {
     if (tipoEntidadEfectivo === 'vehiculo') {
-      identificador = data.matricula || 'VehÃ­culo';
+      identificador = data.matricula || 'Vehículo';
       subtexto = `${data.marca || ''} ${data.modelo || ''}`.trim();
     } else {
       identificador = [data.nombre, data.apellidos].filter(Boolean).join(' ');
@@ -60,19 +89,38 @@ export default function HistorialDocumento({ entidadTipo }) {
 
   return (
     <div className="max-w-6xl mx-auto">
-      <Link
-        to={rutaFicha}
-        className="inline-flex items-center text-sm font-medium text-gray-500 hover:text-brand-600 transition-colors mb-5"
-      >
-        â† Volver a {etiquetaVolver}
-      </Link>
+      <div className="flex items-center gap-3 mb-5">
+        <Link
+          to={rutaVolver}
+          className="inline-flex items-center text-sm font-medium text-gray-500 hover:text-brand-600 transition-colors"
+        >
+          ← {textoVolver}
+        </Link>
+        {location.state?.volver && rutaFicha !== rutaVolver && (
+          <>
+            <span className="text-gray-300">|</span>
+            <Link
+              to={rutaFicha}
+              className="inline-flex items-center text-sm font-medium text-gray-500 hover:text-brand-600 transition-colors"
+            >
+              Ir a {etiquetaVolver} →
+            </Link>
+          </>
+        )}
+      </div>
 
       {!tipoValido ? (
-        <p role="alert" className="create-error">Tipo de documento no encontrado.</p>
+        <p role="alert" className="create-error">
+          Tipo de documento no encontrado.
+        </p>
       ) : current?.error ? (
-        <p role="alert" className="create-error">{current.error}</p>
+        <p role="alert" className="create-error">
+          {current.error}
+        </p>
       ) : !current ? (
-        <p role="status" className="text-sm text-gray-500">Cargando historialâ€¦</p>
+        <p role="status" className="text-sm text-gray-500">
+          Cargando historial…
+        </p>
       ) : (
         <>
           <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
@@ -81,11 +129,11 @@ export default function HistorialDocumento({ entidadTipo }) {
                 Historial de {tiposDocumento[tipo] || tipo}
               </h1>
               <p className="text-sm text-gray-500 mt-1">
-                {identificador} {subtexto ? `Â· ${subtexto}` : ''} â€” Ãšltima versiÃ³n y documentos histÃ³ricos renovados
+                {identificador} {subtexto ? ` · ${subtexto}` : ''}
               </p>
             </div>
             <Button onClick={() => navigate(`/documentos/nuevo${queryNuevo}`)}>
-              + AÃ±adir documento
+              + Añadir documento
             </Button>
           </div>
 

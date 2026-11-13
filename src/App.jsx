@@ -1,13 +1,15 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
-import { ThemeProvider } from './context/ThemeContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import MainLayout from './layouts/MainLayout';
 import Login from './pages/auth/Login';
 import Registro from './pages/auth/Registro';
 import Dashboard from './pages/dashboard/Dashboard';
+import Inicio from './pages/Inicio';
 import Vehiculos from './pages/vehiculos/Vehiculos';
 import Transportistas from './pages/transportistas/Transportistas';
+import Conductores from './pages/transportistas/Conductores';
+import FormConductor from './pages/transportistas/FormConductor';
 import VehiculoDetalle from './pages/vehiculos/VehiculoDetalle';
 import Usuarios from './pages/usuarios/Usuarios';
 import Trabajadores from './pages/trabajadores/Trabajadores';
@@ -27,15 +29,14 @@ import MaterialDetalle from './pages/materiales/MaterialDetalle';
 import Entregas from './pages/entregas/Entregas';
 import FormEntrega from './pages/entregas/FormEntrega';
 import EntregaDetalle from './pages/entregas/EntregaDetalle';
-import KioskoEntregas from './pages/kiosko/KioskoEntregas';
+import ModoTablet from './pages/kiosko/ModoTablet';
 import FirmasResumen from './pages/firmas/FirmasResumen';
 import FirmaDocumentoDetalle from './pages/firmas/FirmaDocumentoDetalle';
 
 export default function App() {
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <BrowserRouter>
+    <AuthProvider>
+      <BrowserRouter>
         <Routes>
           {/* Rutas públicas de autenticación */}
           <Route path="/login" element={<Login />} />
@@ -44,44 +45,91 @@ export default function App() {
           {/* Rutas protegidas (requieren haber iniciado sesión) */}
           <Route element={<ProtectedRoute />}>
             {/* Modo Kiosko para Tablet en Almacén (fuera de MainLayout, interfaz limpia y táctil) */}
-            <Route path="/kiosko" element={<KioskoEntregas />} />
+            <Route path="/kiosko" element={<ModoTablet />} />
 
             <Route element={<MainLayout />}>
-              <Route path="/" element={<Dashboard />} />
+              <Route path="/" element={<Inicio />} />
+              <Route path="/calendario" element={<Dashboard />} />
               <Route path="/firmas" element={<FirmasResumen />} />
               <Route path="/firmas/:plantillaId" element={<FirmaDocumentoDetalle />} />
               <Route path="/usuarios" element={<Usuarios />} />
               <Route path="/usuarios/nuevo" element={<FormUsuario />} />
               <Route path="/usuarios/:id/editar" element={<FormUsuario key="editar-usuario" />} />
-              <Route path="/documentos" element={<Documentos />} />
+              {/* <Route path="/documentos" element={<Documentos />} /> */}
               <Route path="/documentos/nuevo" element={<FormDocumento />} />
               <Route path="/documentos/:id" element={<DocumentoDetalle />} />
-              <Route path="/documentos/:id/editar" element={<FormDocumento key="editar-documento" />} />
+              <Route
+                path="/documentos/:id/editar"
+                element={<FormDocumento key="editar-documento" />}
+              />
               <Route path="/vehiculos" element={<Vehiculos />} />
               <Route path="/vehiculos/:id" element={<VehiculoDetalle />} />
-              <Route path="/vehiculos/:vehiculoId/documentos/:tipo" element={<HistorialDocumentoVehiculo />} />
-              <Route path="/transportistas/:transportistaId/documentos/:tipo" element={<HistorialDocumento entidadTipo="transportista" />} />
-              <Route path="/conductores/:conductorId/documentos/:tipo" element={<HistorialDocumento entidadTipo="transportista" />} />
-              <Route path="/transportistas" element={<Transportistas />} />
-              <Route path="/conductores" element={<Navigate to="/transportistas" replace />} />
+              <Route
+                path="/vehiculos/:vehiculoId/documentos/:tipo"
+                element={<HistorialDocumentoVehiculo />}
+              />
+              <Route
+                path="/transportistas/:transportistaId/documentos/:tipo"
+                element={<HistorialDocumento entidadTipo="transportista" />}
+              />
+              <Route
+                path="/conductores/:conductorId/documentos/:tipo"
+                element={<HistorialDocumento entidadTipo="conductor" />}
+              />
+              <Route
+                path="/trabajadores/:trabajadorId/documentos/:tipo"
+                element={<HistorialDocumento entidadTipo="trabajador" />}
+              />
+              <Route path="/transportistas" element={<Transportistas key="transportistas" />} />
+              <Route path="/conductores" element={<Conductores />} />
               <Route path="/trabajadores" element={<Trabajadores />} />
               <Route path="/vehiculos/nuevo" element={<FormVehiculo />} />
               <Route path="/transportistas/nuevo" element={<FormTransportista />} />
-              <Route path="/conductores/nuevo" element={<Navigate to="/transportistas/nuevo" replace />} />
+              <Route
+                path="/transportistas/:empresaId/conductores/:id"
+                element={<PersonaDetalle tipo="conductores" />}
+              />
+              <Route
+                path="/transportistas/:empresaId/conductores/nuevo"
+                element={<FormConductor key="nuevo-conductor-empresa" />}
+              />
+              <Route
+                path="/transportistas/:empresaId/conductores/:id/editar"
+                element={<FormConductor key="editar-conductor-empresa" />}
+              />
+              <Route path="/conductores/nuevo" element={<FormConductor key="nuevo-conductor" />} />
               <Route path="/trabajadores/nuevo" element={<FormTrabajador />} />
-              <Route path="/vehiculos/:id/editar" element={<FormVehiculo key="editar-vehiculo" />} />
-              <Route path="/transportistas/:id" element={<PersonaDetalle tipo="transportistas" />} />
-              <Route path="/conductores/:id" element={<PersonaDetalle tipo="transportistas" />} />
-              <Route path="/transportistas/:id/editar" element={<FormTransportista key="editar-transportista" />} />
-              <Route path="/conductores/:id/editar" element={<FormTransportista key="editar-transportista" />} />
+              <Route
+                path="/vehiculos/:id/editar"
+                element={<FormVehiculo key="editar-vehiculo" />}
+              />
+              <Route
+                path="/transportistas/:id"
+                element={<PersonaDetalle tipo="transportistas" />}
+              />
+              <Route path="/conductores/:id" element={<PersonaDetalle tipo="conductores" />} />
+              <Route
+                path="/transportistas/:id/editar"
+                element={<FormTransportista key="editar-transportista" />}
+              />
+              <Route
+                path="/conductores/:id/editar"
+                element={<FormConductor key="editar-conductor" />}
+              />
               <Route path="/trabajadores/:id" element={<PersonaDetalle tipo="trabajadores" />} />
-              <Route path="/trabajadores/:id/editar" element={<FormTrabajador key="editar-trabajador" />} />
-              
+              <Route
+                path="/trabajadores/:id/editar"
+                element={<FormTrabajador key="editar-trabajador" />}
+              />
+
               {/* Rutas del módulo de Materiales (EPIS / Vestuario) */}
               <Route path="/materiales" element={<Materiales />} />
               <Route path="/materiales/nuevo" element={<FormMaterial />} />
               <Route path="/materiales/:id" element={<MaterialDetalle />} />
-              <Route path="/materiales/:id/editar" element={<FormMaterial key="editar-material" />} />
+              <Route
+                path="/materiales/:id/editar"
+                element={<FormMaterial key="editar-material" />}
+              />
 
               {/* Rutas del módulo de Entregas de EPIS / Vestuario */}
               <Route path="/entregas" element={<Entregas />} />
@@ -95,6 +143,5 @@ export default function App() {
         </Routes>
       </BrowserRouter>
     </AuthProvider>
-  </ThemeProvider>
   );
 }

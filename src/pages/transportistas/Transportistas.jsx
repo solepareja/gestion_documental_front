@@ -1,117 +1,107 @@
-import { useState, useEffect } from 'react';
-import api from '../../services/api';
+import usePagedList from '../../components/usePagedList';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Button from '../../components/Button';
 import Table from '../../components/Table';
 import ListFilters from '../../components/ListFilters';
-import { filtrarTransportistas } from '../../services/filtros';
-import { CATEGORIAS_CARNET } from '../../utils/carnetCategorias';
 
 export default function Transportistas() {
-    const [transportistas, setTransportistas] = useState([]);
-    const [cargando, setCargando] = useState(true);
-    const [error, setError] = useState(null);
-    const navigate = useNavigate();
-    const [filtros, setFiltros] = useState({ busqueda: '', asignacion: '', tipoCarnet: '' });
-    const cambiarFiltro = (key, value) => setFiltros(current => ({ ...current, [key]: value }));
-    const filtrados = filtrarTransportistas(transportistas, filtros);
-    const hayFiltros = Object.values(filtros).some(value => value.trim());
+  const base = '/transportistas';
+  const navigate = useNavigate();
+  const [filtros, setFiltros] = useState({ busqueda: '', tipoTransportista: '' });
+  const cambiarFiltro = (key, value) => setFiltros((current) => ({ ...current, [key]: value }));
+  const recarga = 0;
+  const {
+    data: transportistas,
+    cargando,
+    error,
+    total,
+    pagination,
+  } = usePagedList('transportistas', { ...filtros, rolTransporte: 'transportistas' }, recarga);
+  const filtrados = transportistas;
+  const hayFiltros = Object.values(filtros).some((value) => value.trim());
 
-    useEffect(() => {
-        const cargarTransportistas = async () => {
-            try {
-                const response = await api.get("/transportistas");
-                setTransportistas(response.data);
-            } catch (err) {
-                console.error("Error al cargar los transportistas", err);
-                setError("Error al cargar los transportistas");
-            } finally {
-                setCargando(false);
-            }
-        };
-        cargarTransportistas();
-    }, []);
-
-    const columns = [
-        { header: 'Nombre', render: (persona) => <Link to={"/transportistas/" + persona.id} className="text-brand-600 hover:text-brand-800 hover:underline font-bold">{persona.nombre}</Link> },
-        { header: 'Apellidos', render: (persona) => persona.apellidos || '—' },
-        { header: 'DNI', accessor: 'dni' },
-        {
-            header: 'Permisos',
-            render: (persona) => {
-                if (persona.permisos && persona.permisos.length > 0) {
-                    return (
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                            {persona.permisos.map((p, idx) => (
-                                <span
-                                    key={idx}
-                                    title={p.fechaCaducidad ? `Válido hasta: ${p.fechaCaducidad}` : undefined}
-                                >
-                                    {p.tipo}
-                                </span>
-                            ))}
-                        </div>
-                    );
-                }
-                if (persona.tipoCarnet) {
-                    return (
-                        <span className="px-2 py-0.5 rounded-md text-[11px] font-black bg-gray-900 text-white shadow-2xs">
-                            {persona.tipoCarnet}
-                        </span>
-                    );
-                }
-                return <span className="text-gray-400 italic text-xs">Sin permisos</span>;
-            }
-        },
-        { header: 'Correo', accessor: 'correo' },
-        {
-            header: 'Vehículo', width: '180px',
-            render: (transportista) => transportista.vehiculoId ? (
-                <Link
-                    to={`/vehiculos/${transportista.vehiculoId}`}
-                    className="text-brand-600 hover:text-brand-800 hover:underline font-bold"
-                >
-                    {transportista.vehiculoMatricula || 'Ver vehículo'}
-                </Link>
-            ) : (
-                <span className="text-gray-400 italic">Sin asignar</span>
-            )
-        }
-    ];
-
-    return (
-        <div>
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">
-                    Transportistas
-                </h1>
-                
-                <Button onClick={() => navigate('/transportistas/nuevo')}>
-                    + Añadir transportista
-                </Button>
-            </div>
-
-            {error && <p className="text-red-500 mb-4">{error}</p>}
-
-            <ListFilters id="transportistas" busqueda={filtros.busqueda} onSearch={value => cambiarFiltro('busqueda', value)}
-                placeholder="Nombre, DNI, correo, teléfono o matrícula…" active={hayFiltros} count={filtrados.length} total={transportistas.length} loading={cargando} error={error}
-                onClear={() => setFiltros({ busqueda: '', asignacion: '', tipoCarnet: '' })}
-                filters={[
-                    { key: 'asignacion', label: 'Asignación de vehículo', allLabel: 'Todos los transportistas', value: filtros.asignacion,
-                        onChange: value => cambiarFiltro('asignacion', value), options: [
-                            { value: 'asignado', label: 'Con vehículo asignado' }, { value: 'sin-asignar', label: 'Sin vehículo asignado' },
-                        ] },
-                    { key: 'tipoCarnet', label: 'Tipo de carnet', allLabel: 'Todos los carnets', value: filtros.tipoCarnet,
-                        onChange: value => cambiarFiltro('tipoCarnet', value),
-                        options: CATEGORIAS_CARNET.map(categoria => ({ value: categoria.codigo, label: categoria.codigo })) },
-                ]} />
-
-            <Table
-                columns={columns}
-                data={filtrados}
-                isLoading={cargando}
-                emptyMessage={hayFiltros ? 'No hay transportistas que coincidan con la búsqueda y los filtros' : 'No hay transportistas disponibles'}
-            />
+  const columns = [
+    {
+      header: 'Nombre',
+      render: (persona) => (
+        <Link
+          to={base + '/' + persona.id}
+          className="text-brand-600 hover:text-brand-800 hover:underline font-bold"
+        >
+          {[persona.nombre, persona.tipoTransportista !== 'EMPRESA' && persona.apellidos]
+            .filter(Boolean)
+            .join(' ')}
+        </Link>
+      ),
+    },
+    { header: 'DNI / NIF', accessor: 'dni' },
+    { header: 'Correo', accessor: 'correo' },
+    { header: 'Teléfono', accessor: 'telefono' },
+    {
+      header: 'Conductores',
+      render: (persona) => (
+        <div className="flex flex-col items-start gap-2">
+          <Link
+            to={`/transportistas/${persona.id}`}
+            className="text-brand-600 font-semibold hover:underline"
+          >
+            Ver conductores
+          </Link>
         </div>
-    );
+      ),
+    },
+  ];
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">
+          Transportistas
+        </h1>
+
+        <Button onClick={() => navigate(base + '/nuevo')}>+ Añadir transportista</Button>
+      </div>
+
+      {error && <p className="text-red-500 mb-4">{error}</p>}
+
+      <ListFilters
+        id="transportistas"
+        busqueda={filtros.busqueda}
+        onSearch={(value) => cambiarFiltro('busqueda', value)}
+        placeholder="Nombre, NIF, correo o teléfono…"
+        active={hayFiltros}
+        count={total}
+        total={total}
+        loading={cargando}
+        error={error}
+        onClear={() => setFiltros({ busqueda: '', tipoTransportista: '' })}
+        filters={[
+          {
+            key: 'tipoTransportista',
+            label: 'Tipo de transportista',
+            allLabel: 'Todos',
+            value: filtros.tipoTransportista,
+            onChange: (value) => cambiarFiltro('tipoTransportista', value),
+            options: [
+              { value: 'EMPRESA', label: 'Empresas' },
+              { value: 'AUTONOMO', label: 'Autónomos' },
+            ],
+          },
+        ]}
+      />
+
+      <Table
+        pagination={pagination}
+        columns={columns}
+        data={filtrados}
+        isLoading={cargando}
+        emptyMessage={
+          hayFiltros
+            ? 'No hay transportistas que coincidan con la búsqueda y los filtros'
+            : 'No hay transportistas disponibles'
+        }
+      />
+    </div>
+  );
 }

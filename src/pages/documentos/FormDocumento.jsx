@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import api from '../../services/api';
 import {
   tiposDocumentoVehiculo,
-  tiposDocumentoConductor,
   tiposDocumentoTransportista,
-  tiposDocumento,
-  fechaDocumentoParaBack
+  tiposDocumentoEmpleado,
+  documentosPorTipoTransportista,
+  fechaDocumentoParaBack,
 } from '../../services/documentos';
 import Button from '../../components/Button';
 import CreateFormLayout from '../../components/CreateFormLayout';
@@ -40,24 +40,35 @@ export default function FormDocumento() {
 
   // Parámetros de origen desde URL
   const paramVehiculoId = params.get('vehiculoId') || '';
-  const paramTransportistaId = params.get('transportistaId') || params.get('conductorId') || '';
+  const paramTransportistaId = params.get('transportistaId') || '';
+  const paramConductorId = params.get('conductorId') || '';
   const paramOrigen = params.get('origen') || '';
   const paramTipo = params.get('tipo') || '';
 
   // Determinar entidad inicial
-  const entidadInicial = paramTransportistaId || paramOrigen === 'transportista' || paramOrigen === 'conductor'
-    ? 'transportista'
-    : 'vehiculo';
+  const entidadInicial = paramConductorId
+    ? 'conductor'
+    : paramTransportistaId || paramOrigen === 'transportista' || paramOrigen === 'conductor'
+      ? 'transportista'
+      : 'vehiculo';
 
   const [entidadTipo, setEntidadTipo] = useState(entidadInicial);
 
   const [formData, setFormData] = useState({
-    tipo: 'ITV',
+    tipo: (entidadInicial === 'vehiculo'
+      ? tiposDocumentoVehiculo
+      : entidadInicial === 'conductor'
+        ? tiposDocumentoEmpleado
+        : tiposDocumentoTransportista)[paramTipo]
+      ? paramTipo
+      : entidadInicial === 'vehiculo'
+        ? 'ITV'
+        : Object.keys(tiposDocumentoTransportista)[0],
     fechaEmision: '',
     fechaCaducidad: '',
     vehiculoId: paramVehiculoId,
     transportistaId: paramTransportistaId,
-    conductorId: paramTransportistaId,
+    conductorId: paramConductorId,
     numeroReferencia: '',
     companiaAseguradora: '',
     estado: 'VIGENTE',
@@ -66,11 +77,6 @@ export default function FormDocumento() {
     archivoNombre: '',
   });
 
-  const [vehiculos, setVehiculos] = useState(null);
-  const [transportistas, setTransportistas] = useState(null);
-  const [cargandoListas, setCargandoListas] = useState(true);
-  const [listasError, setListasError] = useState(null);
-  const [retry, setRetry] = useState(0);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 
@@ -104,21 +110,23 @@ export default function FormDocumento() {
     setLoadingDoc(true);
     setLoadError(null);
 
-    api.get(`/documentos/${id}`)
+    api
+      .get(`/documentos/${id}`)
       .then(({ data }) => {
         if (!active) return;
         let tipoEnt = 'vehiculo';
-        if (data.transportistaId || data.conductorId) tipoEnt = 'transportista';
+        if (data.transportistaId) tipoEnt = 'transportista';
+        if (data.conductorId) tipoEnt = 'conductor';
         setEntidadTipo(tipoEnt);
 
-        const idTransp = data.transportistaId || data.conductorId;
+        const idTransp = data.transportistaId;
         setFormData({
           tipo: data.tipo || 'ITV',
           fechaEmision: formatearFechaParaInput(data.fechaEmision),
           fechaCaducidad: formatearFechaParaInput(data.fechaCaducidad),
           vehiculoId: data.vehiculoId ? String(data.vehiculoId) : '',
           transportistaId: idTransp ? String(idTransp) : '',
-          conductorId: idTransp ? String(idTransp) : '',
+          conductorId: data.conductorId ? String(data.conductorId) : '',
           numeroReferencia: data.numeroReferencia || '',
           companiaAseguradora: data.companiaAseguradora || '',
           estado: data.estado || 'VIGENTE',
@@ -133,7 +141,7 @@ export default function FormDocumento() {
         setLoadError(
           err.response?.status === 404
             ? 'No se ha encontrado este documento.'
-            : 'No se pudo cargar el documento. Vuelve a intentarlo.'
+            : 'No se pudo cargar el documento. Vuelve a intentarlo.',
         );
         setLoadingDoc(false);
       });
@@ -143,71 +151,53 @@ export default function FormDocumento() {
     };
   }, [id]);
 
-  // Carga de listas de selección
+  const [perfil, setPerfil] = useState(null);
+  const transportistaActual = formData.transportistaId;
   useEffect(() => {
+    if (entidadTipo !== 'transportista' || !transportistaActual) return;
     let active = true;
-    setCargandoListas(true);
-    Promise.all([
-      api.get('/vehiculos').catch(() => ({ data: [] })),
-      api.get('/transportistas').catch(() => api.get('/conductores')).catch(() => ({ data: [] })),
-    ])
-      .then(([resVeh, resTransp]) => {
-        if (active) {
-          setVehiculos(resVeh.data || []);
-          setTransportistas(resTransp.data || []);
-          setListasError(null);
-        }
+    api
+      .get(`/transportistas/${transportistaActual}`)
+      .then(({ data }) => {
+        if (!active) return;
+        setPerfil({ id: String(transportistaActual), tipo: data.tipoTransportista });
+        const disponibles = documentosPorTipoTransportista(data.tipoTransportista);
+        if (!id)
+          setFormData((current) => ({
+            ...current,
+            tipo: disponibles[current.tipo] ? current.tipo : Object.keys(disponibles)[0],
+          }));
       })
       .catch(() => {
-        if (active) setListasError('No se pudieron cargar los datos.');
-      })
-      .finally(() => {
-        if (active) setCargandoListas(false);
+        if (active) setError('No se pudo comprobar la documentación de esta ficha.');
       });
+    return () => {
+      active = false;
+    };
+  }, [entidadTipo, transportistaActual, id]);
 
-    return () => { active = false; };
-  }, [retry]);
-
-  // Si viene tipo de la URL y no estamos editando, asignarlo si es válido para la entidad
-  useEffect(() => {
-    if (!id && paramTipo && tiposDocumento[paramTipo]) {
-      setFormData(prev => ({ ...prev, tipo: paramTipo }));
-    }
-  }, [id, paramTipo]);
-
-  // Mapa de tipos según la entidad activa
   const tiposDisponibles =
     entidadTipo === 'vehiculo'
       ? tiposDocumentoVehiculo
-      : tiposDocumentoTransportista;
+      : entidadTipo === 'conductor'
+        ? tiposDocumentoEmpleado
+        : documentosPorTipoTransportista(
+            perfil?.id === String(transportistaActual) ? perfil.tipo : undefined,
+          );
 
-  const handleCambiarEntidad = (nuevaEntidad) => {
-    setEntidadTipo(nuevaEntidad);
-    const tipos =
-      nuevaEntidad === 'vehiculo'
-        ? tiposDocumentoVehiculo
-        : tiposDocumentoTransportista;
-
-    setFormData(prev => ({
-      ...prev,
-      tipo: tipos[prev.tipo] ? prev.tipo : Object.keys(tipos)[0],
-      vehiculoId: nuevaEntidad === 'vehiculo' ? prev.vehiculoId : '',
-      transportistaId: (nuevaEntidad === 'transportista' || nuevaEntidad === 'conductor') ? (prev.transportistaId || prev.conductorId) : '',
-      conductorId: (nuevaEntidad === 'transportista' || nuevaEntidad === 'conductor') ? (prev.transportistaId || prev.conductorId) : '',
-    }));
-  };
-
-  const handleChange = event => {
+  const handleChange = (event) => {
     const { name, value, type, checked } = event.target;
     const valorCampo = type === 'checkbox' ? checked : value;
-    setFormData(current => {
+    setFormData((current) => {
       const updated = {
         ...current,
         [name]: valorCampo,
-        ...(name === 'transportistaId' ? { conductorId: valorCampo } : {}),
-        ...(name === 'conductorId' ? { transportistaId: valorCampo } : {}),
       };
-      if (name === 'fechaCaducidad' && current.estado !== 'ANULADO' && current.estado !== 'PENDIENTE') {
+      if (
+        name === 'fechaCaducidad' &&
+        current.estado !== 'ANULADO' &&
+        current.estado !== 'PENDIENTE'
+      ) {
         if (valorCampo) {
           const hoy = new Date().toISOString().slice(0, 10);
           updated.estado = valorCampo < hoy ? 'CADUCADO' : 'VIGENTE';
@@ -221,17 +211,26 @@ export default function FormDocumento() {
 
   // Determinar ruta de retorno
   const calcularRutaVolver = () => {
+    if (formData.conductorId || paramConductorId)
+      return `/conductores/${formData.conductorId || paramConductorId}${paramOrigen === 'historial' ? `/documentos/${encodeURIComponent(paramTipo || formData.tipo)}` : ''}`;
     if (paramOrigen === 'historial') {
-      if (paramVehiculoId) return `/vehiculos/${paramVehiculoId}/documentos/${encodeURIComponent(paramTipo || formData.tipo)}`;
-      if (paramTransportistaId) return `/transportistas/${paramTransportistaId}/documentos/${encodeURIComponent(paramTipo || formData.tipo)}`;
+      if (paramVehiculoId)
+        return `/vehiculos/${paramVehiculoId}/documentos/${encodeURIComponent(paramTipo || formData.tipo)}`;
+      if (paramTransportistaId)
+        return `/transportistas/${paramTransportistaId}/documentos/${encodeURIComponent(paramTipo || formData.tipo)}`;
     }
     if (paramOrigen === 'vehiculo' && (formData.vehiculoId || paramVehiculoId)) {
       return `/vehiculos/${formData.vehiculoId || paramVehiculoId}`;
     }
-    if ((paramOrigen === 'transportista' || paramOrigen === 'conductor') && (formData.transportistaId || formData.conductorId || paramTransportistaId)) {
+    if (
+      (paramOrigen === 'transportista' || paramOrigen === 'conductor') &&
+      (formData.transportistaId || formData.conductorId || paramTransportistaId)
+    ) {
       return `/transportistas/${formData.transportistaId || formData.conductorId || paramTransportistaId}`;
     }
-    return '/documentos';
+    if (formData.vehiculoId) return `/vehiculos/${formData.vehiculoId}`;
+    if (formData.transportistaId) return `/transportistas/${formData.transportistaId}`;
+    return '/';
   };
 
   const volver = calcularRutaVolver();
@@ -241,16 +240,20 @@ export default function FormDocumento() {
   const esItv = formData.tipo === 'ITV';
   const esCaducidadObligatoria = esItv || esSeguro;
 
-  const handleSubmit = async event => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    if (saving || loadingDoc || loadError || cargandoListas) return;
+    if (saving || loadingDoc || loadError) return;
 
     if (entidadTipo === 'vehiculo' && !formData.vehiculoId) {
-      setError('Selecciona el vehículo al que pertenece el documento.');
+      setError('Accede desde la ficha del vehículo para añadir su documentación.');
       return;
     }
-    if ((entidadTipo === 'transportista' || entidadTipo === 'conductor') && !formData.transportistaId && !formData.conductorId) {
-      setError('Selecciona el transportista al que pertenece el documento.');
+    if (
+      (entidadTipo === 'transportista' || entidadTipo === 'conductor') &&
+      !formData.transportistaId &&
+      !formData.conductorId
+    ) {
+      setError('Accede desde la ficha del transportista para añadir su documentación.');
       return;
     }
 
@@ -264,7 +267,11 @@ export default function FormDocumento() {
       return;
     }
 
-    if (formData.fechaCaducidad && formData.fechaEmision && formData.fechaCaducidad < formData.fechaEmision) {
+    if (
+      formData.fechaCaducidad &&
+      formData.fechaEmision &&
+      formData.fechaCaducidad < formData.fechaEmision
+    ) {
       setError('La fecha de caducidad no puede ser anterior a la fecha de emisión.');
       return;
     }
@@ -276,7 +283,8 @@ export default function FormDocumento() {
       let estadoAjustado = formData.estado;
       if (estadoAjustado !== 'ANULADO' && estadoAjustado !== 'PENDIENTE') {
         const hoy = new Date().toISOString().slice(0, 10);
-        estadoAjustado = (formData.fechaCaducidad && formData.fechaCaducidad < hoy) ? 'CADUCADO' : 'VIGENTE';
+        estadoAjustado =
+          formData.fechaCaducidad && formData.fechaCaducidad < hoy ? 'CADUCADO' : 'VIGENTE';
       }
 
       const payload = {
@@ -284,10 +292,11 @@ export default function FormDocumento() {
         fechaEmision: fechaDocumentoParaBack(formData.fechaEmision),
         fechaCaducidad: fechaDocumentoParaBack(formData.fechaCaducidad),
         vehiculoId: entidadTipo === 'vehiculo' ? Number(formData.vehiculoId) : null,
-        transportistaId: (entidadTipo === 'transportista' || entidadTipo === 'conductor') ? Number(formData.transportistaId || formData.conductorId) : null,
-        conductorId: (entidadTipo === 'transportista' || entidadTipo === 'conductor') ? Number(formData.transportistaId || formData.conductorId) : null,
+        transportistaId: entidadTipo === 'transportista' ? Number(formData.transportistaId) : null,
+        conductorId: entidadTipo === 'conductor' ? Number(formData.conductorId) : null,
         numeroReferencia: (formData.numeroReferencia || '').trim() || null,
-        companiaAseguradora: esSeguro && formData.companiaAseguradora ? formData.companiaAseguradora.trim() : null,
+        companiaAseguradora:
+          esSeguro && formData.companiaAseguradora ? formData.companiaAseguradora.trim() : null,
         estado: estadoAjustado,
         avisos: formData.avisos !== false,
         archivo: formData.archivo || null,
@@ -302,33 +311,40 @@ export default function FormDocumento() {
       setError(
         err.response?.status === 404
           ? 'El registro asociado ya no existe. Revisa los datos.'
-          : err.response?.data?.message || 'No se pudo guardar el documento. Revisa los campos e inténtalo de nuevo.'
+          : err.response?.data?.message ||
+              'No se pudo guardar el documento. Revisa los campos e inténtalo de nuevo.',
       );
     } finally {
       setSaving(false);
     }
   };
 
-  const placeholderReferencia =
-    esSeguro
-      ? 'Ej. POL-12345678'
-      : esItv
+  const placeholderReferencia = esSeguro
+    ? 'Ej. POL-12345678'
+    : esItv
       ? 'Ej. Nº informe / registro ITV'
       : formData.tipo === 'CONTRATO_FIRMADO'
-      ? 'Ej. Nº de contrato'
-      : formData.tipo === 'ALTA_TRABAJADOR'
-      ? 'Ej. Nº de afiliación / registro TGSS'
-      : formData.tipo === 'CERTIFICADO_SEG_SOCIAL' || formData.tipo === 'AEAT'
-      ? 'Ej. CSV (Código Seguro de Verificación)'
-      : formData.tipo === 'MODELO_036_037'
-      ? 'Ej. Justificante de presentación AEAT'
-      : formData.tipo === 'DOCUMENTACION_VEHICULO'
-      ? 'Ej. Nº de bastidor o expediente'
-      : 'Número de referencia o expediente (opcional)';
+        ? 'Ej. Nº de contrato'
+        : formData.tipo === 'ALTA_TRABAJADOR'
+          ? 'Ej. Nº de afiliación / registro TGSS'
+          : formData.tipo === 'CERTIFICADO_SEG_SOCIAL' || formData.tipo === 'AEAT'
+            ? 'Ej. CSV (Código Seguro de Verificación)'
+            : formData.tipo === 'MODELO_036_037'
+              ? 'Ej. Justificante de presentación AEAT'
+              : formData.tipo === 'DOCUMENTACION_VEHICULO'
+                ? 'Ej. Nº de bastidor o expediente'
+                : 'Número de referencia o expediente (opcional)';
+
+  if (
+    !id &&
+    [paramVehiculoId, paramTransportistaId, paramConductorId].filter(Boolean).length !== 1
+  ) {
+    return <Navigate to="/" replace />;
+  }
 
   return (
     <CreateFormLayout
-      title={id ? 'Editar documento' : 'Añadir documento'}
+      title={`${id ? 'Editar' : 'Añadir'} documento de ${entidadTipo === 'vehiculo' ? 'vehículo' : entidadTipo === 'conductor' ? 'conductor' : 'transportista'}`}
       category="Documentos"
       editing={Boolean(id)}
       backTo={volver}
@@ -336,111 +352,45 @@ export default function FormDocumento() {
         paramOrigen === 'historial'
           ? 'el historial'
           : paramOrigen === 'vehiculo'
-          ? 'la ficha del vehículo'
-          : (paramOrigen === 'transportista' || paramOrigen === 'conductor')
-          ? 'la ficha del transportista'
-          : 'documentos'
+            ? 'la ficha del vehículo'
+            : paramOrigen === 'transportista' || paramOrigen === 'conductor'
+              ? 'la ficha del transportista'
+              : 'documentos'
       }
       description="Registra la documentación correspondiente a vehículos y transportistas con fechas de control y archivo digital."
     >
-      {(error || loadError) && <p role="alert" className="create-error">{error || loadError}</p>}
-      {listasError && (
-        <div role="alert" className="create-error">
-          <p className="mb-3">{listasError}</p>
-          <Button variant="secondary" size="sm" onClick={() => setRetry(v => v + 1)}>Reintentar</Button>
-        </div>
+      {(error || loadError) && (
+        <p role="alert" className="create-error">
+          {error || loadError}
+        </p>
       )}
-      {(loadingDoc || cargandoListas) && <p role="status" className="pb-6 text-sm text-gray-500">Cargando datos…</p>}
+      {loadingDoc && (
+        <p role="status" className="pb-6 text-sm text-gray-500">
+          Cargando datos…
+        </p>
+      )}
 
       <form onSubmit={handleSubmit}>
         <fieldset
           className="create-form disabled:opacity-60 space-y-6"
-          disabled={saving || loadingDoc || Boolean(loadError) || cargandoListas}
+          disabled={saving || loadingDoc || Boolean(loadError)}
         >
-          {/* Selector de Entidad: Vehículo / Transportista (Segmented Control sin bordes) */}
-          <div className="col-span-full">
-            <label className="block text-[11px] font-extrabold text-gray-500 uppercase tracking-wider mb-2">
-              ¿A quién corresponde este documento?
-            </label>
-            <div className="p-1.5 rounded-2xl bg-gray-100/90 dark:bg-gray-800/80 flex items-center gap-1.5">
-              {[
-                { id: 'vehiculo', label: 'Vehículo' },
-                { id: 'transportista', label: 'Transportista' },
-              ].map((ent) => {
-                const activo = (entidadTipo === ent.id || (ent.id === 'transportista' && entidadTipo === 'conductor'));
-                return (
-                  <button
-                    key={ent.id}
-                    type="button"
-                    disabled={Boolean(id) || Boolean(paramOrigen && paramOrigen !== 'documentos')}
-                    onClick={() => handleCambiarEntidad(ent.id)}
-                    className={`flex-1 flex items-center justify-center py-2.5 px-3 rounded-xl text-sm font-bold tracking-tight transition-all cursor-pointer border-0 ${
-                      activo
-                        ? 'bg-white dark:bg-gray-900 text-brand-600 dark:text-brand-400 shadow-sm'
-                        : 'text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-white/40'
-                    } disabled:cursor-not-allowed`}
-                  >
-                    <span>{ent.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-            {paramOrigen && paramOrigen !== 'documentos' && (
-              <p className="text-[11px] text-gray-400 mt-1.5">
-                La entidad está fijada según el perfil desde el que has accedido.
-              </p>
-            )}
-          </div>
-
-          {/* Desplegable de la Entidad Concreta */}
-          {entidadTipo === 'vehiculo' && (
-            <div>
-              <label htmlFor="vehiculoId">Vehículo asignado <span className="text-red-500">*</span></label>
-              <CustomSelect
-                id="vehiculoId"
-                name="vehiculoId"
-                value={formData.vehiculoId}
-                onChange={handleChange}
-                placeholder="Selecciona un vehículo"
-                required
-              >
-                <option value="">Selecciona un vehículo</option>
-                {vehiculos?.map(vehiculo => (
-                  <option key={vehiculo.id} value={vehiculo.id}>
-                    {vehiculo.matricula} — {vehiculo.marca} {vehiculo.modelo}
-                  </option>
-                ))}
-              </CustomSelect>
-            </div>
-          )}
-
-          {(entidadTipo === 'transportista' || entidadTipo === 'conductor') && (
-            <div>
-              <label htmlFor="transportistaId">Transportista asignado <span className="text-red-500">*</span></label>
-              <CustomSelect
-                id="transportistaId"
-                name="transportistaId"
-                value={formData.transportistaId || formData.conductorId}
-                onChange={handleChange}
-                placeholder="Selecciona un transportista"
-                required
-              >
-                <option value="">Selecciona un transportista</option>
-                {transportistas?.map(c => (
-                  <option key={c.id} value={c.id}>
-                    {c.nombre} {c.apellidos || ''} {c.dni ? `(${c.dni})` : ''}
-                  </option>
-                ))}
-              </CustomSelect>
-            </div>
-          )}
-
           {/* Tipo de Documento */}
           <div>
-            <label htmlFor="tipo">Tipo de documento <span className="text-red-500">*</span></label>
-            <CustomSelect id="tipo" name="tipo" value={formData.tipo} onChange={handleChange} required>
+            <label htmlFor="tipo">
+              Tipo de documento <span className="text-red-500">*</span>
+            </label>
+            <CustomSelect
+              id="tipo"
+              name="tipo"
+              value={formData.tipo}
+              onChange={handleChange}
+              required
+            >
               {Object.entries(tiposDisponibles).map(([value, label]) => (
-                <option key={value} value={value}>{label}</option>
+                <option key={value} value={value}>
+                  {label}
+                </option>
               ))}
             </CustomSelect>
             {DESCRIPCIONES_DOCUMENTO[formData.tipo] && (
@@ -452,7 +402,9 @@ export default function FormDocumento() {
 
           {/* Fechas */}
           <div>
-            <label htmlFor="fechaEmision">Fecha de emisión <span className="text-red-500">*</span></label>
+            <label htmlFor="fechaEmision">
+              Fecha de emisión <span className="text-red-500">*</span>
+            </label>
             <CustomDatePicker
               id="fechaEmision"
               name="fechaEmision"
@@ -495,7 +447,9 @@ export default function FormDocumento() {
           {/* Número de referencia */}
           <div>
             <label htmlFor="numeroReferencia">
-              {esSeguro ? 'Número de póliza o referencia' : 'Número de referencia / expediente (opcional)'}
+              {esSeguro
+                ? 'Número de póliza o referencia'
+                : 'Número de referencia / expediente (opcional)'}
             </label>
             <input
               id="numeroReferencia"
@@ -510,7 +464,13 @@ export default function FormDocumento() {
           {/* Estado del documento */}
           <div>
             <label htmlFor="estado">Estado</label>
-            <CustomSelect id="estado" name="estado" value={formData.estado} onChange={handleChange} required>
+            <CustomSelect
+              id="estado"
+              name="estado"
+              value={formData.estado}
+              onChange={handleChange}
+              required
+            >
               <option value="VIGENTE">Vigente</option>
               <option value="CADUCADO">Caducado</option>
               <option value="PENDIENTE">Pendiente</option>
@@ -523,17 +483,17 @@ export default function FormDocumento() {
             role="switch"
             aria-checked={Boolean(formData.avisos)}
             tabIndex={0}
-            onClick={() => setFormData(prev => ({ ...prev, avisos: !prev.avisos }))}
+            onClick={() => setFormData((prev) => ({ ...prev, avisos: !prev.avisos }))}
             onKeyDown={(e) => {
               if (e.key === ' ' || e.key === 'Enter') {
                 e.preventDefault();
-                setFormData(prev => ({ ...prev, avisos: !prev.avisos }));
+                setFormData((prev) => ({ ...prev, avisos: !prev.avisos }));
               }
             }}
             className={`col-span-full rounded-2xl p-4.5 transition-all cursor-pointer select-none border-0 ${
               formData.avisos
-                ? 'bg-amber-100/70 dark:bg-amber-950/40 hover:bg-amber-100/90'
-                : 'bg-gray-100/80 dark:bg-gray-800/60 hover:bg-gray-100'
+                ? 'bg-amber-100/70 hover:bg-amber-100/90'
+                : 'bg-gray-100/80 hover:bg-gray-100'
             }`}
           >
             <div className="flex items-center justify-between gap-4">
@@ -543,39 +503,54 @@ export default function FormDocumento() {
                   className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 transition-colors ${
                     formData.avisos
                       ? 'bg-amber-500 text-white shadow-sm shadow-amber-500/25'
-                      : 'bg-gray-200 dark:bg-gray-700 text-gray-400'
+                      : 'bg-gray-200 text-gray-400'
                   }`}
                 >
                   {formData.avisos ? (
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                      />
                     </svg>
                   ) : (
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"
+                      />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"
+                      />
                     </svg>
                   )}
                 </div>
 
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-sm font-bold text-gray-900 dark:text-gray-100">
+                    <span className="text-sm font-bold text-gray-900">
                       Avisos y recordatorios de caducidad
                     </span>
                     <span
                       className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wide transition-colors ${
                         formData.avisos
-                          ? 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300'
-                          : 'bg-gray-200/90 text-gray-500 dark:bg-gray-700/80 dark:text-gray-400'
+                          ? 'bg-emerald-500/15 text-emerald-800'
+                          : 'bg-gray-200/90 text-gray-500'
                       }`}
                     >
                       {formData.avisos ? 'Avisos activados' : 'Avisos desactivados'}
                     </span>
                   </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 leading-relaxed">
+                  <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">
                     {formData.avisos
-                      ? 'Recibirás avisos automáticos en la campana y en el panel cuando esté próximo a vencer.'
+                      ? 'Recibirás avisos automáticos en la campana y en el Calendario cuando esté próximo a vencer.'
                       : 'No se generarán avisos ni recordatorios de caducidad para este documento.'}
                   </p>
                 </div>
@@ -585,9 +560,7 @@ export default function FormDocumento() {
               <div className="shrink-0 pl-2">
                 <div
                   className={`w-12 h-7 rounded-full p-1 transition-colors duration-200 ease-in-out ${
-                    formData.avisos
-                      ? 'bg-brand-500'
-                      : 'bg-gray-300 dark:bg-gray-600'
+                    formData.avisos ? 'bg-brand-500' : 'bg-gray-300'
                   }`}
                 >
                   <div
@@ -604,14 +577,13 @@ export default function FormDocumento() {
           <div className="col-span-full pt-2">
             <DocumentoFileUploader
               label="PDF o imagen del documento"
-              sublabel="Opcional. Sube el documento escaneado o fotografía (máx. 15 MB)"
               value={formData.archivo}
               fileName={formData.archivoNombre}
               onChange={(archivo, archivoNombre) => {
-                setFormData(prev => ({
+                setFormData((prev) => ({
                   ...prev,
                   archivo: archivo || '',
-                  archivoNombre: archivoNombre || ''
+                  archivoNombre: archivoNombre || '',
                 }));
               }}
               disabled={saving}
@@ -620,12 +592,9 @@ export default function FormDocumento() {
 
           {/* Acciones */}
           <div className="create-actions">
-            <span className="create-required-note">
-              {esCaducidadObligatoria
-                ? 'Para este tipo de documento la fecha de caducidad es obligatoria.'
-                : 'La referencia y la caducidad son opcionales según el documento.'}
-            </span>
-            <Button variant="secondary" onClick={() => navigate(volver)}>Cancelar</Button>
+            <Button variant="secondary" onClick={() => navigate(volver)}>
+              Cancelar
+            </Button>
             <Button type="submit" disabled={saving}>
               {saving ? 'Guardando…' : id ? 'Guardar cambios' : 'Guardar documento'}
             </Button>

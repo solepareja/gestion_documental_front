@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
 import { AuthContext } from './auth-context';
 
@@ -11,6 +11,27 @@ export function AuthProvider({ children }) {
       return null;
     }
   });
+  const [modoTablet, setModoTablet] = useState(
+    () => localStorage.getItem('modo_tablet') === 'activo',
+  );
+  const activarModoTablet = useCallback(() => {
+    localStorage.setItem('modo_tablet', 'activo');
+    setModoTablet(true);
+  }, []);
+
+  useEffect(() => {
+    const sincronizar = () => {
+      setModoTablet(localStorage.getItem('modo_tablet') === 'activo');
+      try {
+        setUsuario(JSON.parse(localStorage.getItem('usuario_sesion')));
+      } catch {
+        setUsuario(null);
+      }
+    };
+    window.addEventListener('storage', sincronizar);
+    return () => window.removeEventListener('storage', sincronizar);
+  }, []);
+
   const [cargando, setCargando] = useState(false);
 
   useEffect(() => {
@@ -75,6 +96,8 @@ export function AuthProvider({ children }) {
   };
 
   const logout = () => {
+    localStorage.removeItem('modo_tablet');
+    setModoTablet(false);
     setUsuario(null);
     localStorage.removeItem('usuario_sesion');
   };
@@ -90,6 +113,8 @@ export function AuthProvider({ children }) {
         isAuthenticated: Boolean(usuario),
         cargando,
         esKiosko,
+        modoTablet,
+        activarModoTablet,
         esAdmin,
         rol: rolActual,
         login,

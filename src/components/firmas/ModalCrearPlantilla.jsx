@@ -42,7 +42,14 @@ export default function ModalCrearPlantilla({ onClose, onPlantillaCreada }) {
     setTitulo(p.titulo);
     setDescripcion(p.descripcion);
     setContenidoLegal(p.contenidoLegal);
-    if (['Toda la plantilla', 'Fábrica y Operarios', 'Conductores y Transportistas', 'Administración'].includes(p.colectivo)) {
+    if (
+      [
+        'Toda la plantilla',
+        'Fábrica y Operarios',
+        'Conductores y Transportistas',
+        'Administración',
+      ].includes(p.colectivo)
+    ) {
       setColectivo(p.colectivo);
     } else {
       setColectivo('Otro');
@@ -57,7 +64,8 @@ export default function ModalCrearPlantilla({ onClose, onPlantillaCreada }) {
       return;
     }
 
-    const colectivoFinal = colectivo === 'Otro' ? (colectivoPersonalizado.trim() || 'General') : colectivo;
+    const colectivoFinal =
+      colectivo === 'Otro' ? colectivoPersonalizado.trim() || 'General' : colectivo;
 
     setGuardando(true);
     setError(null);
@@ -85,24 +93,23 @@ export default function ModalCrearPlantilla({ onClose, onPlantillaCreada }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl max-w-3xl w-full max-h-[92vh] flex flex-col border-0 overflow-hidden">
-        
+      <div className="bg-white rounded-3xl shadow-2xl max-w-3xl w-full max-h-[92vh] flex flex-col border-0 overflow-hidden">
         {/* Cabecera */}
-        <div className="px-6 py-4 bg-gray-50/90 dark:bg-gray-850/90 border-0 flex justify-between items-center">
+        <div className="px-6 py-4 bg-gray-50/90 border-0 flex justify-between items-center">
           <div>
-            <span className="text-[11px] font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-brand-600">
               Nuevo Documento Corporativo
             </span>
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white leading-tight">
+            <h3 className="text-lg font-bold text-gray-900 leading-tight">
               Crear Tipo de Documento para Firmas
             </h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+            <p className="text-xs text-gray-500 mt-0.5">
               Define los requisitos legales y el colectivo asignado para su cumplimiento
             </p>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-800 transition cursor-pointer"
+            className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-200 transition cursor-pointer"
           >
             ✕
           </button>
@@ -111,14 +118,14 @@ export default function ModalCrearPlantilla({ onClose, onPlantillaCreada }) {
         {/* Formulario con Scroll */}
         <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-5 text-sm">
           {error && (
-            <div className="p-3.5 text-xs rounded-2xl bg-rose-500/10 text-rose-700 dark:text-rose-300 border-0">
+            <div className="p-3.5 text-xs rounded-2xl bg-rose-500/10 text-rose-700 border-0">
               {error}
             </div>
           )}
 
           {/* Plantillas rápidas de 1 clic */}
           <div>
-            <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">
+            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
               Cargar modelo rápido (1 clic):
             </label>
             <div className="flex flex-wrap gap-2">
@@ -127,7 +134,7 @@ export default function ModalCrearPlantilla({ onClose, onPlantillaCreada }) {
                   type="button"
                   key={idx}
                   onClick={() => aplicarPredefinida(p)}
-                  className="px-3.5 py-2 rounded-xl text-xs font-bold bg-gray-100 hover:bg-brand-500/15 hover:text-brand-700 dark:bg-gray-800 dark:hover:bg-brand-950/40 dark:hover:text-brand-300 text-gray-700 dark:text-gray-300 border-0 transition shadow-2xs cursor-pointer"
+                  className="px-3.5 py-2 rounded-xl text-xs font-bold bg-gray-100 hover:bg-brand-500/15 hover:text-brand-700 text-gray-700 border-0 transition shadow-2xs cursor-pointer"
                 >
                   {p.titulo.split(' ')[0]} {p.titulo.split(' ')[1] || ''}
                 </button>
@@ -138,7 +145,7 @@ export default function ModalCrearPlantilla({ onClose, onPlantillaCreada }) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Título */}
             <div className="md:col-span-2">
-              <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1">
+              <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
                 Nombre del Documento *
               </label>
               <input
@@ -147,22 +154,25 @@ export default function ModalCrearPlantilla({ onClose, onPlantillaCreada }) {
                 value={titulo}
                 onChange={(e) => setTitulo(e.target.value)}
                 placeholder="Ej. Protección de Datos RGPD, Hoja de Entrega de EPIs..."
-                className="w-full px-4 py-3 rounded-2xl bg-gray-100/80 hover:bg-gray-200/60 dark:bg-gray-800 dark:hover:bg-gray-750 border-0 focus:outline-none focus:bg-white dark:focus:bg-gray-950 focus:ring-2 focus:ring-brand-500 text-gray-900 dark:text-gray-100 placeholder-gray-400 text-sm transition-all"
+                className="w-full px-4 py-3 rounded-2xl bg-gray-100/80 hover:bg-gray-200/60 border-0 focus:outline-none focus:bg-white focus:ring-2 focus:ring-brand-500 text-gray-900 placeholder-gray-400 text-sm transition-all"
               />
             </div>
 
             {/* Colectivo / Ámbito */}
             <div>
-              <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1">
+              <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
                 Colectivo / Ámbito Asignado *
               </label>
-              <CustomSelect
-                value={colectivo}
-                onChange={(e) => setColectivo(e.target.value)}
-              >
-                <option value="Toda la plantilla">Toda la plantilla (Todos los trabajadores)</option>
-                <option value="Fábrica y Operarios">Fábrica y Operarios (Producción / Almacén)</option>
-                <option value="Conductores y Transportistas">Conductores y Transportistas (Flota)</option>
+              <CustomSelect value={colectivo} onChange={(e) => setColectivo(e.target.value)}>
+                <option value="Toda la plantilla">
+                  Toda la plantilla (Todos los trabajadores)
+                </option>
+                <option value="Fábrica y Operarios">
+                  Fábrica y Operarios (Producción / Almacén)
+                </option>
+                <option value="Conductores y Transportistas">
+                  Conductores y Transportistas (Flota)
+                </option>
                 <option value="Administración">Administración / Oficinas</option>
                 <option value="Otro">Otro (personalizado)</option>
               </CustomSelect>
@@ -170,7 +180,7 @@ export default function ModalCrearPlantilla({ onClose, onPlantillaCreada }) {
 
             {colectivo === 'Otro' ? (
               <div>
-                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1">
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
                   Especificar colectivo
                 </label>
                 <input
@@ -178,12 +188,12 @@ export default function ModalCrearPlantilla({ onClose, onPlantillaCreada }) {
                   value={colectivoPersonalizado}
                   onChange={(e) => setColectivoPersonalizado(e.target.value)}
                   placeholder="Ej. Técnicos de montaje..."
-                  className="w-full px-4 py-3 rounded-2xl bg-gray-100/80 hover:bg-gray-200/60 dark:bg-gray-800 dark:hover:bg-gray-750 border-0 focus:outline-none focus:bg-white dark:focus:bg-gray-950 focus:ring-2 focus:ring-brand-500 text-gray-900 dark:text-gray-100 text-sm transition-all"
+                  className="w-full px-4 py-3 rounded-2xl bg-gray-100/80 hover:bg-gray-200/60 border-0 focus:outline-none focus:bg-white focus:ring-2 focus:ring-brand-500 text-gray-900 text-sm transition-all"
                 />
               </div>
             ) : (
               <div>
-                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1">
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
                   Descripción breve (opcional)
                 </label>
                 <input
@@ -191,7 +201,7 @@ export default function ModalCrearPlantilla({ onClose, onPlantillaCreada }) {
                   value={descripcion}
                   onChange={(e) => setDescripcion(e.target.value)}
                   placeholder="Breve resumen del objetivo de este documento..."
-                  className="w-full px-4 py-3 rounded-2xl bg-gray-100/80 hover:bg-gray-200/60 dark:bg-gray-800 dark:hover:bg-gray-750 border-0 focus:outline-none focus:bg-white dark:focus:bg-gray-950 focus:ring-2 focus:ring-brand-500 text-gray-900 dark:text-gray-100 placeholder-gray-400 text-sm transition-all"
+                  className="w-full px-4 py-3 rounded-2xl bg-gray-100/80 hover:bg-gray-200/60 border-0 focus:outline-none focus:bg-white focus:ring-2 focus:ring-brand-500 text-gray-900 placeholder-gray-400 text-sm transition-all"
                 />
               </div>
             )}
@@ -199,7 +209,7 @@ export default function ModalCrearPlantilla({ onClose, onPlantillaCreada }) {
 
           {colectivo === 'Otro' && (
             <div>
-              <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1">
+              <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
                 Descripción breve (opcional)
               </label>
               <input
@@ -207,7 +217,7 @@ export default function ModalCrearPlantilla({ onClose, onPlantillaCreada }) {
                 value={descripcion}
                 onChange={(e) => setDescripcion(e.target.value)}
                 placeholder="Breve resumen del objetivo de este documento..."
-                className="w-full px-4 py-3 rounded-2xl bg-gray-100/80 hover:bg-gray-200/60 dark:bg-gray-800 dark:hover:bg-gray-750 border-0 focus:outline-none focus:bg-white dark:focus:bg-gray-950 focus:ring-2 focus:ring-brand-500 text-gray-900 dark:text-gray-100 placeholder-gray-400 text-sm transition-all"
+                className="w-full px-4 py-3 rounded-2xl bg-gray-100/80 hover:bg-gray-200/60 border-0 focus:outline-none focus:bg-white focus:ring-2 focus:ring-brand-500 text-gray-900 placeholder-gray-400 text-sm transition-all"
               />
             </div>
           )}
@@ -215,10 +225,12 @@ export default function ModalCrearPlantilla({ onClose, onPlantillaCreada }) {
           {/* Cláusulas y Contenido Legal */}
           <div>
             <div className="flex justify-between items-center mb-1.5">
-              <label className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+              <label className="text-xs font-bold text-gray-700 uppercase tracking-wider">
                 Contenido / Cláusulas Legales a Firmar *
               </label>
-              <span className="text-[11px] text-gray-400">Este texto se mostrará al trabajador antes de firmar</span>
+              <span className="text-[11px] text-gray-400">
+                Este texto se mostrará al trabajador antes de firmar
+              </span>
             </div>
             <textarea
               required
@@ -226,7 +238,7 @@ export default function ModalCrearPlantilla({ onClose, onPlantillaCreada }) {
               value={contenidoLegal}
               onChange={(e) => setContenidoLegal(e.target.value)}
               placeholder="Escribe o pega aquí el clausulado legal que el trabajador deberá aceptar..."
-              className="w-full p-4 rounded-2xl bg-gray-100/80 hover:bg-gray-200/60 dark:bg-gray-800 dark:hover:bg-gray-750 border-0 focus:outline-none focus:bg-white dark:focus:bg-gray-950 focus:ring-2 focus:ring-brand-500 text-gray-900 dark:text-gray-100 text-xs leading-relaxed font-sans placeholder-gray-400 transition-all"
+              className="w-full p-4 rounded-2xl bg-gray-100/80 hover:bg-gray-200/60 border-0 focus:outline-none focus:bg-white focus:ring-2 focus:ring-brand-500 text-gray-900 text-xs leading-relaxed font-sans placeholder-gray-400 transition-all"
             />
           </div>
 
@@ -236,7 +248,7 @@ export default function ModalCrearPlantilla({ onClose, onPlantillaCreada }) {
               type="button"
               onClick={onClose}
               disabled={guardando}
-              className="px-4 py-2.5 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition cursor-pointer"
+              className="px-4 py-2.5 text-xs font-semibold text-gray-700 hover:bg-gray-100 rounded-xl transition cursor-pointer"
             >
               Cancelar
             </button>
@@ -249,7 +261,6 @@ export default function ModalCrearPlantilla({ onClose, onPlantillaCreada }) {
             </button>
           </div>
         </form>
-
       </div>
     </div>
   );

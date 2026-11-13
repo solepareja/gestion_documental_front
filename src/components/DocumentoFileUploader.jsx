@@ -13,7 +13,7 @@ export default function DocumentoFileUploader({
   value,
   fileName,
   onChange,
-  disabled = false
+  disabled = false,
 }) {
   const [procesando, setProcesando] = useState(false);
   const [errorLocal, setErrorLocal] = useState(null);
@@ -21,7 +21,8 @@ export default function DocumentoFileUploader({
   const [mostrarModal, setMostrarModal] = useState(false);
   const inputRef = useRef(null);
 
-  const esPdf = value?.startsWith('data:application/pdf') || fileName?.toLowerCase().endsWith('.pdf');
+  const esPdf =
+    value?.startsWith('data:application/pdf') || fileName?.toLowerCase().endsWith('.pdf');
 
   const procesarArchivo = async (file) => {
     if (!file) return;
@@ -29,10 +30,13 @@ export default function DocumentoFileUploader({
 
     // Validar tipo de archivo
     const esTipoPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
-    const esTipoImagen = file.type.startsWith('image/') || /\.(jpe?g|png|webp|gif)$/i.test(file.name);
+    const esTipoImagen =
+      file.type.startsWith('image/') || /\.(jpe?g|png|webp|gif)$/i.test(file.name);
 
     if (!esTipoPdf && !esTipoImagen) {
-      setErrorLocal('Formato no compatible. Por favor, selecciona un documento PDF o una imagen (JPG, PNG, WebP).');
+      setErrorLocal(
+        'Formato no compatible. Por favor, selecciona un documento PDF o una imagen (JPG, PNG, WebP).',
+      );
       return;
     }
 
@@ -104,12 +108,8 @@ export default function DocumentoFileUploader({
   return (
     <div className="flex flex-col">
       <div className="flex items-baseline justify-between mb-1.5">
-        <label className="block text-sm font-bold text-gray-800">
-          {label}
-        </label>
-        {sublabel && (
-          <span className="text-[11px] text-gray-400 font-medium">{sublabel}</span>
-        )}
+        <label className="block text-sm font-bold text-gray-800">{label}</label>
+        {sublabel && <span className="text-[11px] text-gray-400 font-medium">{sublabel}</span>}
       </div>
 
       <input
@@ -123,20 +123,25 @@ export default function DocumentoFileUploader({
 
       {value ? (
         // Estado con archivo cargado (PDF o Imagen)
-        <div className="relative rounded-3xl border-0 bg-gray-100/70 dark:bg-gray-800/60 overflow-hidden shadow-2xs group transition-all">
+        <div className="relative rounded-3xl border-0 bg-gray-100/70 overflow-hidden shadow-2xs group transition-all">
           <div className="p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3.5 min-w-0 w-full sm:w-auto">
               {/* Icono representativo */}
               {esPdf ? (
-                <div className="w-12 h-12 rounded-2xl bg-red-500/15 text-red-600 dark:text-red-400 border-0 flex items-center justify-center flex-shrink-0 shadow-2xs">
+                <div className="w-12 h-12 rounded-2xl bg-red-500/15 text-red-600 border-0 flex items-center justify-center flex-shrink-0 shadow-2xs">
                   <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.75}
+                      d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+                    />
                   </svg>
                 </div>
               ) : (
                 <div
                   onClick={() => setMostrarModal(true)}
-                  className="w-14 h-14 rounded-2xl border-0 overflow-hidden bg-gray-200 dark:bg-gray-700 flex-shrink-0 cursor-pointer group-hover:opacity-90 relative"
+                  className="w-14 h-14 rounded-2xl border-0 overflow-hidden bg-gray-200 flex-shrink-0 cursor-pointer group-hover:opacity-90 relative"
                   title="Ver imagen completa"
                 >
                   <img
@@ -146,7 +151,12 @@ export default function DocumentoFileUploader({
                   />
                   <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"
+                      />
                     </svg>
                   </div>
                 </div>
@@ -157,21 +167,32 @@ export default function DocumentoFileUploader({
                 <div className="flex items-center gap-2 mb-0.5">
                   <span
                     className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wide uppercase border-0 ${
-                      esPdf
-                        ? 'bg-red-500/15 text-red-700 dark:text-red-300'
-                        : 'bg-indigo-500/15 text-indigo-700 dark:text-indigo-300'
+                      esPdf ? 'bg-red-500/15 text-red-700' : 'bg-indigo-500/15 text-indigo-700'
                     }`}
                   >
                     {esPdf ? 'Documento PDF' : 'Imagen'}
                   </span>
                   <span className="text-xs font-semibold text-emerald-600 flex items-center gap-1">
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                    <svg
+                      className="w-3.5 h-3.5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2.5}
+                        d="M5 13l4 4L19 7"
+                      />
                     </svg>
                     Adjunto
                   </span>
                 </div>
-                <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate" title={fileName || 'Documento adjunto'}>
+                <p
+                  className="text-sm font-semibold text-gray-800 truncate"
+                  title={fileName || 'Documento adjunto'}
+                >
                   {fileName || (esPdf ? 'Documento.pdf' : 'Imagen-documento.jpg')}
                 </p>
                 <p className="text-xs text-gray-400">
@@ -185,11 +206,26 @@ export default function DocumentoFileUploader({
               <button
                 type="button"
                 onClick={() => setMostrarModal(true)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-brand-700 dark:text-brand-300 bg-brand-500/15 hover:bg-brand-500/25 border-0 rounded-xl transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-brand-700 bg-brand-500/15 hover:bg-brand-500/25 border-0 rounded-xl transition-colors cursor-pointer"
               >
-                <svg className="w-4 h-4 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                <svg
+                  className="w-4 h-4 text-brand-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                  />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                  />
                 </svg>
                 {esPdf ? 'Ver PDF' : 'Ver imagen'}
               </button>
@@ -198,7 +234,7 @@ export default function DocumentoFileUploader({
                 type="button"
                 onClick={() => inputRef.current?.click()}
                 disabled={disabled || procesando}
-                className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 border-0 rounded-xl transition-colors cursor-pointer shadow-2xs"
+                className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white hover:bg-gray-50 border-0 rounded-xl transition-colors cursor-pointer shadow-2xs"
               >
                 Cambiar
               </button>
@@ -208,10 +244,15 @@ export default function DocumentoFileUploader({
                 onClick={() => onChange('', '')}
                 disabled={disabled || procesando}
                 title="Eliminar este archivo adjunto"
-                className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl transition-colors cursor-pointer"
+                className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors cursor-pointer"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                  />
                 </svg>
               </button>
             </div>
@@ -226,29 +267,34 @@ export default function DocumentoFileUploader({
           onClick={() => !disabled && !procesando && inputRef.current?.click()}
           className={`relative rounded-3xl border-0 transition-all cursor-pointer p-6 flex flex-col items-center justify-center text-center ${
             arrastrando
-              ? 'bg-brand-100/80 dark:bg-brand-950/60 ring-2 ring-brand-500 scale-[1.01]'
-              : 'bg-gray-100/80 hover:bg-gray-200/70 dark:bg-gray-800/60 dark:hover:bg-gray-800'
+              ? 'bg-brand-100/80 ring-2 ring-brand-500 scale-[1.01]'
+              : 'bg-gray-100/80 hover:bg-gray-200/70'
           } ${disabled || procesando ? 'opacity-60 cursor-not-allowed' : ''}`}
         >
           {procesando ? (
             <div className="flex flex-col items-center gap-2 py-2">
               <div className="w-8 h-8 border-3 border-brand-200 border-t-brand-600 rounded-full animate-spin" />
-              <p className="text-xs font-semibold text-gray-600">Procesando y optimizando documento…</p>
+              <p className="text-xs font-semibold text-gray-600">
+                Procesando y optimizando documento…
+              </p>
             </div>
           ) : (
             <>
-              <div className="w-12 h-12 rounded-2xl bg-white dark:bg-gray-700 border-0 shadow-xs text-brand-600 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+              <div className="w-12 h-12 rounded-2xl bg-white border-0 shadow-xs text-brand-600 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.75}
+                    d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  />
                 </svg>
               </div>
 
               <div className="space-y-1">
-                <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">
-                  <span className="text-brand-600 hover:underline">Sube un archivo</span> o arrástralo y suéltalo aquí
-                </p>
-                <p className="text-xs text-gray-400">
-                  PDF de la póliza/ficha, o foto/escaneo en JPG, PNG (hasta 15 MB)
+                <p className="text-sm font-semibold text-gray-800">
+                  <span className="text-brand-600 hover:underline">Sube un archivo</span> o
+                  arrástralo y suéltalo aquí
                 </p>
               </div>
             </>
@@ -258,8 +304,18 @@ export default function DocumentoFileUploader({
 
       {errorLocal && (
         <p className="mt-2 text-xs font-medium text-red-600 flex items-center gap-1">
-          <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <svg
+            className="w-3.5 h-3.5 flex-shrink-0"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
           </svg>
           {errorLocal}
         </p>

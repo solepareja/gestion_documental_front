@@ -7,8 +7,22 @@ import ListFilters from '../../components/ListFilters';
 
 const GRUPOS = [
   { id: 'todos', label: 'Todos los documentos' },
-  { id: 'vehiculos', label: 'Vehículos', campo: 'vehiculoId', singular: 'Vehículo', todos: 'Todos los vehículos', origen: 'vehiculo' },
-  { id: 'transportistas', label: 'Transportistas', campo: 'transportistaId', singular: 'Transportista', todos: 'Todos los transportistas', origen: 'transportista' },
+  {
+    id: 'vehiculos',
+    label: 'Vehículos',
+    campo: 'vehiculoId',
+    singular: 'Vehículo',
+    todos: 'Todos los vehículos',
+    origen: 'vehiculo',
+  },
+  {
+    id: 'transportistas',
+    label: 'Transportistas',
+    campo: 'transportistaId',
+    singular: 'Transportista',
+    todos: 'Todos los transportistas',
+    origen: 'transportista',
+  },
 ];
 
 export default function Documentos() {
@@ -21,79 +35,149 @@ export default function Documentos() {
   const [error, setError] = useState(null);
   const [retry, setRetry] = useState(0);
 
-  const grupo = GRUPOS.find(item => item.campo && (params.get(item.campo) || (item.id === 'transportistas' && params.get('conductorId'))))
-    || GRUPOS.find(item => item.id === params.get('grupo') || (item.id === 'transportistas' && params.get('grupo') === 'conductores')) || GRUPOS[0];
-  const entidadId = grupo.campo ? params.get(grupo.campo) || (grupo.id === 'transportistas' ? params.get('conductorId') || '' : '') : '';
+  const grupo =
+    GRUPOS.find(
+      (item) =>
+        item.campo &&
+        (params.get(item.campo) || (item.id === 'transportistas' && params.get('conductorId'))),
+    ) ||
+    GRUPOS.find(
+      (item) =>
+        item.id === params.get('grupo') ||
+        (item.id === 'transportistas' && params.get('grupo') === 'conductores'),
+    ) ||
+    GRUPOS[0];
+  const entidadId = grupo.campo
+    ? params.get(grupo.campo) ||
+      (grupo.id === 'transportistas' ? params.get('conductorId') || '' : '')
+    : '';
   const opciones = datos[grupo.id] || [];
 
   useEffect(() => {
     let active = true;
-    Promise.allSettled(['vehiculos', 'transportistas'].map(recurso => api.get('/' + recurso)))
-      .then(results => {
-        if (!active) return;
-        setDatos(Object.fromEntries(['vehiculos', 'transportistas'].map((key, index) =>
-          [key, results[index].status === 'fulfilled' ? results[index].value.data || [] : []])));
-        setError(results.some(result => result.status === 'rejected') ? 'No se han podido cargar todos los selectores. Puedes seguir buscando por categoría.' : null);
-        setCargando(false);
-      });
-    return () => { active = false; };
+    Promise.allSettled(
+      ['vehiculos', 'transportistas'].map((recurso) => api.get('/' + recurso)),
+    ).then((results) => {
+      if (!active) return;
+      setDatos(
+        Object.fromEntries(
+          ['vehiculos', 'transportistas'].map((key, index) => [
+            key,
+            results[index].status === 'fulfilled' ? results[index].value.data || [] : [],
+          ]),
+        ),
+      );
+      setError(
+        results.some((result) => result.status === 'rejected')
+          ? 'No se han podido cargar todos los selectores. Puedes seguir buscando por categoría.'
+          : null,
+      );
+      setCargando(false);
+    });
+    return () => {
+      active = false;
+    };
   }, [retry]);
 
-  const cambiarGrupo = id => setParams(id === 'todos' ? {} : { grupo: id });
-  const cambiarEntidad = id => setParams({ grupo: grupo.id, ...(id ? { [grupo.campo]: id } : {}) });
-  const quitarFiltros = () => { setBusqueda(''); setSoloVigentes(false); setParams({}); };
+  const cambiarGrupo = (id) => setParams(id === 'todos' ? {} : { grupo: id });
+  const cambiarEntidad = (id) =>
+    setParams({ grupo: grupo.id, ...(id ? { [grupo.campo]: id } : {}) });
+  const quitarFiltros = () => {
+    setBusqueda('');
+    setSoloVigentes(false);
+    setParams({});
+  };
   const queryNuevo = grupo.campo
-    ? '?' + new URLSearchParams({ origen: grupo.origen, ...(entidadId ? { [grupo.campo]: entidadId } : {}) }).toString() : '';
-  const nombreEntidad = item => grupo.id === 'vehiculos'
-    ? [item.matricula, [item.marca, item.modelo].filter(Boolean).join(' ')].filter(Boolean).join(' — ')
-    : [item.nombre, item.apellidos, item.dni ? '(' + item.dni + ')' : ''].filter(Boolean).join(' ');
+    ? '?' +
+      new URLSearchParams({
+        origen: grupo.origen,
+        ...(entidadId ? { [grupo.campo]: entidadId } : {}),
+      }).toString()
+    : '';
+  const nombreEntidad = (item) =>
+    grupo.id === 'vehiculos'
+      ? [item.matricula, [item.marca, item.modelo].filter(Boolean).join(' ')]
+          .filter(Boolean)
+          .join(' — ')
+      : [item.nombre, item.apellidos, item.dni ? '(' + item.dni + ')' : '']
+          .filter(Boolean)
+          .join(' ');
 
-  return <div>
-    <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">Documentos</h1>
-
+  return (
+    <div>
+      <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">
+            Documentos
+          </h1>
+        </div>
+        <Button onClick={() => navigate('/documentos/nuevo' + queryNuevo)}>
+          + Añadir documento
+        </Button>
       </div>
-      <Button onClick={() => navigate('/documentos/nuevo' + queryNuevo)}>+ Añadir documento</Button>
+      <ListFilters
+        id="documentos"
+        busqueda={busqueda}
+        onSearch={setBusqueda}
+        placeholder="Tipo, referencia, matrícula, nombre o archivo…"
+        active={Boolean(busqueda || soloVigentes || grupo.id !== 'todos')}
+        onClear={quitarFiltros}
+        filters={[
+          {
+            key: 'categoria',
+            label: 'Categoría',
+            allLabel: 'Todos los documentos',
+            value: grupo.id === 'todos' ? '' : grupo.id,
+            onChange: (value) => cambiarGrupo(value || 'todos'),
+            options: GRUPOS.slice(1).map((item) => ({ value: item.id, label: item.label })),
+          },
+          ...(grupo.campo
+            ? [
+                {
+                  key: 'entidad',
+                  label: grupo.singular,
+                  allLabel: grupo.todos,
+                  value: entidadId,
+                  disabled: cargando,
+                  onChange: cambiarEntidad,
+                  options: [
+                    ...(entidadId && !opciones.some((item) => String(item.id) === entidadId)
+                      ? [{ value: entidadId, label: 'Selección actual' }]
+                      : []),
+                    ...opciones.map((item) => ({
+                      value: String(item.id),
+                      label: nombreEntidad(item),
+                    })),
+                  ],
+                },
+              ]
+            : []),
+          {
+            key: 'vigencia',
+            label: 'Vigencia',
+            allLabel: 'Cualquier estado',
+            value: soloVigentes ? 'vigentes' : '',
+            onChange: (value) => setSoloVigentes(value === 'vigentes'),
+            options: [{ value: 'vigentes', label: 'Solo vigentes' }],
+          },
+        ]}
+      />
+      {error && (
+        <div role="alert" className="mb-4 text-xs text-red-700 flex flex-wrap items-center gap-3">
+          <span>{error}</span>
+          <Button variant="secondary" size="sm" onClick={() => setRetry((value) => value + 1)}>
+            Reintentar
+          </Button>
+        </div>
+      )}{' '}
+      <DocumentosTabla
+        busqueda={busqueda}
+        soloVigentes={soloVigentes}
+        grupoEntidad={grupo.id}
+        vehiculoId={grupo.id === 'vehiculos' ? entidadId : ''}
+        transportistaId={grupo.id === 'transportistas' ? entidadId : ''}
+        enEntidad={false}
+      />
     </div>
-
-    <ListFilters
-      id="documentos"
-      busqueda={busqueda}
-      onSearch={setBusqueda}
-      placeholder="Tipo, referencia, matrícula, nombre o archivo…"
-      active={Boolean(busqueda || soloVigentes || grupo.id !== 'todos')}
-      onClear={quitarFiltros}
-      filters={[
-        {
-          key: 'categoria', label: 'Categoría', allLabel: 'Todos los documentos',
-          value: grupo.id === 'todos' ? '' : grupo.id,
-          onChange: value => cambiarGrupo(value || 'todos'),
-          options: GRUPOS.slice(1).map(item => ({ value: item.id, label: item.label })),
-        },
-        ...(grupo.campo ? [{
-          key: 'entidad', label: grupo.singular, allLabel: grupo.todos, value: entidadId,
-          disabled: cargando, onChange: cambiarEntidad,
-          options: [
-            ...(entidadId && !opciones.some(item => String(item.id) === entidadId)
-              ? [{ value: entidadId, label: 'Selección actual' }] : []),
-            ...opciones.map(item => ({ value: String(item.id), label: nombreEntidad(item) })),
-          ],
-        }] : []),
-        {
-          key: 'vigencia', label: 'Vigencia', allLabel: 'Cualquier estado',
-          value: soloVigentes ? 'vigentes' : '',
-          onChange: value => setSoloVigentes(value === 'vigentes'),
-          options: [{ value: 'vigentes', label: 'Solo vigentes' }],
-        },
-      ]}
-    />
-    {error && <div role="alert" className="mb-4 text-xs text-red-700 flex flex-wrap items-center gap-3">
-      <span>{error}</span>
-      <Button variant="secondary" size="sm" onClick={() => setRetry(value => value + 1)}>Reintentar</Button>
-    </div>}    <DocumentosTabla busqueda={busqueda} soloVigentes={soloVigentes} grupoEntidad={grupo.id}
-      vehiculoId={grupo.id === 'vehiculos' ? entidadId : ''}
-      transportistaId={grupo.id === 'transportistas' ? entidadId : ''}
-      enEntidad={false} />
-  </div>;
+  );
 }

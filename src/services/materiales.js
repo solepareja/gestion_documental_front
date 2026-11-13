@@ -8,15 +8,33 @@ export const tiposMaterial = {
 export const estadosLineaEntrega = {
   ENTREGADO: 'Entregado',
   DEVUELTO: 'Devuelto',
-  PENDIENTE_RENOVACION: 'Pendiente de renovación',
+  PENDIENTE_RENOVACION: 'Pendiente de renovaciÃ³n',
   RENOVADO: 'Renovado',
   CADUCADO: 'Caducado',
 };
 
 export const opcionesTallasComunes = [
-  'XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL',
-  '36', '37', '38', '39', '40', '41', '42', '43', '44', '45', '46', '47', '48',
-  'Única'
+  'XS',
+  'S',
+  'M',
+  'L',
+  'XL',
+  'XXL',
+  '3XL',
+  '36',
+  '37',
+  '38',
+  '39',
+  '40',
+  '41',
+  '42',
+  '43',
+  '44',
+  '45',
+  '46',
+  '47',
+  '48',
+  'Ãšnica',
 ];
 
 export const tiposTallaje = {
@@ -29,9 +47,32 @@ export function obtenerTipoTallaje(material) {
   return material?.requiereTalla ? 'OTRO' : 'UNICA';
 }
 
+export function stockTalla(material, talla = '') {
+  const stocks = material?.stockPorTalla || {};
+  if (Object.keys(stocks).length)
+    return Number(stocks[material?.requiereTalla ? talla : 'ÚNICA'] || 0);
+  return material?.requiereTalla ? 0 : Number(material?.stock || 0);
+}
+
+export function disponibleTalla(material, talla, lineas = [], excluirId) {
+  return Math.max(
+    0,
+    stockTalla(material, talla) -
+      lineas
+        .filter(
+          (l) =>
+            l.idTemp !== excluirId &&
+            String(l.materialId) === String(material?.id) &&
+            (!material?.requiereTalla || l.talla === talla),
+        )
+        .reduce((sum, l) => sum + Number(l.cantidad || 0), 0),
+  );
+}
+
 export function obtenerTallasMaterial(material) {
-  return obtenerTipoTallaje(material) === 'UNICA'
-    ? ['Única'] : opcionesTallasComunes.filter(talla => talla !== 'Única');
+  return Object.keys(material?.stockPorTalla || {}).filter(
+    (talla) => stockTalla(material, talla) > 0,
+  );
 }
 
 export async function obtenerMateriales(tipo = null) {

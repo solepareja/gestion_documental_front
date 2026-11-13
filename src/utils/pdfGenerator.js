@@ -4,7 +4,7 @@ import autoTable from 'jspdf-autotable';
 /**
  * Utilidad oficial para generar y descargar directamente el archivo .PDF
  * del justificante de entrega de EPIS y vestuario laboral.
- * 
+ *
  * Se descarga como archivo físico en el ordenador / tablet para guardarlo
  * en la carpeta que el usuario elija (o en Descargas), sin abrir pestañas vacías.
  */
@@ -36,7 +36,8 @@ export function imprimirOdescargarPdfEntrega(entrega) {
 
   const idDoc = String(entrega.id || 'NUEVA').padStart(5, '0');
   const fechaDoc = formatearFecha(entrega.fechaEntrega || new Date().toISOString().slice(0, 10));
-  const trabajador = `${entrega.trabajadorNombre || ''} ${entrega.trabajadorApellidos || ''}`.trim() || 'Trabajador';
+  const trabajador =
+    `${entrega.trabajadorNombre || ''} ${entrega.trabajadorApellidos || ''}`.trim() || 'Trabajador';
   const dni = entrega.trabajadorDni || '—';
   const depto = entrega.trabajadorDepartamento || 'Taller / Fábrica';
 
@@ -54,7 +55,11 @@ export function imprimirOdescargarPdfEntrega(entrega) {
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7.5);
   doc.setTextColor(148, 163, 184); // slate-400
-  doc.text('Control y Registro Oficial de Entrega de Equipos de Protección Individual (EPIS) y Ropa de Trabajo', margin, 29);
+  doc.text(
+    'Control y Registro Oficial de Entrega de Equipos de Protección Individual (EPIS) y Ropa de Trabajo',
+    margin,
+    29,
+  );
 
   // Recuadro informativo del justificante (derecha)
   doc.setFont('helvetica', 'bold');
@@ -184,7 +189,8 @@ export function imprimirOdescargarPdfEntrega(entrega) {
   doc.setTextColor(71, 85, 105);
   doc.text('DECLARACIÓN DE RECEPCIÓN Y CONFORMIDAD:', margin, currentY);
 
-  const textoLegal = 'En cumplimiento de la Ley 31/1995 de Prevención de Riesgos Laborales y el Real Decreto 773/1997 sobre la utilización de equipos de protección individual, el trabajador abajo firmante certifica haber recibido los equipos de protección individual y/o vestuario laboral detallados en este documento en perfecto estado para su uso. Asimismo, declara haber recibido la información y formación adecuada sobre su utilización, limpieza, cuidado, conservación y obligatoriedad de uso durante las operaciones que entrañen riesgo.';
+  const textoLegal =
+    'En cumplimiento de la Ley 31/1995 de Prevención de Riesgos Laborales y el Real Decreto 773/1997 sobre la utilización de equipos de protección individual, el trabajador abajo firmante certifica haber recibido los equipos de protección individual y/o vestuario laboral detallados en este documento en perfecto estado para su uso. Asimismo, declara haber recibido la información y formación adecuada sobre su utilización, limpieza, cuidado, conservación y obligatoriedad de uso durante las operaciones que entrañen riesgo.';
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(6.5);
@@ -197,32 +203,6 @@ export function imprimirOdescargarPdfEntrega(entrega) {
   // --- BLOQUE DE FIRMAS ---
   const sigCardWidth = (pageWidth - margin * 2 - 8) / 2;
   const sigCardHeight = 40;
-
-  // Tarjeta izquierda: Por la Empresa
-  doc.setFillColor(248, 250, 252);
-  doc.setDrawColor(203, 213, 225);
-  doc.roundedRect(margin, currentY, sigCardWidth, sigCardHeight, 2, 2, 'FD');
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(7.5);
-  doc.setTextColor(15, 23, 42);
-  doc.text('Por la Empresa:', margin + 3, currentY + 6);
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7);
-  doc.setTextColor(100, 116, 139);
-  doc.text('Fábrica Sofás Valencia S.L.', margin + 3, currentY + 10);
-
-  doc.setFont('helvetica', 'italic');
-  doc.setFontSize(7);
-  doc.setTextColor(148, 163, 184);
-  doc.text('[ Sello / Firma Departamento PRL ]', margin + sigCardWidth / 2, currentY + 24, { align: 'center' });
-
-  doc.setDrawColor(226, 232, 240);
-  doc.line(margin + 3, currentY + 34, margin + sigCardWidth - 3, currentY + 34);
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(6);
-  doc.setTextColor(100, 116, 139);
-  doc.text('Responsable de entrega y control de material', margin + sigCardWidth / 2, currentY + 37.5, { align: 'center' });
 
   // Tarjeta derecha: Firma del Trabajador
   const rightCardX = margin + sigCardWidth + 8;
@@ -242,7 +222,16 @@ export function imprimirOdescargarPdfEntrega(entrega) {
   // Estampar imagen de la firma si existe
   if (entrega.firma && String(entrega.firma).startsWith('data:image')) {
     try {
-      doc.addImage(entrega.firma, 'PNG', rightCardX + 10, currentY + 12, sigCardWidth - 20, 20, undefined, 'FAST');
+      doc.addImage(
+        entrega.firma,
+        'PNG',
+        rightCardX + 10,
+        currentY + 12,
+        sigCardWidth - 20,
+        20,
+        undefined,
+        'FAST',
+      );
     } catch (e) {
       console.warn('No se pudo incrustar la imagen de la firma en el PDF:', e);
     }
@@ -250,7 +239,9 @@ export function imprimirOdescargarPdfEntrega(entrega) {
     doc.setFont('helvetica', 'italic');
     doc.setFontSize(7.5);
     doc.setTextColor(148, 163, 184);
-    doc.text('Sin firma registrada', rightCardX + sigCardWidth / 2, currentY + 22, { align: 'center' });
+    doc.text('Sin firma registrada', rightCardX + sigCardWidth / 2, currentY + 22, {
+      align: 'center',
+    });
   }
 
   doc.setDrawColor(226, 232, 240);
@@ -258,7 +249,12 @@ export function imprimirOdescargarPdfEntrega(entrega) {
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(6);
   doc.setTextColor(100, 116, 139);
-  doc.text(`Firmado electrónicamente el ${fechaDoc}`, rightCardX + sigCardWidth / 2, currentY + 37.5, { align: 'center' });
+  doc.text(
+    `Firmado electrónicamente el ${fechaDoc}`,
+    rightCardX + sigCardWidth / 2,
+    currentY + 37.5,
+    { align: 'center' },
+  );
 
   // DESCARGA DIRECTA COMO ARCHIVO .PDF (diálogo de descarga/carpeta del sistema)
   const nombreLimpio = trabajador.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ_-]/g, '_');
@@ -270,7 +266,13 @@ export function imprimirOdescargarPdfEntrega(entrega) {
  * Genera el PDF oficial de un documento corporativo firmado (RGPD, EPIs, Vehículos, etc.)
  * Permite tanto descargarlo como obtener el Base64 para guardarlo en backend.
  */
-export function generarPdfDocumentoFirmado({ plantilla, trabajador, firmaSvgBase64, fechaFirma, descargar = true }) {
+export function generarPdfDocumentoFirmado({
+  plantilla,
+  trabajador,
+  firmaSvgBase64,
+  fechaFirma,
+  descargar = true,
+}) {
   if (!plantilla || !trabajador) return null;
 
   const doc = new jsPDF({
@@ -281,11 +283,19 @@ export function generarPdfDocumentoFirmado({ plantilla, trabajador, firmaSvgBase
 
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 18;
-  const contentWidth = pageWidth - (margin * 2);
+  const contentWidth = pageWidth - margin * 2;
 
   const fechaObj = fechaFirma ? new Date(fechaFirma) : new Date();
-  const fechaStr = fechaObj.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
-  const horaStr = fechaObj.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const fechaStr = fechaObj.toLocaleDateString('es-ES', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+  const horaStr = fechaObj.toLocaleTimeString('es-ES', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
   const nombreTrabajador = `${trabajador.nombre || ''} ${trabajador.apellidos || ''}`.trim();
   const dni = trabajador.dni || '—';
   const depto = trabajador.departamento || 'General';
@@ -316,7 +326,11 @@ export function generarPdfDocumentoFirmado({ plantilla, trabajador, firmaSvgBase
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8.5);
   doc.setTextColor(100, 116, 139);
-  doc.text(`Ámbito / Colectivo: ${plantilla.colectivo || 'General'} | Ref: DOC-PLANT-${plantilla.id || '01'}`, margin, currentY);
+  doc.text(
+    `Ámbito / Colectivo: ${plantilla.colectivo || 'General'} | Ref: DOC-PLANT-${plantilla.id || '01'}`,
+    margin,
+    currentY,
+  );
 
   // --- RECUADRO DATOS DEL TRABAJADOR ---
   currentY += 6;
@@ -349,7 +363,9 @@ export function generarPdfDocumentoFirmado({ plantilla, trabajador, firmaSvgBase
   doc.setFontSize(8);
   doc.setTextColor(51, 65, 85);
 
-  const textoLegal = plantilla.contenidoLegal || 'Por medio de este documento el firmante declara su total conformidad.';
+  const textoLegal =
+    plantilla.contenidoLegal ||
+    'Por medio de este documento el firmante declara su total conformidad.';
   const lineasTexto = doc.splitTextToSize(textoLegal, contentWidth);
   doc.text(lineasTexto, margin, currentY);
 
@@ -378,7 +394,16 @@ export function generarPdfDocumentoFirmado({ plantilla, trabajador, firmaSvgBase
 
   if (firmaSvgBase64 && String(firmaSvgBase64).startsWith('data:image')) {
     try {
-      doc.addImage(firmaSvgBase64, 'PNG', sigBoxX + 10, currentY + 8, sigBoxWidth - 20, 24, undefined, 'FAST');
+      doc.addImage(
+        firmaSvgBase64,
+        'PNG',
+        sigBoxX + 10,
+        currentY + 8,
+        sigBoxWidth - 20,
+        24,
+        undefined,
+        'FAST',
+      );
     } catch (e) {
       console.warn('Error al incrustar firma en PDF:', e);
     }
@@ -390,8 +415,15 @@ export function generarPdfDocumentoFirmado({ plantilla, trabajador, firmaSvgBase
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(6.5);
   doc.setTextColor(100, 116, 139);
-  doc.text(`Firmado digitalmente el ${fechaStr} a las ${horaStr}`, sigBoxX + sigBoxWidth / 2, currentY + 38, { align: 'center' });
-  doc.text(`Identificador DNI: ${dni}`, sigBoxX + sigBoxWidth / 2, currentY + 41.5, { align: 'center' });
+  doc.text(
+    `Firmado digitalmente el ${fechaStr} a las ${horaStr}`,
+    sigBoxX + sigBoxWidth / 2,
+    currentY + 38,
+    { align: 'center' },
+  );
+  doc.text(`Identificador DNI: ${dni}`, sigBoxX + sigBoxWidth / 2, currentY + 41.5, {
+    align: 'center',
+  });
 
   // Pie de página de validez
   doc.setFontSize(6.5);
@@ -399,7 +431,7 @@ export function generarPdfDocumentoFirmado({ plantilla, trabajador, firmaSvgBase
   doc.text(
     'Documento firmado electrónicamente mediante captura táctil de consentimiento conforme a la política interna de Fábrica Sofás Valencia S.L.',
     margin,
-    285
+    285,
   );
 
   const base64Pdf = doc.output('datauristring');
@@ -413,3 +445,64 @@ export function generarPdfDocumentoFirmado({ plantilla, trabajador, firmaSvgBase
   return base64Pdf;
 }
 
+export function descargarPdfHistorialAnual(entregas, anyo) {
+  if (!entregas.length) return;
+  const doc = new jsPDF();
+  const persona = entregas[0];
+  const nombre = `${persona.trabajadorNombre || ''} ${persona.trabajadorApellidos || ''}`.trim();
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(16);
+  doc.text('Fábrica Sofás Valencia S.L.', 14, 20);
+  doc.setFontSize(12);
+  doc.text(`Historial de entregas de material · ${anyo}`, 14, 29);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  const cabecera = doc.splitTextToSize(
+    `${nombre} · DNI / NIE: ${persona.trabajadorDni || '—'}`,
+    180,
+  );
+  doc.text(cabecera, 14, 38);
+  const filas = entregas.flatMap((entrega) =>
+    (entrega.lineas?.length ? entrega.lineas : [{}]).map((linea) => [
+      `#${entrega.id}`,
+      formatearFecha(entrega.fechaEntrega),
+      linea.materialNombre || '—',
+      linea.materialTipo || '—',
+      String(linea.cantidad ?? '—'),
+      linea.talla || '—',
+      linea.estado || '—',
+      entrega.firma ? 'Sí' : 'No',
+      entrega.observaciones || '',
+    ]),
+  );
+  autoTable(doc, {
+    startY: 42 + (cabecera.length - 1) * 5,
+    head: [
+      [
+        'Entrega',
+        'Fecha',
+        'Material',
+        'Tipo',
+        'Uds.',
+        'Talla',
+        'Estado',
+        'Firmada',
+        'Observaciones',
+      ],
+    ],
+    body: filas,
+    styles: { fontSize: 7, cellPadding: 2.5, overflow: 'linebreak' },
+    headStyles: { fillColor: [51, 65, 85] },
+    margin: { top: 16, bottom: 18 },
+  });
+  const paginas = doc.getNumberOfPages();
+  for (let pagina = 1; pagina <= paginas; pagina++) {
+    doc.setPage(pagina);
+    doc.setFontSize(8);
+    doc.setTextColor(100);
+    doc.text(`${persona.trabajadorDni || ''} · ${anyo} · ${entregas.length} entregas`, 14, 287);
+    doc.text(`${pagina} / ${paginas}`, 195, 287, { align: 'right' });
+  }
+  const dni = String(persona.trabajadorDni || 'trabajador').replace(/[^a-zA-Z0-9]/g, '');
+  doc.save(`Historial_entregas_${dni}_${anyo}.pdf`);
+}

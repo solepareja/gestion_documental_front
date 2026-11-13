@@ -7,16 +7,13 @@ import {
 } from '../utils/carnetCategorias';
 import IconoVehiculoCarnet from './IconosCarnetDGT';
 import CustomSelect from './CustomSelect';
+import CustomDatePicker from './CustomDatePicker';
 
 /**
  * Tabla interactiva inspirada en el reverso oficial del Carnet de Conducir DGT / UE.
  * Utiliza los pictogramas vectoriales oficiales de los vehículos y cabecera sobria y profesional.
  */
-export default function TablaPermisosCarnet({
-  permisos = [],
-  onChange,
-  disabled = false,
-}) {
+export default function TablaPermisosCarnet({ permisos = [], onChange, disabled = false }) {
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState('');
   const [modoCompleto, setModoCompleto] = useState(true);
 
@@ -50,35 +47,40 @@ export default function TablaPermisosCarnet({
   };
 
   const categoriasDisponiblesParaAgregar = CATEGORIAS_CARNET.filter(
-    (c) => !codigosActivos.has(c.codigo)
+    (c) => !codigosActivos.has(c.codigo),
   );
 
   return (
-    <div className="rounded-3xl border-0 bg-gray-50/70 dark:bg-gray-900/60 overflow-hidden shadow-2xs">
+    <div className="rounded-3xl border-0 bg-gray-50/70 shadow-2xs">
       {/* Cabecera sobria y elegante integrada con el diseño de la aplicación */}
       <div className="p-4 sm:p-5 border-0 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-start sm:items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gray-200/70 dark:bg-gray-800 border-0 flex items-center justify-center text-gray-700 dark:text-gray-300 shrink-0">
+          <div className="w-9 h-9 rounded-xl bg-gray-200/70 border-0 flex items-center justify-center text-gray-700 shrink-0">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.8}
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
             </svg>
           </div>
           <div>
-            <h3 className="text-sm sm:text-base font-bold text-gray-900 dark:text-gray-100 tracking-tight">
+            <h3 className="text-sm sm:text-base font-bold text-gray-900 tracking-tight">
               Permisos de conducir (Categorías DGT)
             </h3>
           </div>
         </div>
 
         {/* Toggle para alternar vista */}
-        <div className="flex items-center gap-1 bg-gray-200/70 dark:bg-gray-800 p-1 rounded-xl border-0 self-start sm:self-auto">
+        <div className="flex items-center gap-1 bg-gray-200/70 p-1 rounded-xl border-0 self-start sm:self-auto">
           <button
             type="button"
             onClick={() => setModoCompleto(true)}
             className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
               modoCompleto
-                ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-2xs font-bold'
-                : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
+                ? 'bg-white text-gray-900 shadow-2xs font-bold'
+                : 'text-gray-500 hover:text-gray-900'
             }`}
           >
             Vista carnet DGT
@@ -88,8 +90,8 @@ export default function TablaPermisosCarnet({
             onClick={() => setModoCompleto(false)}
             className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
               !modoCompleto
-                ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-2xs font-bold'
-                : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
+                ? 'bg-white text-gray-900 shadow-2xs font-bold'
+                : 'text-gray-500 hover:text-gray-900'
             }`}
           >
             Solo activos ({permisos.length})
@@ -101,7 +103,7 @@ export default function TablaPermisosCarnet({
       <div className="overflow-x-auto tabla-carnet">
         <table className="w-full text-left border-collapse text-xs">
           <thead>
-            <tr className="bg-gray-100/80 dark:bg-gray-800 text-gray-600 dark:text-gray-300 font-bold uppercase text-[11px] tracking-wider select-none border-0">
+            <tr className="bg-gray-100/80 text-gray-600 font-bold uppercase text-[11px] tracking-wider select-none border-0">
               <th className="py-3 px-3 w-64 min-w-[240px]">9. Categoría y tipo</th>
               <th className="py-3 px-3 w-40 min-w-[150px]">10. Expedición</th>
               <th className="py-3 px-3 w-40 min-w-[150px]">11. Caducidad</th>
@@ -109,25 +111,23 @@ export default function TablaPermisosCarnet({
               <th className="py-3 px-3 w-28 min-w-[110px] text-center">Estado</th>
             </tr>
           </thead>
-          <tbody className="bg-white dark:bg-gray-900 border-0 font-medium">
+          <tbody className="bg-white border-0 font-medium">
             {modoCompleto ? (
               // Vista carnet completo (muestra las 15 categorías como la tarjeta física de la DGT)
               CATEGORIAS_CARNET.map((cat) => {
                 const permisoActivo = permisos.find(
-                  (p) => p.tipo?.toUpperCase() === cat.codigo.toUpperCase()
+                  (p) => p.tipo?.toUpperCase() === cat.codigo.toUpperCase(),
                 );
                 const activo = Boolean(permisoActivo);
-                const estado = activo
-                  ? calcularEstadoPermiso(permisoActivo.fechaCaducidad)
-                  : null;
+                const estado = activo ? calcularEstadoPermiso(permisoActivo.fechaCaducidad) : null;
 
                 return (
                   <tr
                     key={cat.codigo}
                     className={`border-0 transition-colors ${
                       activo
-                        ? 'bg-amber-100/30 hover:bg-amber-100/50 dark:bg-amber-950/20 dark:hover:bg-amber-950/30'
-                        : 'hover:bg-gray-100/40 dark:hover:bg-gray-800/40 text-gray-400'
+                        ? 'bg-amber-100/30 hover:bg-amber-100/50'
+                        : 'hover:bg-gray-100/40 text-gray-400'
                     }`}
                   >
                     {/* Col 9: Casilla + Código Badge + Silueta oficial DGT + Nombre */}
@@ -174,14 +174,14 @@ export default function TablaPermisosCarnet({
                     {/* Col 10: Expedición */}
                     <td className="py-2 px-3 align-middle">
                       {activo ? (
-                        <input
-                          type="date"
+                        <CustomDatePicker
                           value={formatearFechaISO(permisoActivo.fechaEmision)}
                           disabled={disabled}
+                          size="sm"
+                          placeholder="dd/mm/aaaa"
                           onChange={(e) =>
                             handleCambioFecha(cat.codigo, 'fechaEmision', e.target.value)
                           }
-                          className="w-full text-xs rounded-lg border-0 bg-gray-100 hover:bg-gray-200/60 px-2 py-1 focus:bg-white focus:ring-2 focus:ring-brand-500 font-medium"
                         />
                       ) : (
                         <span className="text-gray-300 font-mono tracking-widest text-center block select-none">
@@ -193,14 +193,15 @@ export default function TablaPermisosCarnet({
                     {/* Col 11: Caducidad */}
                     <td className="py-2 px-3 align-middle">
                       {activo ? (
-                        <input
-                          type="date"
+                        <CustomDatePicker
                           value={formatearFechaISO(permisoActivo.fechaCaducidad)}
                           disabled={disabled}
+                          size="sm"
+                          placeholder="dd/mm/aaaa"
+                          min={formatearFechaISO(permisoActivo.fechaEmision) || undefined}
                           onChange={(e) =>
                             handleCambioFecha(cat.codigo, 'fechaCaducidad', e.target.value)
                           }
-                          className="w-full text-xs rounded-lg border-0 bg-gray-100 hover:bg-gray-200/60 px-2 py-1 focus:bg-white focus:ring-2 focus:ring-brand-500 font-medium"
                         />
                       ) : (
                         <span className="text-gray-300 font-mono tracking-widest text-center block select-none">
@@ -241,7 +242,6 @@ export default function TablaPermisosCarnet({
                         <span className="text-[11px] text-gray-300 select-none">—</span>
                       )}
                     </td>
-
                   </tr>
                 );
               })
@@ -256,7 +256,10 @@ export default function TablaPermisosCarnet({
                 const estado = calcularEstadoPermiso(p.fechaCaducidad);
 
                 return (
-                  <tr key={p.tipo} className="even:bg-gray-50/70 dark:even:bg-gray-800/35 hover:bg-brand-500/10 dark:hover:bg-brand-500/15 transition-colors border-0">
+                  <tr
+                    key={p.tipo}
+                    className="even:bg-gray-50/70 hover:bg-brand-500/10 transition-colors border-0"
+                  >
                     {/* Col 9 */}
                     <td className="py-2 px-3 align-middle">
                       <div className="flex items-center gap-2">
@@ -280,27 +283,26 @@ export default function TablaPermisosCarnet({
 
                     {/* Col 10 */}
                     <td className="py-2 px-3 align-middle">
-                      <input
-                        type="date"
+                      <CustomDatePicker
                         value={formatearFechaISO(p.fechaEmision)}
                         disabled={disabled}
-                        onChange={(e) =>
-                          handleCambioFecha(p.tipo, 'fechaEmision', e.target.value)
-                        }
-                        className="w-full text-xs rounded-lg border-0 bg-gray-100 hover:bg-gray-200/60 px-2 py-1 focus:bg-white focus:ring-2 focus:ring-brand-500 font-medium"
+                        size="sm"
+                        placeholder="dd/mm/aaaa"
+                        onChange={(e) => handleCambioFecha(p.tipo, 'fechaEmision', e.target.value)}
                       />
                     </td>
 
                     {/* Col 11 */}
                     <td className="py-2 px-3 align-middle">
-                      <input
-                        type="date"
+                      <CustomDatePicker
                         value={formatearFechaISO(p.fechaCaducidad)}
                         disabled={disabled}
+                        size="sm"
+                        placeholder="dd/mm/aaaa"
+                        min={formatearFechaISO(p.fechaEmision) || undefined}
                         onChange={(e) =>
                           handleCambioFecha(p.tipo, 'fechaCaducidad', e.target.value)
                         }
-                        className="w-full text-xs rounded-lg border-0 bg-gray-100 hover:bg-gray-200/60 px-2 py-1 focus:bg-white focus:ring-2 focus:ring-brand-500 font-medium"
                       />
                     </td>
 
@@ -311,9 +313,7 @@ export default function TablaPermisosCarnet({
                         placeholder="Ej: 01 (gafas)"
                         value={p.observaciones || ''}
                         disabled={disabled}
-                        onChange={(e) =>
-                          handleCambioFecha(p.tipo, 'observaciones', e.target.value)
-                        }
+                        onChange={(e) => handleCambioFecha(p.tipo, 'observaciones', e.target.value)}
                         className="w-full text-xs rounded-lg border-0 bg-gray-100 hover:bg-gray-200/60 px-2 py-1 focus:bg-white focus:ring-2 focus:ring-brand-500 font-medium"
                       />
                     </td>
@@ -336,8 +336,18 @@ export default function TablaPermisosCarnet({
                         title={`Eliminar permiso ${p.tipo}`}
                         className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors cursor-pointer inline-flex items-center justify-center"
                       >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                          />
                         </svg>
                       </button>
                     </td>

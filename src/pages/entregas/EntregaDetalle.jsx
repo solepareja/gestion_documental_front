@@ -61,7 +61,9 @@ export default function EntregaDetalle() {
   if (error || !entrega) {
     return (
       <div className="max-w-4xl mx-auto bg-white rounded-2xl border border-gray-100 p-8 text-center shadow-xs">
-        <p role="alert" className="text-red-500 font-semibold mb-4">{error || 'Entrega no disponible'}</p>
+        <p role="alert" className="text-red-500 font-semibold mb-4">
+          {error || 'Entrega no disponible'}
+        </p>
         <Button onClick={() => navigate('/entregas')}>Volver a entregas</Button>
       </div>
     );
@@ -82,22 +84,34 @@ export default function EntregaDetalle() {
             viewBox="0 0 24 24"
             stroke="currentColor"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M10 19l-7-7m0 0l7-7m-7 7h18"
+            />
           </svg>
           Volver al listado de entregas
         </Link>
 
         <div className="flex items-center gap-2 flex-wrap">
-          <Button variant="secondary" onClick={descargarPdf} title="Descargar o imprimir justificante oficial en PDF">
+          <Button
+            variant="secondary"
+            onClick={descargarPdf}
+            title="Descargar o imprimir justificante oficial en PDF"
+          >
             <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
             </svg>
             Descargar PDF
           </Button>
 
-          <Button onClick={() => navigate('/entregas/nueva')}>
-            + Nueva entrega
-          </Button>
+          <Button onClick={() => navigate('/entregas/nueva')}>+ Nueva entrega</Button>
 
           <DeleteButton
             resource="entregas"
@@ -110,7 +124,6 @@ export default function EntregaDetalle() {
 
       {/* Justificante Formal (Documento Imprimible) */}
       <div className="entrega-justificante bg-white rounded-3xl border border-gray-200 shadow-sm p-6 sm:p-10 print:p-0 print:border-none print:shadow-none space-y-8">
-        
         {/* Cabecera del Documento */}
         <div className="flex flex-wrap items-start justify-between gap-6 border-b border-gray-200 pb-6">
           <div className="flex flex-wrap items-center gap-4 flex-1 basis-96">
@@ -159,7 +172,9 @@ export default function EntregaDetalle() {
             </div>
             <div>
               <span className="block text-gray-400 font-medium">DNI / NIE:</span>
-              <span className="font-bold text-gray-900 text-sm">{entrega.trabajadorDni || '—'}</span>
+              <span className="font-bold text-gray-900 text-sm">
+                {entrega.trabajadorDni || '—'}
+              </span>
             </div>
             <div>
               <span className="block text-gray-400 font-medium">Correo electrónico:</span>
@@ -167,16 +182,16 @@ export default function EntregaDetalle() {
             </div>
             <div>
               <span className="block text-gray-400 font-medium">Departamento:</span>
-              <span className="font-semibold text-gray-800">{entrega.trabajadorDepartamento || '—'}</span>
+              <span className="font-semibold text-gray-800">
+                {entrega.trabajadorDepartamento || '—'}
+              </span>
             </div>
           </div>
         </div>
 
         {/* Tabla de Artículos Entregados */}
         <div>
-          <h3 className="text-sm font-bold text-gray-900 mb-3">
-            Detalle de material entregado
-          </h3>
+          <h3 className="text-sm font-bold text-gray-900 mb-3">Detalle de material entregado</h3>
           <div className="overflow-x-auto rounded-2xl border-0 shadow-xs">
             <table className="w-full table-fixed min-w-[620px] text-left text-xs border-collapse border-0">
               <thead className="bg-gray-100/75 text-gray-500 font-bold uppercase tracking-wider text-[11px] border-0">
@@ -185,16 +200,21 @@ export default function EntregaDetalle() {
                   <th className="p-3.5 border-0">Tipo</th>
                   <th className="p-3.5 text-center border-0">Cantidad</th>
                   <th className="p-3.5 text-center border-0">Talla</th>
-                  <th className="p-3.5 border-0">Renovación prevista</th>
                   <th className="p-3.5 text-right border-0">Estado</th>
                 </tr>
               </thead>
-              <tbody className="bg-white dark:bg-gray-900 border-0">
+              <tbody className="bg-white border-0">
                 {(entrega.lineas || []).map((l) => (
-                  <tr key={l.id} className="even:bg-gray-50/70 dark:even:bg-gray-800/35 hover:bg-brand-500/10 dark:hover:bg-brand-500/15 transition-colors border-0">
+                  <tr
+                    key={l.id}
+                    className="even:bg-gray-50/70 hover:bg-brand-500/10 transition-colors border-0"
+                  >
                     <td className="p-3.5 font-bold text-gray-900 text-sm">
                       {l.materialId ? (
-                        <Link to={`/materiales/${l.materialId}`} className="text-brand-600 hover:text-brand-800 hover:underline">
+                        <Link
+                          to={`/materiales/${l.materialId}`}
+                          className="text-brand-600 hover:text-brand-800 hover:underline"
+                        >
                           {l.materialNombre}
                         </Link>
                       ) : (
@@ -202,11 +222,13 @@ export default function EntregaDetalle() {
                       )}
                     </td>
                     <td className="p-3.5">
-                      <span className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-bold ${
-                        l.materialTipo === 'EPI'
-                          ? 'bg-amber-100 text-amber-800'
-                          : 'bg-blue-100 text-blue-800'
-                      }`}>
+                      <span
+                        className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                          l.materialTipo === 'EPI'
+                            ? 'bg-amber-100 text-amber-800'
+                            : 'bg-blue-100 text-blue-800'
+                        }`}
+                      >
                         {tiposMaterial[l.materialTipo] || l.materialTipo}
                       </span>
                     </td>
@@ -216,12 +238,7 @@ export default function EntregaDetalle() {
                     <td className="p-3.5 text-center font-semibold text-gray-700">
                       {l.talla ? `Talla ${l.talla}` : 'Talla única'}
                     </td>
-                    <td className="p-3.5 text-gray-600 font-medium">
-                      {l.fechaRenovacion ? formatearFecha(l.fechaRenovacion) : 'A determinar'}
-                    </td>
-                    <td className="p-3.5 text-right font-bold text-emerald-700">
-                      Entregado
-                    </td>
+                    <td className="p-3.5 text-right font-bold text-emerald-700">Entregado</td>
                   </tr>
                 ))}
               </tbody>
@@ -240,31 +257,24 @@ export default function EntregaDetalle() {
         {/* Cláusula Legal y Bloque de Firmas */}
         <div className="space-y-4 pt-4 border-t border-gray-200">
           <p className="text-[11px] text-gray-500 text-justify leading-relaxed">
-            De conformidad con el Real Decreto 773/1997 sobre disposiciones mínimas de seguridad y salud relativas a la
-            utilización por los trabajadores de equipos de protección individual, el trabajador abajo firmante certifica
-            haber recibido los equipos descritos en perfecto estado de uso y funcionamiento, así como las instrucciones
-            pertinentes sobre su uso, conservación y mantenimiento obligatorio durante el desarrollo de sus tareas.
+            De conformidad con el Real Decreto 773/1997 sobre disposiciones mínimas de seguridad y
+            salud relativas a la utilización por los trabajadores de equipos de protección
+            individual, el trabajador abajo firmante certifica haber recibido los equipos descritos
+            en perfecto estado de uso y funcionamiento, así como las instrucciones pertinentes sobre
+            su uso, conservación y mantenimiento obligatorio durante el desarrollo de sus tareas.
           </p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2">
-            {/* Firma del Emisor */}
-            <div className="p-4 rounded-2xl border border-gray-200 bg-gray-50/50 flex flex-col justify-between min-h-44 gap-3 text-xs">
-              <div>
-                <span className="font-bold text-gray-800 block">Por la Empresa:</span>
-                <span className="text-gray-500 block text-[11px]">Fábrica Sofás Valencia S.L.</span>
-              </div>
-              <div className="text-center text-gray-400 italic text-[11px] border-t border-gray-200 pt-2">
-                Sello y firma del responsable de entrega
-              </div>
-            </div>
-
-            {/* Firma Digital del Trabajador */}
-            <div className="p-4 rounded-2xl border border-brand-200 bg-brand-50/20 flex flex-col justify-between min-h-44 gap-3 text-xs">
+          <div className="flex justify-end pt-2">
+            {/* Firma Digital del Trabajador a la derecha */}
+            <div className="w-full sm:w-1/2 sm:max-w-md p-4 rounded-2xl border border-brand-200 bg-brand-50/20 flex flex-col justify-between min-h-44 gap-3 text-xs">
               <div className="flex flex-wrap justify-between items-start gap-2">
                 <div>
-                  <span className="font-bold text-gray-900 block">Conforme el trabajador receptor:</span>
+                  <span className="font-bold text-gray-900 block">
+                    Conforme el trabajador receptor:
+                  </span>
                   <span className="text-gray-600 block text-[11px]">
-                    {entrega.trabajadorNombre} {entrega.trabajadorApellidos} ({entrega.trabajadorDni || 'DNI'})
+                    {entrega.trabajadorNombre} {entrega.trabajadorApellidos} (
+                    {entrega.trabajadorDni || 'DNI'})
                   </span>
                 </div>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
@@ -291,7 +301,6 @@ export default function EntregaDetalle() {
             </div>
           </div>
         </div>
-
       </div>
     </div>
   );

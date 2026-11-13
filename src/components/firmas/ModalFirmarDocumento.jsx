@@ -2,7 +2,12 @@ import { useState } from 'react';
 import SignaturePad from '../SignaturePad';
 import { generarPdfDocumentoFirmado } from '../../utils/pdfGenerator';
 
-export default function ModalFirmarDocumento({ trabajador, plantilla, onClose, onFirmaCompletada }) {
+export default function ModalFirmarDocumento({
+  trabajador,
+  plantilla,
+  onClose,
+  onFirmaCompletada,
+}) {
   const [firmaSvgBase64, setFirmaSvgBase64] = useState('');
   const [aceptoTerminos, setAceptoTerminos] = useState(false);
   const [descargarAlTerminar, setDescargarAlTerminar] = useState(false);
@@ -51,20 +56,17 @@ export default function ModalFirmarDocumento({ trabajador, plantilla, onClose, o
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl max-w-2xl w-full max-h-[94vh] flex flex-col border-0 overflow-hidden">
-        
+      <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[94vh] flex flex-col border-0 overflow-hidden">
         {/* Cabecera */}
-        <div className="px-6 py-4 bg-gray-50/90 dark:bg-gray-850/90 border-0 flex justify-between items-center">
+        <div className="px-6 py-4 bg-gray-50/90 border-0 flex justify-between items-center">
           <div>
-            <span className="text-[11px] font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-brand-600">
               Módulo de Firmas Corporativas
             </span>
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white leading-tight">
-              {plantilla.titulo}
-            </h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+            <h3 className="text-lg font-bold text-gray-900 leading-tight">{plantilla.titulo}</h3>
+            <p className="text-xs text-gray-500 mt-0.5">
               Firmante:{' '}
-              <span className="font-semibold text-gray-800 dark:text-gray-200">
+              <span className="font-semibold text-gray-800">
                 {trabajador.nombre} {trabajador.apellidos}
               </span>{' '}
               • DNI: <span className="font-mono">{trabajador.dni}</span>
@@ -72,7 +74,7 @@ export default function ModalFirmarDocumento({ trabajador, plantilla, onClose, o
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-800 transition cursor-pointer"
+            className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-200 transition cursor-pointer"
           >
             ✕
           </button>
@@ -81,32 +83,33 @@ export default function ModalFirmarDocumento({ trabajador, plantilla, onClose, o
         {/* Cuerpo con Scroll */}
         <div className="p-6 overflow-y-auto space-y-5 text-sm">
           {error && (
-            <div className="p-3.5 text-xs rounded-2xl bg-rose-500/10 text-rose-700 dark:text-rose-300 border-0">
+            <div className="p-3.5 text-xs rounded-2xl bg-rose-500/10 text-rose-700 border-0">
               {error}
             </div>
           )}
 
           {/* Texto / Cláusulas del documento */}
           <div>
-            <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1.5">
+            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
               Contenido Legal y Condiciones de Cumplimiento
             </label>
-            <div className="p-4 bg-gray-100/80 dark:bg-gray-800 rounded-2xl border-0 max-h-40 overflow-y-auto text-xs text-gray-700 dark:text-gray-200 whitespace-pre-line leading-relaxed shadow-inner">
+            <div className="p-4 bg-gray-100/80 rounded-2xl border-0 max-h-40 overflow-y-auto text-xs text-gray-700 whitespace-pre-line leading-relaxed shadow-inner">
               {plantilla.contenidoLegal}
             </div>
           </div>
 
           {/* Checkbox de conformidad */}
           <div className="space-y-2">
-            <label className="flex items-start gap-3.5 p-4 rounded-2xl bg-brand-500/10 dark:bg-brand-950/30 border-0 cursor-pointer select-none transition hover:bg-brand-500/15">
+            <label className="flex items-start gap-3.5 p-4 rounded-2xl bg-brand-500/10 border-0 cursor-pointer select-none transition hover:bg-brand-500/15">
               <input
                 type="checkbox"
                 checked={aceptoTerminos}
                 onChange={(e) => setAceptoTerminos(e.target.checked)}
                 className="mt-0.5 h-4 w-4 rounded text-brand-600 focus:ring-brand-500 cursor-pointer border-0"
               />
-              <span className="text-xs text-gray-800 dark:text-gray-200 leading-snug">
-                <strong>He leído y presto mi consentimiento y conformidad</strong> con el contenido íntegro expuesto en este documento, autorizando su registro vinculante.
+              <span className="text-xs text-gray-800 leading-snug">
+                <strong>He leído y presto mi consentimiento y conformidad</strong> con el contenido
+                íntegro expuesto en este documento, autorizando su registro vinculante.
               </span>
             </label>
 
@@ -117,7 +120,7 @@ export default function ModalFirmarDocumento({ trabajador, plantilla, onClose, o
                 onChange={(e) => setDescargarAlTerminar(e.target.checked)}
                 className="h-3.5 w-3.5 rounded text-brand-600 focus:ring-brand-500 cursor-pointer border-0"
               />
-              <span className="text-xs text-gray-500 dark:text-gray-400">
+              <span className="text-xs text-gray-500">
                 Descargar copia en PDF automáticamente al confirmar la firma
               </span>
             </label>
@@ -126,7 +129,7 @@ export default function ModalFirmarDocumento({ trabajador, plantilla, onClose, o
           {/* Canvas de Firma Táctil */}
           <div>
             <div className="flex justify-between items-center mb-1.5">
-              <label className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+              <label className="text-xs font-bold text-gray-700 uppercase tracking-wider">
                 Firma manuscrita en pantalla / tablet
               </label>
               <span className="text-[11px] text-gray-400">Use el dedo o lápiz táctil</span>
@@ -138,16 +141,12 @@ export default function ModalFirmarDocumento({ trabajador, plantilla, onClose, o
         </div>
 
         {/* Pie de Acciones */}
-        <div className="px-6 py-4 bg-gray-50/90 dark:bg-gray-850/90 border-0 flex items-center justify-between gap-3">
-          <span className="text-[11px] text-gray-400 hidden sm:inline">
-            El documento quedará registrado con sello temporal y sellado digital.
-          </span>
-
+        <div className="px-6 py-4 bg-gray-50/90 border-0 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 ml-auto">
             <button
               onClick={onClose}
               disabled={enviando}
-              className="px-4 py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition cursor-pointer"
+              className="px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-100 rounded-xl transition cursor-pointer"
             >
               Cancelar
             </button>
@@ -160,7 +159,6 @@ export default function ModalFirmarDocumento({ trabajador, plantilla, onClose, o
             </button>
           </div>
         </div>
-
       </div>
     </div>
   );

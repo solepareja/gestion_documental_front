@@ -9,7 +9,7 @@ export default function ModalVisorDocumento({
   onCerrar,
   archivo,
   archivoNombre = 'documento',
-  titulo = 'Documento del vehículo'
+  titulo = 'Documento del vehículo',
 }) {
   useEffect(() => {
     if (!abierto) return;
@@ -22,7 +22,8 @@ export default function ModalVisorDocumento({
 
   if (!abierto || !archivo) return null;
 
-  const esPdf = archivo.startsWith('data:application/pdf') || archivoNombre?.toLowerCase().endsWith('.pdf');
+  const esPdf =
+    archivo.startsWith('data:application/pdf') || archivoNombre?.toLowerCase().endsWith('.pdf');
 
   const handleDescargar = () => {
     try {
@@ -44,12 +45,12 @@ export default function ModalVisorDocumento({
     if (nuevaVentana) {
       if (esPdf) {
         nuevaVentana.document.write(
-          `<iframe src="${archivo}" frameborder="0" style="border:0; top:0; left:0; bottom:0; right:0; width:100%; height:100%;" allowfullscreen></iframe>`
+          `<iframe src="${archivo}" frameborder="0" style="border:0; top:0; left:0; bottom:0; right:0; width:100%; height:100%;" allowfullscreen></iframe>`,
         );
         nuevaVentana.document.title = archivoNombre || 'Documento PDF';
       } else {
         nuevaVentana.document.write(
-          `<div style="display:flex;justify-content:center;align-items:center;min-height:100vh;background:#0f172a;margin:0;"><img src="${archivo}" style="max-width:100%;max-height:100vh;object-fit:contain;" /></div>`
+          `<div style="display:flex;justify-content:center;align-items:center;min-height:100vh;background:#0f172a;margin:0;"><img src="${archivo}" style="max-width:100%;max-height:100vh;object-fit:contain;" /></div>`,
         );
         nuevaVentana.document.title = archivoNombre || 'Imagen del documento';
       }
@@ -84,9 +85,7 @@ export default function ModalVisorDocumento({
               <h3 id="modal-visor-titulo" className="text-sm font-bold text-gray-900 truncate">
                 {titulo}
               </h3>
-              {archivoNombre && (
-                <p className="text-xs text-gray-500 truncate">{archivoNombre}</p>
-              )}
+              {archivoNombre && <p className="text-xs text-gray-500 truncate">{archivoNombre}</p>}
             </div>
           </div>
 
@@ -98,7 +97,12 @@ export default function ModalVisorDocumento({
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200/80 border-0 rounded-xl transition-colors cursor-pointer"
             >
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                />
               </svg>
               <span className="hidden sm:inline">Nueva pestaña</span>
             </button>
@@ -110,7 +114,12 @@ export default function ModalVisorDocumento({
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-brand-700 bg-brand-500/15 hover:bg-brand-500/25 border-0 rounded-xl transition-colors cursor-pointer"
             >
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                />
               </svg>
               <span className="hidden sm:inline">Descargar</span>
             </button>
@@ -122,7 +131,12 @@ export default function ModalVisorDocumento({
               className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-colors cursor-pointer"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>

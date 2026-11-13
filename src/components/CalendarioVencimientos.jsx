@@ -6,17 +6,29 @@ import ModalConfirmacion from './ModalConfirmacion';
 const DIAS_SEMANA = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 const DIAS_SEMANA_CORTO = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 const MESES = [
-  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+  'Enero',
+  'Febrero',
+  'Marzo',
+  'Abril',
+  'Mayo',
+  'Junio',
+  'Julio',
+  'Agosto',
+  'Septiembre',
+  'Octubre',
+  'Noviembre',
+  'Diciembre',
 ];
 
 export default function CalendarioVencimientos({
   eventos = [],
   cargando = false,
-  onAvisoEliminado
+  onAvisoEliminado,
 }) {
   const hoy = useMemo(() => new Date(), []);
-  const [fechaActual, setFechaActual] = useState(() => new Date(hoy.getFullYear(), hoy.getMonth(), 1));
+  const [fechaActual, setFechaActual] = useState(
+    () => new Date(hoy.getFullYear(), hoy.getMonth(), 1),
+  );
   const [filtroTipo, setFiltroTipo] = useState('TODOS');
   const [diaSeleccionado, setDiaSeleccionado] = useState(null);
   const [modalAbierto, setModalAbierto] = useState(false);
@@ -66,7 +78,9 @@ export default function CalendarioVencimientos({
   const eventosFiltrados = useMemo(() => {
     if (filtroTipo === 'TODOS') return eventos;
     if (filtroTipo === 'AVISO') {
-      return eventos.filter((ev) => ['AVISO', 'NOTA', 'EVENTO', 'RECORDATORIO'].includes(ev.categoria));
+      return eventos.filter((ev) =>
+        ['AVISO', 'NOTA', 'EVENTO', 'RECORDATORIO'].includes(ev.categoria),
+      );
     }
     return eventos.filter((ev) => ev.categoria === filtroTipo);
   }, [eventos, filtroTipo]);
@@ -174,7 +188,12 @@ export default function CalendarioVencimientos({
     const partes = clave.split('-');
     if (partes.length === 3) {
       const d = new Date(Number(partes[0]), Number(partes[1]) - 1, Number(partes[2]));
-      return d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+      return d.toLocaleDateString('es-ES', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      });
     }
     return clave;
   };
@@ -198,22 +217,27 @@ export default function CalendarioVencimientos({
   };
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-3xl border-0 shadow-xs overflow-hidden">
+    <div className="bg-white rounded-3xl border-0 shadow-xs overflow-hidden">
       {/* Barra superior de controles del calendario */}
-      <div className="p-5 sm:p-6 bg-white dark:bg-gray-900 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="p-5 sm:p-6 bg-white flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div ref={menuNavRef} className="flex flex-wrap items-center gap-2.5">
-            <div className="flex items-center gap-1.5 bg-gray-100/70 dark:bg-gray-800/60 p-1 rounded-2xl">
+            <div className="flex items-center gap-1.5 bg-gray-100/70 p-1 rounded-2xl">
               {/* Botón Mes anterior */}
               <button
                 type="button"
                 onClick={mesAnterior}
                 aria-label="Mes anterior"
                 title="Mes anterior"
-                className="w-8 h-8 flex items-center justify-center shrink-0 text-gray-500 hover:text-brand-500 hover:bg-white dark:hover:bg-gray-700 rounded-xl transition-colors cursor-pointer border-0"
+                className="w-8 h-8 flex items-center justify-center shrink-0 text-gray-500 hover:text-brand-500 hover:bg-white rounded-xl transition-colors cursor-pointer border-0"
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 19l-7-7 7-7"
+                  />
                 </svg>
               </button>
 
@@ -222,7 +246,7 @@ export default function CalendarioVencimientos({
                 <button
                   type="button"
                   onClick={() => setMenuAbierto((prev) => (prev === 'mes' ? null : 'mes'))}
-                  className={`w-[144px] sm:w-[160px] flex items-center justify-center gap-1.5 bg-white dark:bg-gray-850 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-900 dark:text-white font-extrabold text-base sm:text-lg py-1 px-2 sm:px-3 rounded-xl cursor-pointer shadow-2xs transition-colors ${
+                  className={`w-[144px] sm:w-[160px] flex items-center justify-center gap-1.5 bg-white hover:bg-gray-50 text-gray-900 font-extrabold text-base sm:text-lg py-1 px-2 sm:px-3 rounded-xl cursor-pointer shadow-2xs transition-colors ${
                     menuAbierto === 'mes' ? 'ring-2 ring-brand-500' : ''
                   }`}
                   aria-haspopup="listbox"
@@ -247,7 +271,7 @@ export default function CalendarioVencimientos({
                 {menuAbierto === 'mes' && (
                   <div
                     role="listbox"
-                    className="absolute left-0 top-full mt-2 z-50 w-44 bg-white dark:bg-gray-900 rounded-2xl border-0 shadow-2xl p-1.5 max-h-56 overflow-y-auto ring-1 ring-black/5 dark:ring-white/10 animate-in fade-in duration-100"
+                    className="absolute left-0 top-full mt-2 z-50 w-44 bg-white rounded-2xl border-0 shadow-2xl p-1.5 max-h-56 overflow-y-auto ring-1 ring-black/5 animate-in fade-in duration-100"
                   >
                     {MESES.map((m, idx) => {
                       const activo = idx === mes;
@@ -262,13 +286,21 @@ export default function CalendarioVencimientos({
                           }}
                           className={`flex items-center justify-between px-3 py-1.5 text-xs rounded-xl cursor-pointer select-none transition-all ${
                             activo
-                              ? 'bg-brand-50 dark:bg-brand-950/40 text-brand-600 dark:text-brand-400 font-bold'
-                              : 'text-gray-700 dark:text-gray-200 hover:bg-brand-50/70 dark:hover:bg-gray-800 hover:text-brand-600'
+                              ? 'bg-brand-50 text-brand-600 font-bold'
+                              : 'text-gray-700 hover:bg-brand-50/70 hover:text-brand-600'
                           }`}
                         >
                           <span>{m}</span>
                           {activo && (
-                            <svg className="w-3.5 h-3.5 text-brand-500 shrink-0 ml-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <svg
+                              className="w-3.5 h-3.5 text-brand-500 shrink-0 ml-2"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
                               <polyline points="20 6 9 17 4 12" />
                             </svg>
                           )}
@@ -284,7 +316,7 @@ export default function CalendarioVencimientos({
                 <button
                   type="button"
                   onClick={() => setMenuAbierto((prev) => (prev === 'anyo' ? null : 'anyo'))}
-                  className={`w-[86px] sm:w-[96px] flex items-center justify-center gap-1.5 bg-brand-50 hover:bg-brand-100/80 dark:bg-brand-950/40 dark:hover:bg-brand-900/60 text-brand-600 dark:text-brand-400 font-black text-base sm:text-lg py-1 px-2 sm:px-3 rounded-xl cursor-pointer shadow-2xs transition-colors ${
+                  className={`w-[86px] sm:w-[96px] flex items-center justify-center gap-1.5 bg-brand-50 hover:bg-brand-100/80 text-brand-600 font-black text-base sm:text-lg py-1 px-2 sm:px-3 rounded-xl cursor-pointer shadow-2xs transition-colors ${
                     menuAbierto === 'anyo' ? 'ring-2 ring-brand-500' : ''
                   }`}
                   aria-haspopup="listbox"
@@ -309,7 +341,7 @@ export default function CalendarioVencimientos({
                 {menuAbierto === 'anyo' && (
                   <div
                     role="listbox"
-                    className="absolute left-0 top-full mt-2 z-50 w-32 bg-white dark:bg-gray-900 rounded-2xl border-0 shadow-2xl p-1.5 max-h-56 overflow-y-auto ring-1 ring-black/5 dark:ring-white/10 animate-in fade-in duration-100"
+                    className="absolute left-0 top-full mt-2 z-50 w-32 bg-white rounded-2xl border-0 shadow-2xl p-1.5 max-h-56 overflow-y-auto ring-1 ring-black/5 animate-in fade-in duration-100"
                   >
                     {aniosDisponibles.map((a) => {
                       const activo = a === anyo;
@@ -325,13 +357,21 @@ export default function CalendarioVencimientos({
                           }}
                           className={`flex items-center justify-between px-3 py-1.5 text-xs rounded-xl cursor-pointer select-none transition-all ${
                             activo
-                              ? 'bg-brand-50 dark:bg-brand-950/40 text-brand-600 dark:text-brand-400 font-bold'
-                              : 'text-gray-700 dark:text-gray-200 hover:bg-brand-50/70 dark:hover:bg-gray-800 hover:text-brand-600'
+                              ? 'bg-brand-50 text-brand-600 font-bold'
+                              : 'text-gray-700 hover:bg-brand-50/70 hover:text-brand-600'
                           }`}
                         >
                           <span>{a}</span>
                           {activo && (
-                            <svg className="w-3.5 h-3.5 text-brand-500 shrink-0 ml-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <svg
+                              className="w-3.5 h-3.5 text-brand-500 shrink-0 ml-2"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
                               <polyline points="20 6 9 17 4 12" />
                             </svg>
                           )}
@@ -348,10 +388,15 @@ export default function CalendarioVencimientos({
                 onClick={mesSiguiente}
                 aria-label="Mes siguiente"
                 title="Mes siguiente"
-                className="w-8 h-8 flex items-center justify-center shrink-0 text-gray-500 hover:text-brand-500 hover:bg-white dark:hover:bg-gray-700 rounded-xl transition-colors cursor-pointer border-0"
+                className="w-8 h-8 flex items-center justify-center shrink-0 text-gray-500 hover:text-brand-500 hover:bg-white rounded-xl transition-colors cursor-pointer border-0"
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
                 </svg>
               </button>
             </div>
@@ -368,14 +413,13 @@ export default function CalendarioVencimientos({
 
         {/* Botones de filtros rápidos */}
         <div className="flex flex-wrap items-center gap-3">
-          <div className="inline-flex rounded-xl bg-gray-100/90 dark:bg-gray-800 p-1 border-0 text-xs font-semibold">
+          <div className="inline-flex rounded-xl bg-gray-100/90 p-1 border-0 text-xs font-semibold">
             {[
               { id: 'TODOS', label: 'Todos' },
               { id: 'ITV', label: 'ITV' },
               { id: 'SEGURO', label: 'Seguros' },
               { id: 'CARNET', label: 'Carnets' },
-              { id: 'MATERIAL', label: 'EPIS' },
-              { id: 'AVISO', label: 'Avisos' },
+              { id: 'MATERIAL', label: 'EPIS/Vestuario' },
             ].map((f) => (
               <button
                 key={f.id}
@@ -384,7 +428,7 @@ export default function CalendarioVencimientos({
                 className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer border-0 ${
                   filtroTipo === f.id
                     ? 'bg-brand-500 text-white shadow-xs font-bold'
-                    : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+                    : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
                 {f.label}
@@ -398,7 +442,7 @@ export default function CalendarioVencimientos({
       <div className="overflow-x-auto px-4 sm:px-6 pb-6">
         <div className="min-w-[620px] lg:min-w-0">
           {/* Cabecera de días de la semana */}
-          <div className="grid grid-cols-7 gap-1 sm:gap-1.5 text-center text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 py-1.5 select-none">
+          <div className="grid grid-cols-7 gap-1 sm:gap-1.5 text-center text-xs font-bold uppercase tracking-wider text-gray-400 py-1.5 select-none">
             {DIAS_SEMANA.map((dia, idx) => (
               <div key={dia}>
                 <span className="hidden md:inline">{dia}</span>
@@ -413,7 +457,7 @@ export default function CalendarioVencimientos({
               Cargando calendario de vencimientos…
             </div>
           ) : (
-            <div className="grid grid-cols-7 gap-1 sm:gap-1.5 auto-rows-fr p-1.5 sm:p-2 rounded-2xl sm:rounded-3xl bg-gray-100/70 dark:bg-gray-950/70 border-0">
+            <div className="grid grid-cols-7 gap-1 sm:gap-1.5 auto-rows-fr p-1.5 sm:p-2 rounded-2xl sm:rounded-3xl bg-gray-100/70 border-0">
               {celdasCalendario.map((celda) => {
                 const esActual = celda.mesRel === 'actual';
                 const tieneEventos = celda.eventos.length > 0;
@@ -425,10 +469,10 @@ export default function CalendarioVencimientos({
                     onClick={() => manejarClickDia(celda)}
                     className={`min-h-[105px] sm:min-h-[120px] p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl transition-all relative flex flex-col justify-between cursor-pointer group border-0 ${
                       celda.esHoy
-                        ? 'bg-brand-50/70 dark:bg-brand-950/40 ring-2 ring-brand-400/60 shadow-xs'
+                        ? 'bg-brand-50/70 ring-2 ring-brand-400/60 shadow-xs'
                         : esActual
-                        ? 'bg-white dark:bg-gray-900 shadow-2xs hover:shadow-xs hover:bg-orange-50/20 dark:hover:bg-gray-850'
-                        : 'bg-white/40 dark:bg-gray-900/30 text-gray-400/60 opacity-60 hover:opacity-100'
+                          ? 'bg-white shadow-2xs hover:shadow-xs hover:bg-orange-50/20'
+                          : 'bg-white/40 text-gray-400/60 opacity-60 hover:opacity-100'
                     } ${esSeleccionado ? 'ring-2 ring-brand-500 shadow-md z-10' : ''}`}
                   >
                     {/* Cabecera de la casilla */}
@@ -438,8 +482,8 @@ export default function CalendarioVencimientos({
                           celda.esHoy
                             ? 'bg-brand-500 text-white shadow-xs font-black'
                             : esActual
-                            ? 'text-gray-700 dark:text-gray-200'
-                            : 'text-gray-400/60 dark:text-gray-600'
+                              ? 'text-gray-700'
+                              : 'text-gray-400/60'
                         }`}
                       >
                         {celda.dia}
@@ -457,9 +501,25 @@ export default function CalendarioVencimientos({
                           <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-current opacity-80" />
                           <span className="truncate">{ev.titulo}</span>
                           {ev.tipo === 'documento' && ev.avisos === false && (
-                            <svg title="Avisos desactivados" className="w-3 h-3 shrink-0 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+                            <svg
+                              title="Avisos desactivados"
+                              className="w-3 h-3 shrink-0 opacity-60"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"
+                              />
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"
+                              />
                             </svg>
                           )}
                         </div>
@@ -488,8 +548,7 @@ export default function CalendarioVencimientos({
 
       {modalAbierto && diaSeleccionado && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs">
-          <div className="bg-white dark:bg-gray-900 rounded-3xl border-0 shadow-2xl max-w-lg w-full p-6 animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[90vh]">
-            
+          <div className="bg-white rounded-3xl border-0 shadow-2xl max-w-lg w-full p-6 animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[90vh]">
             <div className="flex items-center justify-between pb-3 shrink-0">
               <div>
                 <span className="text-xs font-semibold text-brand-500 uppercase tracking-wider">
@@ -506,7 +565,12 @@ export default function CalendarioVencimientos({
                 aria-label="Cerrar ventana"
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
               </button>
             </div>
@@ -518,7 +582,7 @@ export default function CalendarioVencimientos({
                 </h4>
 
                 {eventosDelDia.length === 0 ? (
-                  <p className="text-sm text-gray-400 py-6 text-center italic bg-gray-50/50 dark:bg-gray-800/50 rounded-2xl border-0">
+                  <p className="text-sm text-gray-400 py-6 text-center italic bg-gray-50/50 rounded-2xl border-0">
                     No hay vencimientos ni eventos programados para este día.
                   </p>
                 ) : (
@@ -526,43 +590,76 @@ export default function CalendarioVencimientos({
                     {eventosDelDia.map((ev) => (
                       <div
                         key={ev.id}
-                        className="p-3.5 rounded-2xl border-0 bg-gray-50 dark:bg-gray-800/60 hover:bg-white dark:hover:bg-gray-800 hover:shadow-xs transition-all flex items-start justify-between gap-3"
+                        className="p-3.5 rounded-2xl border-0 bg-gray-50 hover:bg-white hover:shadow-xs transition-all flex items-start justify-between gap-3"
                       >
                         <div className="flex items-start gap-3 min-w-0">
-                          <div className={`p-2 rounded-xl border-0 ${ev.estiloClase} shrink-0 mt-0.5`}>
+                          <div
+                            className={`p-2 rounded-xl border-0 ${ev.estiloClase} shrink-0 mt-0.5`}
+                          >
                             {ev.esAvisoPersonalizado ? (
-                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                              <svg
+                                className="w-4 h-4"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                                />
                               </svg>
                             ) : (
-                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                              <svg
+                                className="w-4 h-4"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                />
                               </svg>
                             )}
                           </div>
                           <div className="min-w-0">
                             <div className="flex flex-wrap items-center gap-1.5 mb-0.5">
-                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border-0 ${ev.estiloClase}`}>
+                              <span
+                                className={`text-[10px] font-bold px-2 py-0.5 rounded-full border-0 ${ev.estiloClase}`}
+                              >
                                 {ev.categoria}
                               </span>
                               {ev.tipo === 'documento' && ev.avisos === false && (
-                                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full border-0 bg-gray-200/60 text-gray-600 dark:bg-gray-700 dark:text-gray-300" title="Avisos desactivados para este documento">
+                                <span
+                                  className="text-[10px] font-semibold px-2 py-0.5 rounded-full border-0 bg-gray-200/60 text-gray-600"
+                                  title="Avisos desactivados para este documento"
+                                >
                                   Sin avisos
                                 </span>
                               )}
                               {ev.prioridad && ev.prioridad !== 'NORMAL' && (
-                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border-0 ${
-                                  ev.prioridad === 'URGENTE'
-                                    ? 'bg-rose-100/90 text-rose-900'
-                                    : 'bg-amber-100/90 text-amber-900'
-                                }`}>
+                                <span
+                                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full border-0 ${
+                                    ev.prioridad === 'URGENTE'
+                                      ? 'bg-rose-100/90 text-rose-900'
+                                      : 'bg-amber-100/90 text-amber-900'
+                                  }`}
+                                >
                                   {ev.prioridad}
                                 </span>
                               )}
                             </div>
-                            <h5 className="text-sm font-bold text-gray-900 break-words">{ev.titulo}</h5>
+                            <h5 className="text-sm font-bold text-gray-900 break-words">
+                              {ev.titulo}
+                            </h5>
                             {ev.subtitulo && (
-                              <p className="text-xs text-gray-500 mt-0.5 break-words">{ev.subtitulo}</p>
+                              <p className="text-xs text-gray-500 mt-0.5 break-words">
+                                {ev.subtitulo}
+                              </p>
                             )}
                             {ev.descripcion && ev.descripcion !== ev.subtitulo && (
                               <p className="text-xs text-gray-600 mt-1 italic break-words bg-white/70 p-2 rounded-lg border border-gray-100">
@@ -576,12 +673,23 @@ export default function CalendarioVencimientos({
                           {ev.enlace && (
                             <Link
                               to={ev.enlace}
+                              state={{ volver: '/calendario', volverTexto: 'Volver al Calendario' }}
                               onClick={() => setModalAbierto(false)}
                               className="inline-flex items-center gap-1 text-xs font-semibold text-brand-700 bg-brand-500/15 hover:bg-brand-500/25 border-0 px-2.5 py-1.5 rounded-xl transition-colors shrink-0"
                             >
                               <span>Ver</span>
-                              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                              <svg
+                                className="w-3.5 h-3.5"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M9 5l7 7-7 7"
+                                />
                               </svg>
                             </Link>
                           )}
@@ -595,13 +703,23 @@ export default function CalendarioVencimientos({
                               }}
                               disabled={eliminandoId === ev.avisoId}
                               title="Eliminar aviso o nota"
-                              className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors cursor-pointer"
+                              className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
                             >
                               {eliminandoId === ev.avisoId ? (
                                 <span className="w-4 h-4 border-2 border-red-500/40 border-t-red-500 rounded-full animate-spin block" />
                               ) : (
-                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                <svg
+                                  className="w-4 h-4"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                  />
                                 </svg>
                               )}
                             </button>

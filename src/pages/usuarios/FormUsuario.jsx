@@ -9,13 +9,18 @@ import useEditRecord from '../../components/useEditRecord';
 export default function FormUsuario() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({ nombre: '', correo: '', rol: 'USUARIO', admin: false });
+  const [formData, setFormData] = useState({
+    nombre: '',
+    correo: '',
+    rol: 'USUARIO',
+    admin: false,
+  });
   const [contrasenya, setContrasenya] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const { loading, loadError } = useEditRecord('usuarios', id, setFormData);
 
-  const handleSubmit = async event => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
     if (saving || loading || loadError) return;
     if (!id && !contrasenya.trim()) {
@@ -25,12 +30,14 @@ export default function FormUsuario() {
     setSaving(true);
     setError(null);
     try {
-      const rolSeleccionado = formData.rol || (formData.admin ? 'ADMIN' : 'USUARIO');
+      const rolSeleccionado =
+        (formData.rol === 'KIOSKO' ? 'USUARIO' : formData.rol) ||
+        (formData.admin ? 'ADMIN' : 'USUARIO');
       const payload = {
         ...formData,
         rol: rolSeleccionado,
         admin: rolSeleccionado === 'ADMIN',
-        ...(contrasenya.trim() ? { contrasenya } : {})
+        ...(contrasenya.trim() ? { contrasenya } : {}),
       };
       if (id) await api.put(`/usuarios/${id}`, payload);
       else await api.post('/usuarios', payload);
@@ -43,35 +50,80 @@ export default function FormUsuario() {
   };
 
   return (
-    <CreateFormLayout title={id ? 'Editar usuario' : 'Añadir usuario'} category="Usuarios" backTo="/usuarios"
-      editing={Boolean(id)} backLabel="usuarios" description="Crea una cuenta y configura sus datos de acceso y permisos.">
-      {(error || loadError) && <p role="alert" className="create-error">{error || loadError}</p>}
-      {loading && <p role="status" className="pb-6 text-sm text-gray-500">Cargando datos…</p>}
+    <CreateFormLayout
+      title={id ? 'Editar usuario' : 'Añadir usuario'}
+      category="Usuarios"
+      backTo="/usuarios"
+      editing={Boolean(id)}
+      backLabel="usuarios"
+      description="Crea una cuenta y configura sus datos de acceso y permisos."
+    >
+      {(error || loadError) && (
+        <p role="alert" className="create-error">
+          {error || loadError}
+        </p>
+      )}
+      {loading && (
+        <p role="status" className="pb-6 text-sm text-gray-500">
+          Cargando datos…
+        </p>
+      )}
       <form onSubmit={handleSubmit}>
-        <fieldset disabled={loading || Boolean(loadError) || saving} className="create-form disabled:opacity-60">
+        <fieldset
+          disabled={loading || Boolean(loadError) || saving}
+          className="create-form disabled:opacity-60"
+        >
           <div>
             <label htmlFor="nombre">Nombre</label>
-            <input id="nombre" name="nombre" required autoComplete="name" value={formData.nombre}
-              onChange={e => setFormData({ ...formData, nombre: e.target.value })} />
+            <input
+              id="nombre"
+              name="nombre"
+              required
+              autoComplete="name"
+              value={formData.nombre}
+              onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+            />
           </div>
           <div>
             <label htmlFor="correo">Correo</label>
-            <input id="correo" name="correo" type="email" required autoComplete="email" value={formData.correo}
-              onChange={e => setFormData({ ...formData, correo: e.target.value })} />
+            <input
+              id="correo"
+              name="correo"
+              type="email"
+              required
+              autoComplete="email"
+              value={formData.correo}
+              onChange={(e) => setFormData({ ...formData, correo: e.target.value })}
+            />
           </div>
           <div>
             <label htmlFor="contrasenya">{id ? 'Nueva contraseña (opcional)' : 'Contraseña'}</label>
-            <input id="contrasenya" name="contrasenya" type="password" required={!id} autoComplete="new-password"
-              aria-describedby={id ? 'password-help' : undefined} value={contrasenya} onChange={e => setContrasenya(e.target.value)} />
-            {id && <p id="password-help" className="mt-2 text-xs text-gray-500">Déjala vacía para mantener la contraseña actual.</p>}
+            <input
+              id="contrasenya"
+              name="contrasenya"
+              type="password"
+              required={!id}
+              autoComplete="new-password"
+              aria-describedby={id ? 'password-help' : undefined}
+              value={contrasenya}
+              onChange={(e) => setContrasenya(e.target.value)}
+            />
+            {id && (
+              <p id="password-help" className="mt-2 text-xs text-gray-500">
+                Déjala vacía para mantener la contraseña actual.
+              </p>
+            )}
           </div>
           <div>
             <label htmlFor="rol">Rol de acceso</label>
             <CustomSelect
               id="rol"
               name="rol"
-              value={formData.rol || (formData.admin ? 'ADMIN' : 'USUARIO')}
-              onChange={e => {
+              value={
+                (formData.rol === 'KIOSKO' ? 'USUARIO' : formData.rol) ||
+                (formData.admin ? 'ADMIN' : 'USUARIO')
+              }
+              onChange={(e) => {
                 const nuevoRol = e.target.value;
                 setFormData({
                   ...formData,
@@ -82,16 +134,23 @@ export default function FormUsuario() {
             >
               <option value="USUARIO">Usuario general</option>
               <option value="ADMIN">Administrador</option>
-              <option value="KIOSKO">Kiosko (Tablet)</option>
             </CustomSelect>
             <p className="mt-1.5 text-xs text-gray-500">
-              Los usuarios con rol <strong>Kiosko</strong> solo verán la pantalla táctil de entrega de material y no podrán navegar por el resto del sistema.
+              El modo tablet se activa desde el menú de la aplicación.
             </p>
           </div>
           <div className="create-actions">
-            <span className="create-required-note">{id ? 'Revisa los datos antes de guardar.' : 'Completa los campos para crear la cuenta.'}</span>
-            <Button variant="secondary" onClick={() => navigate('/usuarios')}>Cancelar</Button>
-            <Button type="submit" disabled={saving}>{saving ? 'Guardando…' : id ? 'Guardar cambios' : 'Crear usuario'}</Button>
+            <span className="create-required-note">
+              {id
+                ? 'Revisa los datos antes de guardar.'
+                : 'Completa los campos para crear la cuenta.'}
+            </span>
+            <Button variant="secondary" onClick={() => navigate('/usuarios')}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={saving}>
+              {saving ? 'Guardando…' : id ? 'Guardar cambios' : 'Crear usuario'}
+            </Button>
           </div>
         </fieldset>
       </form>

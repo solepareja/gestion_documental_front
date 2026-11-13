@@ -4,7 +4,9 @@ export default function DocumentoEstado({ estado, fechaCaducidad, esHistorico = 
   const { etiqueta, estilo } = obtenerInfoEstadoDocumento(estado, fechaCaducidad, esHistorico);
 
   return (
-    <span className={`inline-flex px-2.5 py-0.5 rounded-full border-0 text-xs font-semibold whitespace-nowrap ${estilo}`}>
+    <span
+      className={`inline-flex px-2.5 py-0.5 rounded-full border-0 text-xs font-semibold whitespace-nowrap ${estilo}`}
+    >
       {etiqueta}
     </span>
   );
