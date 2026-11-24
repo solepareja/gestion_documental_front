@@ -1,40 +1,44 @@
+import useEstadoApartado from '../../components/useEstadoApartado';
 import Pagination from '../../components/Pagination';
 import useLocalPagination from '../../components/useLocalPagination';
 import SearchInput from '../../components/SearchInput';
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { obtenerDetallePlantilla, registrarFirma, obtenerPdfFirmado } from '../../services/firmas';
+import ModalCrearPlantilla from '../../components/firmas/ModalCrearPlantilla';
 import ModalFirmarDocumento from '../../components/firmas/ModalFirmarDocumento';
 import BarraProgreso from '../../components/firmas/BarraProgreso';
-import { generarPdfDocumentoFirmado } from '../../utils/pdfGenerator';
 
 export default function FirmaDocumentoDetalle() {
   const { plantillaId } = useParams();
-  const [tabActiva, setTabActiva] = useState('pendientes'); // 'pendientes' | 'firmados'
+  const [tabActiva, setTabActiva] = useEstadoApartado(`firmas.${plantillaId}.tab`, 'pendientes'); // 'pendientes' | 'firmados'
+  const [editando, setEditando] = useState(false);
+  const [recarga, setRecarga] = useState(0);
   const [detalle, setDetalle] = useState(null);
   const [pendientes, setPendientes] = useState([]);
   const [firmados, setFirmados] = useState([]);
-  const [cargando, setCargando] = useState(true);
-  const [filtro, setFiltro] = useState('');
+  const [plantillaCargada, setPlantillaCargada] = useState(null);
+  const cargando = plantillaCargada !== plantillaId;
+  const [filtro, setFiltro] = useEstadoApartado(`firmas.${plantillaId}.busqueda`, '');
   const [trabajadorAFirmar, setTrabajadorAFirmar] = useState(null);
 
   useEffect(() => {
-    cargarDetalle();
-  }, [plantillaId]);
-
-  const cargarDetalle = async () => {
-    try {
-      setCargando(true);
-      const data = await obtenerDetallePlantilla(plantillaId);
-      setDetalle(data);
-      setPendientes(data.pendientes || []);
-      setFirmados(data.firmados || []);
-    } catch (err) {
-      console.error('Error cargando detalle de la plantilla:', err);
-    } finally {
-      setCargando(false);
-    }
-  };
+    let activo = true;
+    obtenerDetallePlantilla(plantillaId)
+      .then((data) => {
+        if (!activo) return;
+        setDetalle(data);
+        setPendientes(data.pendientes || []);
+        setFirmados(data.firmados || []);
+      })
+      .catch((err) => console.error('Error cargando detalle de la plantilla:', err))
+      .finally(() => {
+        if (activo) setPlantillaCargada(plantillaId);
+      });
+    return () => {
+      activo = false;
+    };
+  }, [plantillaId, recarga]);
 
   const handleFirmaCompletada = async (payload) => {
     // 1. Guardar en el backend
@@ -59,27 +63,6 @@ export default function FirmaDocumentoDetalle() {
         pendientesCount: nuevoPendientes,
         porcentaje: nuevoPorcentaje,
       };
-    });
-  };
-
-  const descargarPlantillaVacia = () => {
-    if (!detalle) return;
-    generarPdfDocumentoFirmado({
-      plantilla: {
-        id: detalle.plantillaId,
-        titulo: detalle.titulo,
-        colectivo: detalle.colectivo,
-        contenidoLegal: detalle.contenidoLegal,
-      },
-      trabajador: {
-        nombre: 'MODELO PLANTILLA',
-        apellidos: '',
-        dni: '________________',
-        departamento: detalle.colectivo,
-      },
-      firmaSvgBase64: null,
-      fechaFirma: new Date().toISOString(),
-      descargar: true,
     });
   };
 
@@ -170,6 +153,27 @@ export default function FirmaDocumentoDetalle() {
 
         {/* Métricas rápidas y Barra de Progreso */}
         <div className="flex flex-wrap items-center gap-4 shrink-0">
+          <button
+            onClick={() => setEditando(true)}
+            type="button"
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-slate-200/80 bg-slate-50 text-slate-600 text-xs font-medium transition-colors hover:bg-slate-100 hover:border-slate-300 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 focus-visible:ring-offset-2 cursor-pointer"
+          >
+            <svg
+              className="w-3.5 h-3.5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="1.75"
+                d="M16.862 4.487l2.651 2.651M4 20l4.5-1 11-11a1.875 1.875 0 00-2.651-2.651l-11 11L4 20z"
+              />
+            </svg>
+            Editar documento y firmantes
+          </button>
           <div className="px-4 py-2.5 rounded-2xl bg-gray-50 border border-gray-200/80">
             <BarraProgreso actual={detalle.firmadosCount} total={detalle.totalRequeridos} />
           </div>
@@ -322,10 +326,7 @@ export default function FirmaDocumentoDetalle() {
                     Trabajador Firmante
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider border-0">
-                    Fecha y Hora Exacta (Timestamp)
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider border-0">
-                    IP / Auditoría
+                    Fecha y Hora Exacta
                   </th>
                   <th className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider border-0">
                     Documento Firmado
@@ -356,11 +357,7 @@ export default function FirmaDocumentoDetalle() {
                         year: 'numeric',
                         hour: '2-digit',
                         minute: '2-digit',
-                        second: '2-digit',
                       })}
-                    </td>
-                    <td className="px-6 py-4 text-xs font-mono text-gray-400">
-                      {f.ipAddress || 'Interna / Kiosko'}
                     </td>
                     <td className="px-6 py-4 text-right">
                       <button
@@ -395,6 +392,13 @@ export default function FirmaDocumentoDetalle() {
         )}
       </div>
 
+      {editando && (
+        <ModalCrearPlantilla
+          plantilla={detalle}
+          onClose={() => setEditando(false)}
+          onPlantillaCreada={() => setRecarga((valor) => valor + 1)}
+        />
+      )}
       {/* Modal de Firma */}
       {trabajadorAFirmar && (
         <ModalFirmarDocumento

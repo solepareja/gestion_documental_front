@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/useAuth';
 import Button from '../../components/Button';
 
 export default function Login() {
-  const { login, isAuthenticated, esKiosko, modoTablet } = useAuth();
+  const { login, isAuthenticated, rol } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -14,23 +14,30 @@ export default function Login() {
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState(null);
 
-  const resolverDestino = (rol) => {
-    if (modoTablet || rol === 'KIOSKO') {
-      return '/kiosko';
-    }
-    const prev = location.state?.from?.pathname;
-    if (prev && prev !== '/kiosko' && prev !== '/login') {
-      return prev;
-    }
-    return '/';
-  };
+  const resolverDestino = useCallback(
+    (rol) => {
+      if (rol === 'KIOSKO') {
+        return '/kiosko';
+      }
+      if (rol !== 'ADMIN' && rol !== 'GESTOR') return '/';
+      const prev = location.state?.from?.pathname;
+      if (rol === 'GESTOR' && /^\/usuarios(?:\/|$)/.test(prev || '')) return '/';
+      if (prev && !/^\/(tablet|kiosko)(?:\/|$)/.test(prev) && prev !== '/login') {
+        return prev;
+      }
+      return '/';
+    },
+    [location.state],
+  );
 
   // Si ya está autenticado, redirigir adecuadamente según rol
   useEffect(() => {
     if (isAuthenticated) {
-      navigate(resolverDestino(esKiosko ? 'KIOSKO' : 'USUARIO'), { replace: true });
+      navigate(resolverDestino(rol), {
+        replace: true,
+      });
     }
-  }, [isAuthenticated, esKiosko, modoTablet, navigate, location.state]);
+  }, [isAuthenticated, rol, navigate, resolverDestino]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

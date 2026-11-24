@@ -1,13 +1,14 @@
+import useEstadoApartado from '../../components/useEstadoApartado';
 import usePagedList from '../../components/usePagedList';
-import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Button from '../../components/Button';
 import Table from '../../components/Table';
 import ListFilters from '../../components/ListFilters';
+import DisponibilidadVehiculo from '../../components/DisponibilidadVehiculo';
 
 export default function Vehiculos() {
   const navigate = useNavigate();
-  const [filtros, setFiltros] = useState({
+  const [filtros, setFiltros] = useEstadoApartado('vehiculos.filtros', {
     busqueda: '',
     marca: '',
     tipo: '',
@@ -53,6 +54,16 @@ export default function Vehiculos() {
       accessor: 'km',
     },
     {
+      header: 'Disponibilidad',
+      render: (vehiculo) => (
+        <DisponibilidadVehiculo
+          disponible={vehiculo.disponible}
+          motivos={vehiculo.motivosNoDisponibilidad}
+          forzada={vehiculo.disponibilidadForzada}
+        />
+      ),
+    },
+    {
       header: 'Estado',
       render: (vehiculo) => (
         <span
@@ -89,19 +100,10 @@ export default function Vehiculos() {
         loading={cargando}
         error={error}
         onClear={() => setFiltros({ busqueda: '', marca: '', tipo: '', anyo: '', estado: '' })}
-        filters={[
-          { key: 'marca', label: 'Marca', allLabel: 'Todas las marcas' },
-          { key: 'tipo', label: 'Tipo', allLabel: 'Todos los tipos' },
-          { key: 'anyo', label: 'Año', allLabel: 'Todos los años' },
-        ].map((filter) => ({
-          ...filter,
-          value: filtros[filter.key],
-          onChange: (value) => cambiarFiltro(filter.key, value),
-          options: (opciones[filter.key] || []).map((value) => ({ value, label: value })),
-        }))}
       />
 
       <Table
+        tableClassName="table-measure-content"
         pagination={pagination}
         columns={columns}
         data={filtrados}

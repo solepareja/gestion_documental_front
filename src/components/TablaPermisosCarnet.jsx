@@ -6,7 +6,6 @@ import {
   calcularEstadoPermiso,
 } from '../utils/carnetCategorias';
 import IconoVehiculoCarnet from './IconosCarnetDGT';
-import CustomSelect from './CustomSelect';
 import CustomDatePicker from './CustomDatePicker';
 
 /**
@@ -14,7 +13,6 @@ import CustomDatePicker from './CustomDatePicker';
  * Utiliza los pictogramas vectoriales oficiales de los vehículos y cabecera sobria y profesional.
  */
 export default function TablaPermisosCarnet({ permisos = [], onChange, disabled = false }) {
-  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState('');
   const [modoCompleto, setModoCompleto] = useState(true);
 
   // Lista de códigos actualmente añadidos
@@ -29,7 +27,6 @@ export default function TablaPermisosCarnet({ permisos = [], onChange, disabled 
       observaciones: '',
     };
     onChange([...permisos, nuevo]);
-    setCategoriaSeleccionada('');
   };
 
   const handleEliminarPermiso = (codigo) => {
@@ -45,10 +42,6 @@ export default function TablaPermisosCarnet({ permisos = [], onChange, disabled 
     });
     onChange(actualizados);
   };
-
-  const categoriasDisponiblesParaAgregar = CATEGORIAS_CARNET.filter(
-    (c) => !codigosActivos.has(c.codigo),
-  );
 
   return (
     <div className="rounded-3xl border-0 bg-gray-50/70 shadow-2xs">

@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
+import useEstadoApartado from './useEstadoApartado';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 import ModalConfirmacion from './ModalConfirmacion';
@@ -26,10 +27,14 @@ export default function CalendarioVencimientos({
   onAvisoEliminado,
 }) {
   const hoy = useMemo(() => new Date(), []);
-  const [fechaActual, setFechaActual] = useState(
+  const [fechaActual, setFechaActual] = useEstadoApartado(
+    'calendario.fecha',
     () => new Date(hoy.getFullYear(), hoy.getMonth(), 1),
   );
-  const [filtroTipo, setFiltroTipo] = useState('TODOS');
+  const [filtroGuardado, setFiltroTipo] = useEstadoApartado('calendario.tipo', 'TODOS');
+  const filtroTipo = ['ITV', 'SEGURO'].includes(filtroGuardado)
+    ? 'DOCUMENTO'
+    : filtroGuardado;
   const [diaSeleccionado, setDiaSeleccionado] = useState(null);
   const [modalAbierto, setModalAbierto] = useState(false);
   const [menuAbierto, setMenuAbierto] = useState(null); // null | 'mes' | 'anyo'
@@ -77,6 +82,9 @@ export default function CalendarioVencimientos({
   // Filtrar eventos por tipo
   const eventosFiltrados = useMemo(() => {
     if (filtroTipo === 'TODOS') return eventos;
+    if (filtroTipo === 'DOCUMENTO') {
+      return eventos.filter((ev) => ev.tipo === 'documento');
+    }
     if (filtroTipo === 'AVISO') {
       return eventos.filter((ev) =>
         ['AVISO', 'NOTA', 'EVENTO', 'RECORDATORIO'].includes(ev.categoria),
@@ -416,10 +424,9 @@ export default function CalendarioVencimientos({
           <div className="inline-flex rounded-xl bg-gray-100/90 p-1 border-0 text-xs font-semibold">
             {[
               { id: 'TODOS', label: 'Todos' },
-              { id: 'ITV', label: 'ITV' },
-              { id: 'SEGURO', label: 'Seguros' },
+              { id: 'DOCUMENTO', label: 'Documentos' },
               { id: 'CARNET', label: 'Carnets' },
-              { id: 'MATERIAL', label: 'EPIS/Vestuario' },
+              { id: 'MATERIAL', label: 'EPIs/Vestuario' },
             ].map((f) => (
               <button
                 key={f.id}
@@ -460,7 +467,6 @@ export default function CalendarioVencimientos({
             <div className="grid grid-cols-7 gap-1 sm:gap-1.5 auto-rows-fr p-1.5 sm:p-2 rounded-2xl sm:rounded-3xl bg-gray-100/70 border-0">
               {celdasCalendario.map((celda) => {
                 const esActual = celda.mesRel === 'actual';
-                const tieneEventos = celda.eventos.length > 0;
                 const esSeleccionado = diaSeleccionado?.clave === celda.clave;
 
                 return (

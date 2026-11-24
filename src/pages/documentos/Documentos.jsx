@@ -1,3 +1,4 @@
+import useEstadoApartado from '../../components/useEstadoApartado';
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../../services/api';
@@ -27,9 +28,21 @@ const GRUPOS = [
 
 export default function Documentos() {
   const navigate = useNavigate();
-  const [params, setParams] = useSearchParams();
-  const [busqueda, setBusqueda] = useState('');
-  const [soloVigentes, setSoloVigentes] = useState(true);
+  const [parametrosGuardados, setParametrosGuardados] = useEstadoApartado(
+    'documentos.parametros',
+    '',
+  );
+  const [params, actualizarParams] = useSearchParams(parametrosGuardados);
+  const parametrosActuales = params.toString();
+  useEffect(() => {
+    setParametrosGuardados(parametrosActuales);
+  }, [parametrosActuales, setParametrosGuardados]);
+  const setParams = (valores) => {
+    setParametrosGuardados(new URLSearchParams(valores).toString());
+    actualizarParams(valores);
+  };
+  const [busqueda, setBusqueda] = useEstadoApartado('documentos.busqueda', '');
+  const [soloVigentes, setSoloVigentes] = useEstadoApartado('documentos.vigentes', true);
   const [datos, setDatos] = useState({ vehiculos: [], transportistas: [] });
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);

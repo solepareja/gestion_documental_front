@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   obtenerMaterial,
+  compararTallas,
   tiposMaterial,
   tiposTallaje,
   obtenerTipoTallaje,
@@ -67,15 +68,15 @@ export default function MaterialDetalle() {
 
   const esEPI = material.tipo === 'EPI';
   const tipoTallajeLabel = tiposTallaje[obtenerTipoTallaje(material)] || 'Sin especificar';
-  const vidaUtilLabel = material.vidaUtilMeses
-    ? `${material.vidaUtilMeses} mes${material.vidaUtilMeses > 1 ? 'es' : ''}`
-    : 'Sin definir';
 
   const datos = [
-    ['Tipo de material', tiposMaterial[material.tipo] || material.tipo],
+    ['Código', material.codigo || '—'],
+    ['Tipo', material.nombre],
+    ['Marca/modelo', material.marcaModelo || '—'],
+    ['Categoría', tiposMaterial[material.tipo] || material.tipo],
     ['Stock disponible', `${material.stock ?? 0} uds.`],
     ['Tallaje', tipoTallajeLabel],
-    ...(esEPI ? [['Vida útil estimada', vidaUtilLabel]] : []),
+    ...(esEPI ? [['Normativa', material.normativa || '—']] : []),
   ];
 
   return (
@@ -172,12 +173,14 @@ export default function MaterialDetalle() {
                 </tr>
               </thead>
               <tbody>
-                {Object.entries(material.stockPorTalla).map(([talla, stock]) => (
-                  <tr key={talla} className="border-t border-gray-100">
-                    <td className="py-2">{talla}</td>
-                    <td className="py-2">{stock} uds.</td>
-                  </tr>
-                ))}
+                {Object.entries(material.stockPorTalla)
+                  .sort(([a], [b]) => compararTallas(a, b))
+                  .map(([talla, stock]) => (
+                    <tr key={talla} className="border-t border-gray-100">
+                      <td className="py-2">{talla}</td>
+                      <td className="py-2">{stock} uds.</td>
+                    </tr>
+                  ))}
               </tbody>
             </table>
           ) : (

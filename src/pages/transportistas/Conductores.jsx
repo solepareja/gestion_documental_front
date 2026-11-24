@@ -1,3 +1,4 @@
+import useEstadoApartado from '../../components/useEstadoApartado';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../services/api';
@@ -9,8 +10,8 @@ import { normalizarTexto } from '../../services/filtros';
 export default function Conductores() {
   const [datos, setDatos] = useState(null);
   const [error, setError] = useState('');
-  const [busqueda, setBusqueda] = useState('');
-  const [tipo, setTipo] = useState('');
+  const [busqueda, setBusqueda] = useEstadoApartado('conductores.busqueda', '');
+  const [tipo, setTipo] = useEstadoApartado('conductores.tipo', '');
   useEffect(() => {
     let activo = true;
     api

@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
 import api from '../services/api';
+import { urlArchivoDocumento } from '../services/archivoDocumento';
 import { obtenerEntregas } from '../services/materiales';
 import Button from '../components/Button';
 import DeleteButton from '../components/DeleteButton';
@@ -12,7 +13,6 @@ import CustomSelect from '../components/CustomSelect';
 import TablaPermisosCarnet from '../components/TablaPermisosCarnet';
 import CarnetFotoUploader from '../components/CarnetFotoUploader';
 import {
-  MAPA_CATEGORIAS,
   calcularEstadoPermiso,
   formatearFechaISO,
   formatearFechaParaBack,
@@ -282,6 +282,7 @@ export default function PersonaDetalle({ tipo }) {
     };
 
     const res = await api.put(`/conductores/${id}`, datosAEnviar);
+    setState((prev) => ({ ...prev, data: { ...prev.data, ...res.data } }));
     return res.data;
   };
 
@@ -354,19 +355,19 @@ export default function PersonaDetalle({ tipo }) {
     setSubiendoFoto(tipoLabel);
     try {
       const dataUrl = await comprimirImagen(file);
-      await guardarTransportistaEnApi({
+      const guardado = await guardarTransportistaEnApi({
         [campo]: dataUrl,
       });
       setState((prev) => ({
         ...prev,
         data: {
           ...prev.data,
-          [campo]: dataUrl,
+          [campo]: guardado[campo],
         },
       }));
     } catch (err) {
       console.error('Error al procesar fotografía:', err);
-      alert(err.message || 'No se pudo procesar la fotografía.');
+      alert(err.response?.data?.message || err.message || 'No se pudo procesar la fotografía.');
     } finally {
       setSubiendoFoto(null);
     }
@@ -735,11 +736,6 @@ export default function PersonaDetalle({ tipo }) {
                       </thead>
                       <tbody className="bg-white border-0">
                         {listaPermisos.map((p, idx) => {
-                          const cat = MAPA_CATEGORIAS[p.tipo?.toUpperCase()] || {
-                            codigo: p.tipo,
-                            nombre: p.tipo,
-                            tipoVehiculo: 'Permiso habilitado',
-                          };
                           const est = calcularEstadoPermiso(p.fechaCaducidad);
                           return (
                             <tr
@@ -862,14 +858,14 @@ export default function PersonaDetalle({ tipo }) {
                         onClick={() =>
                           setModalFoto({
                             abierta: true,
-                            src: persona.fotoCarnetAnverso,
+                            src: urlArchivoDocumento(persona.fotoCarnetAnverso),
                             titulo: 'Carnet de conducir - Cara frontal (Anverso)',
                           })
                         }
                         className="relative aspect-[16/10] bg-gray-50 rounded-2xl border border-gray-200 overflow-hidden cursor-pointer group shadow-2xs hover:shadow-md transition-all"
                       >
                         <img
-                          src={persona.fotoCarnetAnverso}
+                          src={urlArchivoDocumento(persona.fotoCarnetAnverso)}
                           alt="Carnet frontal"
                           className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
                         />
@@ -968,14 +964,14 @@ export default function PersonaDetalle({ tipo }) {
                         onClick={() =>
                           setModalFoto({
                             abierta: true,
-                            src: persona.fotoCarnetReverso,
+                            src: urlArchivoDocumento(persona.fotoCarnetReverso),
                             titulo: 'Carnet de conducir - Cara trasera (Reverso)',
                           })
                         }
                         className="relative aspect-[16/10] bg-gray-50 rounded-2xl border border-gray-200 overflow-hidden cursor-pointer group shadow-2xs hover:shadow-md transition-all"
                       >
                         <img
-                          src={persona.fotoCarnetReverso}
+                          src={urlArchivoDocumento(persona.fotoCarnetReverso)}
                           alt="Carnet reverso"
                           className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
                         />
@@ -1142,12 +1138,6 @@ export default function PersonaDetalle({ tipo }) {
                       : 'Documentación del conductor'}
                   </h2>
                 </div>
-                <Link
-                  to={`/documentos?transportistaId=${id}`}
-                  className="text-sm font-semibold text-brand-700 hover:underline"
-                >
-                  Ver en Documentos →
-                </Link>
               </div>
               <DocumentacionEntidad
                 entidadTipo={esEmpresa ? 'transportista' : 'conductor'}
@@ -1231,11 +1221,6 @@ export default function PersonaDetalle({ tipo }) {
                               {l.talla && (
                                 <span className="ml-1 px-1.5 py-0.5 rounded bg-white text-gray-800 text-[11px] font-bold shadow-2xs whitespace-nowrap">
                                   {l.talla}
-                                </span>
-                              )}
-                              {l.fechaRenovacion && (
-                                <span className="text-[10px] text-gray-500 ml-1">
-                                  · Renovar: {fechaVisible(l.fechaRenovacion)}
                                 </span>
                               )}
                             </span>
@@ -1522,11 +1507,12 @@ export default function PersonaDetalle({ tipo }) {
                   value={persona.fotoCarnetAnverso}
                   onChange={async (b64) => {
                     if (b64) {
-                      await guardarTransportistaEnApi({ fotoCarnetAnverso: b64 });
-                      setState((prev) => ({
-                        ...prev,
-                        data: { ...prev.data, fotoCarnetAnverso: b64 },
-                      }));
+                      setSubiendoFoto('anverso');
+                      try {
+                        await guardarTransportistaEnApi({ fotoCarnetAnverso: b64 });
+                      } finally {
+                        setSubiendoFoto(null);
+                      }
                     } else {
                       await handleEliminarFoto('fotoCarnetAnverso');
                     }
@@ -1540,11 +1526,12 @@ export default function PersonaDetalle({ tipo }) {
                   value={persona.fotoCarnetReverso}
                   onChange={async (b64) => {
                     if (b64) {
-                      await guardarTransportistaEnApi({ fotoCarnetReverso: b64 });
-                      setState((prev) => ({
-                        ...prev,
-                        data: { ...prev.data, fotoCarnetReverso: b64 },
-                      }));
+                      setSubiendoFoto('reverso');
+                      try {
+                        await guardarTransportistaEnApi({ fotoCarnetReverso: b64 });
+                      } finally {
+                        setSubiendoFoto(null);
+                      }
                     } else {
                       await handleEliminarFoto('fotoCarnetReverso');
                     }

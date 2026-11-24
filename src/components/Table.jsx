@@ -3,7 +3,7 @@ import Pagination from './Pagination';
  * Componente de Tabla reutilizable con estilo moderno:
  * - Bordes exteriores redondeados (rounded-2xl) y sombra suave.
  * - Sin líneas verticales y con divisores horizontales casi imperceptibles (divide-gray-100).
- * - Todo el contenido alineado a la izquierda por defecto (text-left) y con espaciado equilibrado.
+ * - Columnas adaptadas al contenido y última columna compacta alineada a la derecha.
  * - Soporta uso declarativo (props `columns` y `data`) o composición con subcomponentes (children).
  */
 
@@ -35,7 +35,7 @@ export function TableHeader({ children, align = 'left', className = '' }) {
   return (
     <th
       scope="col"
-      className={`px-6 py-4 ${alignClass} text-xs font-bold text-gray-500 uppercase tracking-wider border-0 ${className}`}
+      className={`px-4 lg:px-6 py-4 ${alignClass} text-xs font-bold text-gray-600 uppercase tracking-wider border-0 ${className}`}
     >
       {children}
     </th>
@@ -48,7 +48,7 @@ export function TableCell({ children, align = 'left', className = '' }) {
 
   return (
     <td
-      className={`px-6 py-4 ${alignClass} text-sm text-gray-800 align-middle border-0 [overflow-wrap:anywhere] ${className}`}
+      className={`px-4 lg:px-6 py-4 ${alignClass} text-sm text-gray-800 align-middle border-0 ${className}`}
     >
       {children}
     </td>
@@ -89,12 +89,12 @@ export default function Table({
   if (children) {
     return (
       <div
-        className={`w-full overflow-hidden rounded-3xl bg-white shadow-xs border-0 ${className}`}
+        className={`min-w-0 max-w-full w-full overflow-hidden rounded-3xl bg-white shadow-xs border-0 ${className}`}
       >
         <div className="overflow-x-auto">
           <table
             style={{ minWidth }}
-            className={`w-full table-fixed border-collapse text-left ${tableClassName}`}
+            className={`w-full border-collapse text-left ${tableClassName}`}
           >
             {children}
           </table>
@@ -105,17 +105,12 @@ export default function Table({
 
   // Modo declarativo (props columns y data)
   return (
-    <div className={`w-full overflow-hidden rounded-3xl bg-white shadow-xs border-0 ${className}`}>
+    <div className={`min-w-0 max-w-full w-full overflow-hidden rounded-3xl bg-white shadow-xs border-0 ${className}`}>
       <div className="overflow-x-auto">
         <table
           style={{ minWidth }}
-          className={`w-full table-fixed border-collapse text-left ${tableClassName}`}
+          className={`w-full border-collapse text-left ${tableClassName}`}
         >
-          <colgroup>
-            {columns?.map((col, idx) => (
-              <col key={idx} style={{ width: col.width }} />
-            ))}
-          </colgroup>
           <TableHead>
             <TableRow hoverable={false}>
               {columns?.map((col, idx) => (

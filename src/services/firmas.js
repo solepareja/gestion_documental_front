@@ -34,3 +34,8 @@ export const eliminarPlantillaDocumento = async (plantillaId) => {
   const response = await api.delete(`/firmas/plantillas/${plantillaId}`);
   return response.data;
 };
+
+export const actualizarPlantillaDocumento = async (id, payload) => {
+  const response = await api.put(`/firmas/plantillas/${id}`, payload);
+  return response.data;
+};

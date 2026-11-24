@@ -2,7 +2,6 @@ import { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../services/api';
 import { tiposDocumento, procesarDocumentosConHistorial } from '../../services/documentos';
-import { useAuth } from '../../context/useAuth';
 import CalendarioVencimientos from '../../components/CalendarioVencimientos';
 
 function normalizarFechaAClave(fecha) {
@@ -24,12 +23,8 @@ function normalizarFechaAClave(fecha) {
 }
 
 export default function Dashboard() {
-  const { usuario } = useAuth();
-
   const [documentos, setDocumentos] = useState([]);
   const [conductores, setConductores] = useState([]);
-  const [vehiculos, setVehiculos] = useState([]);
-  const [entregas, setEntregas] = useState([]);
   const [renovacionVestuario, setRenovacionVestuario] = useState(null);
   const [avisos, setAvisos] = useState([]);
   const [cargando, setCargando] = useState(true);
@@ -41,11 +36,9 @@ export default function Dashboard() {
     const cargarDatos = async () => {
       setCargando(true);
       try {
-        const [resDocs, resCond, resVeh, resEnt, resAvisos, resVestuario] = await Promise.all([
+        const [resDocs, resCond, resAvisos, resVestuario] = await Promise.all([
           api.get('/documentos').catch(() => ({ data: [] })),
           api.get('/conductores').catch(() => ({ data: [] })),
-          api.get('/vehiculos').catch(() => ({ data: [] })),
-          api.get('/entregas').catch(() => ({ data: [] })),
           api.get('/avisos').catch(() => ({ data: [] })),
           api.get('/materiales/renovacion-vestuario').catch(() => ({ data: null, fallo: true })),
         ]);
@@ -53,8 +46,6 @@ export default function Dashboard() {
         if (activo) {
           setDocumentos(resDocs.data || []);
           setConductores(resCond.data || []);
-          setVehiculos(resVeh.data || []);
-          setEntregas(resEnt.data || []);
           setAvisos(resAvisos.data || []);
           setRenovacionVestuario(resVestuario.data);
           setError(
@@ -90,15 +81,8 @@ export default function Dashboard() {
       const esITV = doc.tipo === 'ITV';
       const esSeguro = doc.tipo === 'SEGURO';
 
-      let categoria = 'DOCUMENTO';
-      let estiloClase = 'bg-brand-100/80 text-brand-800 border-0';
-      if (esITV) {
-        categoria = 'ITV';
-        estiloClase = 'bg-amber-100/90 text-amber-900 border-0';
-      } else if (esSeguro) {
-        categoria = 'SEGURO';
-        estiloClase = 'bg-blue-100/90 text-blue-900 border-0';
-      }
+      const categoria = 'DOCUMENTO';
+      const estiloClase = 'bg-brand-100/80 text-brand-800 border-0';
 
       const subtituloPartes = [];
       if (doc.companiaAseguradora) subtituloPartes.push(doc.companiaAseguradora);
@@ -209,34 +193,6 @@ export default function Dashboard() {
       }
     }
 
-    // 3. Renovaciones de EPIS y Vestuario de trabajadores
-    for (const ent of entregas) {
-      if (!ent.lineas) continue;
-      for (const linea of ent.lineas) {
-        if (
-          linea.materialTipo === 'VESTUARIO' ||
-          !linea.fechaRenovacion ||
-          linea.estado === 'DEVUELTO'
-        )
-          continue;
-        const clave = normalizarFechaAClave(linea.fechaRenovacion);
-        if (!clave) continue;
-
-        lista.push({
-          id: `linea-${linea.id}`,
-          tipo: 'material',
-          categoria: 'MATERIAL',
-          titulo: `Renovar ${linea.materialNombre || 'Material'} · ${ent.trabajadorNombre || 'Trabajador'}`,
-          subtitulo: `${linea.materialNombre || 'Material'}${linea.cantidad > 1 ? ` (${linea.cantidad} uds.)` : ''}${linea.talla ? ` (T.${linea.talla})` : ''}`,
-          fecha: clave,
-          rawFecha: linea.fechaRenovacion,
-          enlace: `/entregas/${ent.id}`,
-          estiloClase: 'bg-teal-100/90 text-teal-900 border-0',
-          estado: 'VIGENTE',
-        });
-      }
-    }
-
     if (renovacionVestuario?.proximaFecha) {
       lista.push({
         id: 'renovacion-vestuario',
@@ -288,7 +244,7 @@ export default function Dashboard() {
     }
 
     return lista;
-  }, [documentos, conductores, entregas, avisos, renovacionVestuario]);
+  }, [documentos, conductores, avisos, renovacionVestuario]);
 
   const handleAvisoEliminado = (idAviso) => {
     setAvisos((prev) => prev.filter((a) => a.id !== idAviso));
@@ -307,27 +263,6 @@ export default function Dashboard() {
       .slice(0, 6);
   }, [eventos]);
 
-  // Contadores KPI (solo contabilizan vencimientos con avisos activos)
-  const metricas = useMemo(() => {
-    const hoyStr = new Date().toISOString().slice(0, 10);
-    const dentroDe30Dias = new Date();
-    dentroDe30Dias.setDate(dentroDe30Dias.getDate() + 30);
-    const limiteStr = dentroDe30Dias.toISOString().slice(0, 10);
-
-    const eventosConAviso = eventos.filter((ev) => ev.tipo !== 'documento' || ev.avisos !== false);
-    const caducados = eventosConAviso.filter((ev) => ev.fecha < hoyStr).length;
-    const proximos = eventosConAviso.filter(
-      (ev) => ev.fecha >= hoyStr && ev.fecha <= limiteStr,
-    ).length;
-
-    return {
-      totalVehiculos: vehiculos.length,
-      totalConductores: conductores.length,
-      proximosVencer: proximos,
-      caducados,
-    };
-  }, [eventos, vehiculos, conductores]);
-
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       {/* Cabecera del Panel */}
@@ -340,9 +275,15 @@ export default function Dashboard() {
         <div className="flex flex-wrap items-center gap-2">
           <Link
             to="/entregas/nueva"
-            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 active:scale-[0.98] text-white font-semibold text-xs sm:text-sm shadow-xs hover:shadow-sm transition-all"
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-slate-200/80 bg-slate-50 text-slate-600 text-xs font-medium transition-colors hover:bg-slate-100 hover:border-slate-300 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 focus-visible:ring-offset-2 cursor-pointer"
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg
+              className="w-3.5 h-3.5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              aria-hidden="true"
+            >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"

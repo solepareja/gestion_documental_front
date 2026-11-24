@@ -1,4 +1,4 @@
-import { useLayoutEffect } from 'react';
+import { useLayoutEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
 export default function CreateFormLayout({
@@ -11,9 +11,53 @@ export default function CreateFormLayout({
   backLabel,
 }) {
   const { pathname, search } = useLocation();
+  const contentRef = useRef(null);
 
   useLayoutEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, [pathname, search]);
+
+  useLayoutEffect(() => {
+    const content = contentRef.current;
+    let frame;
+    const showError = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const alert = content.querySelector('.create-error[role="alert"]');
+        if (!alert) return;
+        alert.setAttribute('tabindex', '-1');
+        alert.focus({ preventScroll: true });
+        alert.scrollIntoView({
+          behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+            ? 'instant'
+            : 'smooth',
+          block: 'center',
+        });
+      });
+    };
+    const observer = new MutationObserver((mutations) => {
+      if (
+        mutations.some(
+          ({ target, addedNodes }) =>
+            target.parentElement?.closest('.create-error') ||
+            target.matches?.('.create-error') ||
+            Array.from(addedNodes).some(
+              (node) => node.matches?.('.create-error') || node.querySelector?.('.create-error'),
+            ),
+        )
+      ) {
+        showError();
+      }
+    });
+    observer.observe(content, { childList: true, subtree: true, characterData: true });
+    // También muestra un error que sigue siendo el mismo al volver a guardar.
+    content.addEventListener('submit', showError, true);
+    showError();
+    return () => {
+      observer.disconnect();
+      content.removeEventListener('submit', showError, true);
+      cancelAnimationFrame(frame);
+    };
   }, [pathname, search]);
 
   return (
@@ -43,7 +87,9 @@ export default function CreateFormLayout({
             </p>
           </div>
         </header>
-        <div className="create-content">{children}</div>
+        <div ref={contentRef} className="create-content">
+          {children}
+        </div>
       </div>
     </div>
   );

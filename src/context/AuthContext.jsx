@@ -55,6 +55,8 @@ export function AuthProvider({ children }) {
           throw err;
         }
       }
+      localStorage.removeItem('modo_tablet');
+      setModoTablet(false);
       setUsuario(res.data);
       return res.data;
     } finally {
@@ -96,6 +98,7 @@ export function AuthProvider({ children }) {
   };
 
   const logout = () => {
+    api.post('/auth/logout').catch(() => {});
     localStorage.removeItem('modo_tablet');
     setModoTablet(false);
     setUsuario(null);
@@ -104,7 +107,8 @@ export function AuthProvider({ children }) {
 
   const rolActual = String(usuario?.rol || (usuario?.admin ? 'ADMIN' : 'USUARIO')).toUpperCase();
   const esKiosko = rolActual === 'KIOSKO';
-  const esAdmin = rolActual === 'ADMIN' || Boolean(usuario?.admin);
+  const esAdmin = rolActual === 'ADMIN' || rolActual === 'GESTOR';
+  const puedeGestionarUsuarios = rolActual === 'ADMIN';
 
   return (
     <AuthContext.Provider
@@ -116,6 +120,7 @@ export function AuthProvider({ children }) {
         modoTablet,
         activarModoTablet,
         esAdmin,
+        puedeGestionarUsuarios,
         rol: rolActual,
         login,
         registro,

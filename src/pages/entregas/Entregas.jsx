@@ -1,3 +1,4 @@
+import useEstadoApartado from '../../components/useEstadoApartado';
 import usePagedList from '../../components/usePagedList';
 import api from '../../services/api';
 import { normalizarDni, validarDniNie } from '../../utils/dniValidator';
@@ -8,7 +9,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import Button from '../../components/Button';
 import DeleteButton from '../../components/DeleteButton';
 import Table from '../../components/Table';
-import { imprimirOdescargarPdfEntrega } from '../../utils/pdfGenerator';
+import { descargarPdfEntrega } from '../../utils/descargarPdfEntrega';
 
 function formatearFecha(fechaStr) {
   if (!fechaStr) return '—';
@@ -71,11 +72,14 @@ function HeaderOrdenable({ label, direccion, onAlternar }) {
 }
 
 export default function Entregas() {
-  const [busqueda, setBusqueda] = useState('');
+  const [busqueda, setBusqueda] = useEstadoApartado('entregas.busqueda', '');
   const [recargaTick, setRecargaTick] = useState(0);
-  const [ordenFecha, setOrdenFecha] = useState('desc');
+  const [ordenFecha, setOrdenFecha] = useEstadoApartado('entregas.orden', 'desc');
   const [errorBusqueda, setErrorBusqueda] = useState(null);
-  const [anyoPdf, setAnyoPdf] = useState(String(new Date().getFullYear()));
+  const [anyoPdf, setAnyoPdf] = useEstadoApartado(
+    'entregas.anyoPdf',
+    String(new Date().getFullYear()),
+  );
   const [descargando, setDescargando] = useState(false);
   const navigate = useNavigate();
 
@@ -216,7 +220,7 @@ export default function Entregas() {
             className="p-2"
             title={`Descargar justificante PDF #${e.id}`}
             aria-label={`Descargar justificante PDF #${e.id}`}
-            onClick={() => imprimirOdescargarPdfEntrega(e)}
+            onClick={() => descargarPdfEntrega(e)}
             icon={
               <svg
                 aria-hidden="true"
@@ -395,6 +399,7 @@ export default function Entregas() {
 
       {/* Tabla de entregas */}
       <Table
+        tableClassName="table-measure-content"
         pagination={busqueda ? pagination : undefined}
         columns={columns}
         data={entregasOrdenadas}

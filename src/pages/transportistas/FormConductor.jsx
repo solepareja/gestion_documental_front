@@ -1,3 +1,4 @@
+import RequiredField from '../../components/RequiredField';
 import useEditRecord from '../../components/useEditRecord';
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -96,7 +97,6 @@ export default function FormConductor() {
     const validacionDni = validarIdentificacion(formData.dni);
     if (!validacionDni.valido) {
       setDniError(validacionDni.mensaje);
-      setError(validacionDni.mensaje);
       return;
     }
     setDniError(null);
@@ -208,7 +208,7 @@ export default function FormConductor() {
         >
           <div className="col-span-full space-y-4">
             <label htmlFor="tipoConductor">Tipo de conductor</label>
-            <select
+            <CustomSelect
               id="tipoConductor"
               name="tipoConductor"
               value={formData.tipoConductor}
@@ -216,7 +216,7 @@ export default function FormConductor() {
             >
               <option value="EMPLEADO">Empleado</option>
               <option value="AUTONOMO">Autónomo</option>
-            </select>
+            </CustomSelect>
           </div>
           {/* Bloque 1: Datos Personales */}
           <div className="col-span-full min-w-0 space-y-4">
@@ -329,13 +329,18 @@ export default function FormConductor() {
                 </p>
               </div>
 
-              <TablaPermisosCarnet
-                disabled={loading || Boolean(loadError) || cargando}
-                permisos={formData.permisos || []}
-                onChange={(nuevosPermisos) =>
-                  setFormData((prev) => ({ ...prev, permisos: nuevosPermisos }))
-                }
-              />
+              <RequiredField
+                value={formData.permisos?.length}
+                message="Añade al menos un permiso de conducir."
+              >
+                <TablaPermisosCarnet
+                  disabled={loading || Boolean(loadError) || cargando}
+                  permisos={formData.permisos || []}
+                  onChange={(nuevosPermisos) =>
+                    setFormData((prev) => ({ ...prev, permisos: nuevosPermisos }))
+                  }
+                />
+              </RequiredField>
             </div>
 
             {/* Bloque 4: Fotos del Carnet Físico */}

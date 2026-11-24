@@ -1,7 +1,15 @@
 import { useState, useRef } from 'react';
 import { comprimirImagen } from '../utils/imageCompressor';
+import { urlArchivoDocumento } from '../services/archivoDocumento';
 
-export default function CarnetFotoUploader({ label, sublabel, value, onChange, disabled = false }) {
+export default function CarnetFotoUploader({
+  label,
+  sublabel,
+  value: referencia,
+  onChange,
+  disabled = false,
+}) {
+  const value = urlArchivoDocumento(referencia);
   const [procesando, setProcesando] = useState(false);
   const [errorLocal, setErrorLocal] = useState(null);
   const [arrastrando, setArrastrando] = useState(false);
@@ -15,10 +23,10 @@ export default function CarnetFotoUploader({ label, sublabel, value, onChange, d
 
     try {
       const dataUrl = await comprimirImagen(file);
-      onChange(dataUrl);
+      await onChange(dataUrl);
     } catch (err) {
       console.error('Error al procesar la imagen del carnet:', err);
-      setErrorLocal(err.message || 'No se pudo cargar la imagen');
+      setErrorLocal(err.response?.data?.message || err.message || 'No se pudo cargar la imagen');
     } finally {
       setProcesando(false);
     }

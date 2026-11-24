@@ -1,61 +1,40 @@
-import { useState } from 'react';
-import { crearPlantillaDocumento } from '../../services/firmas';
+import { useEffect, useState } from 'react';
+import { crearPlantillaDocumento, actualizarPlantillaDocumento } from '../../services/firmas';
+import api from '../../services/api';
+import usePagedList from '../usePagedList';
 import CustomSelect from '../CustomSelect';
 
-const PLANTILLAS_PREDEFINIDAS = [
-  {
-    titulo: 'Protección de Datos RGPD y Confidencialidad',
-    colectivo: 'Toda la plantilla',
-    descripcion: 'Consentimiento para el tratamiento de datos y deber de secreto laboral.',
-    contenidoLegal: `De conformidad con lo dispuesto en el Reglamento General de Protección de Datos (RGPD UE 2016/679) y la Ley Orgánica 3/2018 (LOPDGDD), el trabajador abajo firmante queda informado y consiente expresamente el tratamiento de sus datos personales necesarios para el desarrollo de la relación laboral, control horario y accesos, gestión de nóminas y cumplimiento de obligaciones legales.\n\nAsimismo, se compromete a guardar el más estricto secreto profesional respecto a toda información técnica, comercial o confidencial de Fábrica Sofás Valencia S.L. a la que tenga acceso durante el ejercicio de sus funciones.`,
-  },
-  {
-    titulo: 'Entrega de Vestuario y Equipos de Protección Individual (EPIs)',
-    colectivo: 'Fábrica y Operarios',
-    descripcion: 'Constancia de recepción y compromiso de uso de EPIs homologados.',
-    contenidoLegal: `El trabajador manifiesta haber recibido por parte de Fábrica Sofás Valencia S.L. las prendas y Equipos de Protección Individual (EPIs) correspondientes a su puesto de trabajo, en perfecto estado y homologados según normativa vigente.\n\nEl trabajador se compromete a su uso obligatorio y correcto durante la jornada laboral, a mantenerlos limpios y en buen estado de conservación, así como a comunicar cualquier deterioro o necesidad de reposición.`,
-  },
-  {
-    titulo: 'Normativa y Cesión de Uso de Vehículos de Empresa',
-    colectivo: 'Conductores y Transportistas',
-    descripcion: 'Condiciones de custodia, circulación y mantenimiento de la flota.',
-    contenidoLegal: `Mediante el presente documento, el empleado acepta la cesión de uso del vehículo de empresa asignado para labores profesionales de transporte o reparto.\n\nEl trabajador declara disponer de permiso de conducir en vigor, comprometiéndose a respetar el Código de Circulación, a no permitir la conducción a personas ajenas a la empresa, a custodiar el vehículo con la debida diligencia y a notificar de inmediato cualquier siniestro, avería o infracción.`,
-  },
-  {
-    titulo: 'Autorización de Uso de Imagen y Redes Corporativas',
-    colectivo: 'Toda la plantilla',
-    descripcion: 'Permiso para difusión de fotografías en web corporativa y redes sociales.',
-    contenidoLegal: `De conformidad con la Ley Orgánica 1/1982 sobre protección civil del derecho al honor, a la intimidad y a la propia imagen, el trabajador autoriza a Fábrica Sofás Valencia S.L. a capturar y publicar fotografías y vídeos tomados en el ámbito laboral para publicaciones internas, catálogo comercial, página web oficial y redes sociales profesionales de la entidad, sin fines lucrativos directos sobre la imagen.`,
-  },
-];
-
-export default function ModalCrearPlantilla({ onClose, onPlantillaCreada }) {
-  const [titulo, setTitulo] = useState('');
-  const [colectivo, setColectivo] = useState('Toda la plantilla');
-  const [colectivoPersonalizado, setColectivoPersonalizado] = useState('');
-  const [descripcion, setDescripcion] = useState('');
-  const [contenidoLegal, setContenidoLegal] = useState('');
+export default function ModalCrearPlantilla({ onClose, onPlantillaCreada, plantilla = null }) {
+  const [titulo, setTitulo] = useState(plantilla?.titulo || '');
+  const [departamentos, setDepartamentos] = useState(plantilla?.departamentos || []);
+  const [todos, setTodos] = useState(!plantilla?.departamentos?.length);
+  const {
+    opciones,
+    cargando: cargandoDepartamentos,
+    error: errorDepartamentos,
+  } = usePagedList('trabajadores');
+  const departamentosDisponibles = opciones.departamento || [];
+  const [descripcion, setDescripcion] = useState(plantilla?.descripcion || '');
+  const [contenidoLegal, setContenidoLegal] = useState(plantilla?.contenidoLegal || '');
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState(null);
 
-  const aplicarPredefinida = (p) => {
-    setTitulo(p.titulo);
-    setDescripcion(p.descripcion);
-    setContenidoLegal(p.contenidoLegal);
-    if (
-      [
-        'Toda la plantilla',
-        'Fábrica y Operarios',
-        'Conductores y Transportistas',
-        'Administración',
-      ].includes(p.colectivo)
-    ) {
-      setColectivo(p.colectivo);
-    } else {
-      setColectivo('Otro');
-      setColectivoPersonalizado(p.colectivo);
-    }
-  };
+  const [porPersonas, setPorPersonas] = useState(Boolean(plantilla?.trabajadorIds?.length));
+  const [trabajadorIds, setTrabajadorIds] = useState(plantilla?.trabajadorIds || []);
+  const [personas, setPersonas] = useState([]);
+  const [errorPersonas, setErrorPersonas] = useState(false);
+  useEffect(() => {
+    const controller = new AbortController();
+    api
+      .get('/trabajadores', { signal: controller.signal })
+      .then(({ data }) => {
+        if (!controller.signal.aborted) setPersonas(data);
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setErrorPersonas(true);
+      });
+    return () => controller.abort();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -64,16 +43,32 @@ export default function ModalCrearPlantilla({ onClose, onPlantillaCreada }) {
       return;
     }
 
-    const colectivoFinal =
-      colectivo === 'Otro' ? colectivoPersonalizado.trim() || 'General' : colectivo;
+    if (porPersonas && trabajadorIds.length === 0) {
+      setError('Selecciona al menos una persona.');
+      return;
+    }
+
+    if (!porPersonas && !todos && departamentos.length === 0) {
+      setError('Selecciona al menos un departamento o la opción de todos.');
+      return;
+    }
 
     setGuardando(true);
     setError(null);
 
     try {
-      const nueva = await crearPlantillaDocumento({
+      const guardar = plantilla
+        ? (payload) => actualizarPlantillaDocumento(plantilla.plantillaId, payload)
+        : crearPlantillaDocumento;
+      const nueva = await guardar({
         titulo: titulo.trim(),
-        colectivo: colectivoFinal,
+        colectivo: todos
+          ? 'Toda la plantilla'
+          : departamentos
+              .map((d) => (d === 'SIN_DEPARTAMENTO' ? 'Sin departamento' : d))
+              .join(', '),
+        departamentos: porPersonas || todos ? [] : departamentos,
+        trabajadorIds: porPersonas ? trabajadorIds : [],
         descripcion: descripcion.trim(),
         contenidoLegal: contenidoLegal.trim(),
         activo: true,
@@ -85,7 +80,7 @@ export default function ModalCrearPlantilla({ onClose, onPlantillaCreada }) {
       onClose();
     } catch (err) {
       console.error('Error al crear la plantilla:', err);
-      setError('Hubo un error al registrar el documento en el servidor.');
+      setError('No se pudo guardar el documento. Revisa los datos e inténtalo de nuevo.');
     } finally {
       setGuardando(false);
     }
@@ -98,17 +93,18 @@ export default function ModalCrearPlantilla({ onClose, onPlantillaCreada }) {
         <div className="px-6 py-4 bg-gray-50/90 border-0 flex justify-between items-center">
           <div>
             <span className="text-[11px] font-bold uppercase tracking-wider text-brand-600">
-              Nuevo Documento Corporativo
+              {plantilla ? 'Editar documento corporativo' : 'Nuevo documento corporativo'}
             </span>
             <h3 className="text-lg font-bold text-gray-900 leading-tight">
-              Crear Tipo de Documento para Firmas
+              {plantilla ? 'Editar documento y firmantes' : 'Crear documento para firmas'}
             </h3>
             <p className="text-xs text-gray-500 mt-0.5">
-              Define los requisitos legales y el colectivo asignado para su cumplimiento
+              Define los requisitos legales y los departamentos asignados para su cumplimiento
             </p>
           </div>
           <button
             onClick={onClose}
+            disabled={guardando}
             className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-200 transition cursor-pointer"
           >
             ✕
@@ -123,25 +119,6 @@ export default function ModalCrearPlantilla({ onClose, onPlantillaCreada }) {
             </div>
           )}
 
-          {/* Plantillas rápidas de 1 clic */}
-          <div>
-            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
-              Cargar modelo rápido (1 clic):
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {PLANTILLAS_PREDEFINIDAS.map((p, idx) => (
-                <button
-                  type="button"
-                  key={idx}
-                  onClick={() => aplicarPredefinida(p)}
-                  className="px-3.5 py-2 rounded-xl text-xs font-bold bg-gray-100 hover:bg-brand-500/15 hover:text-brand-700 text-gray-700 border-0 transition shadow-2xs cursor-pointer"
-                >
-                  {p.titulo.split(' ')[0]} {p.titulo.split(' ')[1] || ''}
-                </button>
-              ))}
-            </div>
-          </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Título */}
             <div className="md:col-span-2">
@@ -151,6 +128,7 @@ export default function ModalCrearPlantilla({ onClose, onPlantillaCreada }) {
               <input
                 type="text"
                 required
+                maxLength={150}
                 value={titulo}
                 onChange={(e) => setTitulo(e.target.value)}
                 placeholder="Ej. Protección de Datos RGPD, Hoja de Entrega de EPIs..."
@@ -158,69 +136,122 @@ export default function ModalCrearPlantilla({ onClose, onPlantillaCreada }) {
               />
             </div>
 
-            {/* Colectivo / Ámbito */}
             <div>
-              <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
-                Colectivo / Ámbito Asignado *
+              <label className="block text-xs font-bold text-gray-700 mb-2">
+                Personas que deben firmar
               </label>
-              <CustomSelect value={colectivo} onChange={(e) => setColectivo(e.target.value)}>
-                <option value="Toda la plantilla">
-                  Toda la plantilla (Todos los trabajadores)
-                </option>
-                <option value="Fábrica y Operarios">
-                  Fábrica y Operarios (Producción / Almacén)
-                </option>
-                <option value="Conductores y Transportistas">
-                  Conductores y Transportistas (Flota)
-                </option>
-                <option value="Administración">Administración / Oficinas</option>
-                <option value="Otro">Otro (personalizado)</option>
-              </CustomSelect>
+              <select
+                className="w-full p-3 rounded-xl bg-gray-100 mb-3"
+                value={porPersonas ? 'personas' : 'departamentos'}
+                onChange={(e) => setPorPersonas(e.target.value === 'personas')}
+              >
+                <option value="departamentos">Por departamentos / toda la plantilla</option>
+                <option value="personas">Seleccionar personas concretas</option>
+              </select>
+              {porPersonas ? (
+                <>
+                  <CustomSelect
+                    multiple
+                    value={trabajadorIds.map(String)}
+                    options={personas.map((p) => ({
+                      value: String(p.id),
+                      label: `${p.nombre} ${p.apellidos || ''} · ${p.dni || p.departamento || ''}`,
+                    }))}
+                    onChange={(e) => setTrabajadorIds(e.target.value.map(Number))}
+                    placeholder="Selecciona las personas firmantes"
+                  />
+                  {errorPersonas && (
+                    <p role="alert" className="text-xs text-rose-700">
+                      No se pudieron cargar las personas. Cierra y vuelve a abrir el formulario.
+                    </p>
+                  )}
+                </>
+              ) : (
+                <>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                      Departamentos asignados *
+                    </label>
+                    {(todos || departamentos.length > 0) && (
+                      <div className="flex flex-wrap gap-1.5 mb-2">
+                        {(todos ? ['TODOS'] : departamentos).map((d) => (
+                          <span
+                            key={d}
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-brand-50 px-2 py-1 text-[11px] font-semibold text-brand-600"
+                          >
+                            {d === 'TODOS'
+                              ? 'Todos los departamentos'
+                              : d === 'SIN_DEPARTAMENTO'
+                                ? 'Sin departamento'
+                                : d}
+                            <button
+                              type="button"
+                              aria-label={`Quitar ${d === 'TODOS' ? 'todos los departamentos' : d}`}
+                              onClick={() => {
+                                if (d === 'TODOS') setTodos(false);
+                                else
+                                  setDepartamentos((actuales) =>
+                                    actuales.filter((item) => item !== d),
+                                  );
+                              }}
+                              className="rounded hover:bg-brand-100 px-0.5 cursor-pointer"
+                            >
+                              ×
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    <CustomSelect
+                      multiple
+                      showSelection={false}
+                      value={todos ? ['TODOS'] : departamentos}
+                      placeholder={
+                        cargandoDepartamentos
+                          ? 'Cargando departamentos...'
+                          : 'Selecciona departamentos'
+                      }
+                      options={[
+                        { value: 'TODOS', label: 'Todos los departamentos' },
+                        ...[...new Set([...departamentosDisponibles, ...departamentos])].map(
+                          (d) => ({
+                            value: d,
+                            label: d === 'SIN_DEPARTAMENTO' ? 'Sin departamento' : d,
+                          }),
+                        ),
+                      ]}
+                      onChange={(e) => {
+                        const valores = e.target.value;
+                        const seleccionaTodos = !todos && valores.includes('TODOS');
+                        setTodos(seleccionaTodos);
+                        setDepartamentos(
+                          seleccionaTodos ? [] : valores.filter((d) => d !== 'TODOS'),
+                        );
+                      }}
+                    />
+                    {errorDepartamentos && (
+                      <p role="alert" className="text-xs text-rose-700 mt-1">
+                        {errorDepartamentos}
+                      </p>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
-
-            {colectivo === 'Otro' ? (
-              <div>
-                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
-                  Especificar colectivo
-                </label>
-                <input
-                  type="text"
-                  value={colectivoPersonalizado}
-                  onChange={(e) => setColectivoPersonalizado(e.target.value)}
-                  placeholder="Ej. Técnicos de montaje..."
-                  className="w-full px-4 py-3 rounded-2xl bg-gray-100/80 hover:bg-gray-200/60 border-0 focus:outline-none focus:bg-white focus:ring-2 focus:ring-brand-500 text-gray-900 text-sm transition-all"
-                />
-              </div>
-            ) : (
-              <div>
-                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
-                  Descripción breve (opcional)
-                </label>
-                <input
-                  type="text"
-                  value={descripcion}
-                  onChange={(e) => setDescripcion(e.target.value)}
-                  placeholder="Breve resumen del objetivo de este documento..."
-                  className="w-full px-4 py-3 rounded-2xl bg-gray-100/80 hover:bg-gray-200/60 border-0 focus:outline-none focus:bg-white focus:ring-2 focus:ring-brand-500 text-gray-900 placeholder-gray-400 text-sm transition-all"
-                />
-              </div>
-            )}
-          </div>
-
-          {colectivo === 'Otro' && (
             <div>
               <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
                 Descripción breve (opcional)
               </label>
               <input
                 type="text"
+                maxLength={500}
                 value={descripcion}
                 onChange={(e) => setDescripcion(e.target.value)}
                 placeholder="Breve resumen del objetivo de este documento..."
-                className="w-full px-4 py-3 rounded-2xl bg-gray-100/80 hover:bg-gray-200/60 border-0 focus:outline-none focus:bg-white focus:ring-2 focus:ring-brand-500 text-gray-900 placeholder-gray-400 text-sm transition-all"
+                className="w-full px-4 py-3 rounded-2xl bg-gray-100/80 border-0 focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm"
               />
             </div>
-          )}
+          </div>
 
           {/* Cláusulas y Contenido Legal */}
           <div>
@@ -242,6 +273,12 @@ export default function ModalCrearPlantilla({ onClose, onPlantillaCreada }) {
             />
           </div>
 
+          {plantilla && (
+            <p className="text-xs text-gray-500">
+              Los PDF ya firmados se conservan. Los cambios de texto se aplicarán a las próximas
+              firmas.
+            </p>
+          )}
           {/* Pie de Acciones */}
           <div className="pt-2 flex items-center justify-end gap-3">
             <button
@@ -257,7 +294,11 @@ export default function ModalCrearPlantilla({ onClose, onPlantillaCreada }) {
               disabled={guardando}
               className="px-5 py-2.5 text-xs font-bold text-white bg-brand-500 hover:bg-brand-600 disabled:opacity-50 rounded-xl shadow-xs transition cursor-pointer"
             >
-              {guardando ? 'Guardando documento...' : 'Guardar y Publicar Documento'}
+              {guardando
+                ? 'Guardando documento...'
+                : plantilla
+                  ? 'Guardar cambios'
+                  : 'Guardar y publicar documento'}
             </button>
           </div>
         </form>

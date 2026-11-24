@@ -3,14 +3,10 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/useAuth';
 import KioskoEntregas from './KioskoEntregas';
 import ModalFirmarDocumento from '../../components/firmas/ModalFirmarDocumento';
-import {
-  obtenerResumenFirmas,
-  obtenerDetallePlantilla,
-  registrarFirma,
-} from '../../services/firmas';
-import { normalizarDni, validarDniNie } from '../../utils/dniValidator';
+import api from '../../services/api';
+import { validarDniNie } from '../../utils/dniValidator';
 
-export default function ModoTablet() {
+export default function ModoTablet({ integrado = false }) {
   const { activarModoTablet, logout } = useAuth();
   const navigate = useNavigate();
   const [parametros] = useSearchParams();
@@ -21,11 +17,24 @@ export default function ModoTablet() {
     },
     [],
   );
+  useEffect(() => {
+    let ultima = 0;
+    const actividad = () => {
+      if (Date.now() - ultima < 30000) return;
+      ultima = Date.now();
+      api.post('/tablet/actividad').catch(() => {});
+    };
+    const eventos = ['pointerdown', 'keydown', 'scroll'];
+    eventos.forEach((evento) => window.addEventListener(evento, actividad, true));
+    return () => {
+      eventos.forEach((evento) => window.removeEventListener(evento, actividad, true));
+      api.post('/tablet/terminar').catch(() => {});
+    };
+  }, []);
   const [opcion, setOpcion] = useState(() =>
     ['entregas', 'firmas'].includes(parametros.get('opcion')) ? parametros.get('opcion') : null,
   );
   const [persona, setPersona] = useState(null);
-  const [segundosRestantes, setSegundosRestantes] = useState(90);
   const ultimaActividad = useRef(0);
   const [dni, setDni] = useState('');
   const [pendientes, setPendientes] = useState([]);
@@ -34,9 +43,10 @@ export default function ModoTablet() {
   const [cargando, setCargando] = useState(false);
   const [salir, setSalir] = useState(false);
   useEffect(() => {
-    activarModoTablet();
-  }, [activarModoTablet]);
+    if (!integrado) activarModoTablet();
+  }, [activarModoTablet, integrado]);
   const limpiarPersona = () => {
+    api.post('/tablet/terminar').catch(() => {});
     consulta.current += 1;
     setCargando(false);
     setDni('');
@@ -44,11 +54,11 @@ export default function ModoTablet() {
     setPendientes([]);
     setSeleccion(null);
     setMensaje('');
-    setSegundosRestantes(90);
   };
   const reiniciar = () => {
     limpiarPersona();
-    setOpcion(null);
+    if (integrado) navigate('/');
+    else setOpcion(null);
     setSalir(false);
   };
   const siguientePersona = () => {
@@ -60,14 +70,14 @@ export default function ModoTablet() {
     ultimaActividad.current = Date.now();
     const renovar = () => {
       ultimaActividad.current = Date.now();
-      setSegundosRestantes(90);
     };
     const eventos = ['pointerdown', 'pointermove', 'keydown', 'scroll'];
     eventos.forEach((evento) => window.addEventListener(evento, renovar, true));
     const timer = setInterval(() => {
       const restantes = Math.max(0, 90 - Math.floor((Date.now() - ultimaActividad.current) / 1000));
-      setSegundosRestantes(restantes);
+
       if (restantes === 0) {
+        api.post('/tablet/terminar').catch(() => {});
         consulta.current += 1;
         setCargando(false);
         setDni('');
@@ -95,24 +105,9 @@ export default function ModoTablet() {
     const solicitud = ++consulta.current;
     setCargando(true);
     try {
-      const resumen = await obtenerResumenFirmas();
-      const detalles = await Promise.all(
-        resumen.map((doc) => obtenerDetallePlantilla(doc.plantillaId)),
-      );
+      await api.post('/tablet/identificar', { dni });
+      const { data: propios } = await api.get('/tablet/pendientes');
       if (solicitud !== consulta.current) return;
-      const propios = detalles.flatMap((detalle) =>
-        (detalle.pendientes || [])
-          .filter((persona) => normalizarDni(persona.dni || '') === normalizarDni(dni))
-          .map((trabajador) => ({
-            trabajador,
-            plantilla: {
-              id: detalle.plantillaId,
-              titulo: detalle.titulo,
-              colectivo: detalle.colectivo,
-              contenidoLegal: detalle.contenidoLegal,
-            },
-          })),
-      );
       setPendientes(propios);
       if (propios.length) setPersona(propios[0].trabajador);
       if (!propios.length) setMensaje('No hay documentos pendientes para este DNI / NIE.');
@@ -125,25 +120,27 @@ export default function ModoTablet() {
   };
   return (
     <div className="tablet-mode min-h-screen bg-slate-50 text-gray-900 [color-scheme:light]">
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-6xl mx-auto flex justify-between items-center gap-4 px-4 sm:px-8 py-4">
-          <img src="/logo.png" alt="Sofás Valencia" className="h-9 sm:h-11 w-auto shrink-0" />
-          <div className="flex items-center gap-2 sm:gap-3">
-            <button
-              onClick={reiniciar}
-              className="rounded-xl px-3 sm:px-5 py-3 text-sm font-semibold hover:bg-gray-100 focus-visible:outline-brand-500"
-            >
-              Inicio
-            </button>
-            <button
-              onClick={() => setSalir(true)}
-              className="rounded-xl bg-gray-100 hover:bg-gray-200 px-3 sm:px-5 py-3 text-sm font-semibold focus-visible:outline-brand-500"
-            >
-              Salir del modo tablet
-            </button>
+      {!integrado && (
+        <header className="bg-white border-b border-gray-200">
+          <div className="max-w-6xl mx-auto flex justify-between items-center gap-4 px-4 sm:px-8 py-4">
+            <img src="/logo.png" alt="Sofás Valencia" className="h-9 sm:h-11 w-auto shrink-0" />
+            <div className="flex items-center gap-2 sm:gap-3">
+              <button
+                onClick={reiniciar}
+                className="rounded-xl px-3 sm:px-5 py-3 text-sm font-semibold hover:bg-gray-100 focus-visible:outline-brand-500"
+              >
+                Inicio
+              </button>
+              <button
+                onClick={() => setSalir(true)}
+                className="rounded-xl bg-gray-100 hover:bg-gray-200 px-3 sm:px-5 py-3 text-sm font-semibold focus-visible:outline-brand-500"
+              >
+                Salir del modo tablet
+              </button>
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
+      )}
       <main className="max-w-4xl mx-auto px-4 sm:px-8 py-8 sm:py-10 space-y-6">
         {opcion === 'entregas' ? (
           <KioskoEntregas />
@@ -178,7 +175,7 @@ export default function ModoTablet() {
                   </button>
                 )}
                 {persona ? (
-                  <div className="rounded-2xl p-5 bg-white space-y-2">
+                  <div className="rounded-2xl p-5 space-y-2">
                     <h2 className="text-xl font-bold">
                       {persona.nombre} {persona.apellidos}
                     </h2>
@@ -191,7 +188,13 @@ export default function ModoTablet() {
                     </p>
                   </div>
                 ) : (
-                  <form onSubmit={buscar} className="space-y-4">
+                  <form onSubmit={buscar} className="create-card p-5 sm:p-8 space-y-4">
+                    <p className="create-description">
+                      Identifica al firmante para consultar y firmar sus documentos pendientes.
+                    </p>
+                    <label htmlFor="tablet-dni" className="workflow-label">
+                      DNI / NIE del firmante *
+                    </label>
                     <input
                       id="tablet-dni"
                       value={dni}
@@ -220,7 +223,7 @@ export default function ModoTablet() {
                   <button
                     key={item.plantilla.id}
                     onClick={() => setSeleccion(item)}
-                    className="block w-full text-left rounded-2xl p-6 bg-white text-xl font-bold"
+                    className="flex w-full items-center justify-between gap-4 text-left rounded-2xl p-5 bg-white text-sm font-semibold min-h-14"
                   >
                     {item.plantilla.titulo} → Firmar
                   </button>
@@ -236,7 +239,7 @@ export default function ModoTablet() {
           onClose={() => setSeleccion(null)}
           onFirmaCompletada={async (payload) => {
             const solicitud = consulta.current;
-            await registrarFirma(payload);
+            await api.post('/tablet/firmar', payload);
             if (solicitud !== consulta.current) return;
             setPendientes((actuales) =>
               actuales.filter((item) => item.plantilla.id !== payload.plantillaId),
@@ -244,7 +247,6 @@ export default function ModoTablet() {
             setSeleccion(null);
             setMensaje('Documento firmado correctamente.');
             ultimaActividad.current = Date.now();
-            setSegundosRestantes(90);
           }}
         />
       )}

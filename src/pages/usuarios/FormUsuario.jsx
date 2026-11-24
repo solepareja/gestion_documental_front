@@ -134,9 +134,10 @@ export default function FormUsuario() {
             >
               <option value="USUARIO">Usuario general</option>
               <option value="ADMIN">Administrador</option>
+              <option value="GESTOR">Gestor</option>
             </CustomSelect>
             <p className="mt-1.5 text-xs text-gray-500">
-              El modo tablet se activa desde el menú de la aplicación.
+              El usuario general accede a Inicio, entregas de material y firmas.
             </p>
           </div>
           <div className="create-actions">

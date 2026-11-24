@@ -1,31 +1,20 @@
-import SearchInput from '../../components/SearchInput';
+import DeclaracionEntrega from '../../components/DeclaracionEntrega';
+import { pdfEntregaParaArchivo } from '../../utils/pdfGenerator';
+import CustomDatePicker from '../../components/CustomDatePicker';
+import Button from '../../components/Button';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import api from '../../services/api';
 import {
   obtenerMateriales,
-  crearEntrega,
   obtenerTallasMaterial,
   disponibleTalla,
-  tiposTallaje,
   obtenerTipoTallaje,
-  tiposMaterial,
 } from '../../services/materiales';
 import SignaturePad from '../../components/SignaturePad';
 import CustomSelect from '../../components/CustomSelect';
 import { validarDniNie, normalizarDni } from '../../utils/dniValidator';
-import { imprimirOdescargarPdfEntrega } from '../../utils/pdfGenerator';
+import { descargarPdfEntrega } from '../../utils/descargarPdfEntrega';
 import { obtenerDepartamentosUnificados } from '../../utils/departamentos';
-
-function sumarMesesAFecha(fechaStr, meses) {
-  if (!fechaStr || !meses) return '';
-  try {
-    const d = new Date(fechaStr);
-    d.setMonth(d.getMonth() + parseInt(meses, 10));
-    return d.toISOString().slice(0, 10);
-  } catch {
-    return '';
-  }
-}
 
 export default function KioskoEntregas() {
   const hoyStr = new Date().toISOString().slice(0, 10);
@@ -33,8 +22,6 @@ export default function KioskoEntregas() {
   // Estados de datos
   const [trabajadores, setTrabajadores] = useState([]);
   const [materiales, setMateriales] = useState([]);
-  const [categoriaMaterial, setCategoriaMaterial] = useState('EPI');
-  const [busquedaMaterial, setBusquedaMaterial] = useState('');
   const [cargandoInicial, setCargandoInicial] = useState(true);
 
   // Paso actual: 1 (Trabajador), 2 (Materiales), 3 (Firma), 4 (Éxito)
@@ -46,12 +33,10 @@ export default function KioskoEntregas() {
   const [resetBusqueda, setResetBusqueda] = useState(0);
   const [trabajadorSeleccionado, setTrabajadorSeleccionado] = useState(null);
   const [fechaEntrega, setFechaEntrega] = useState(hoyStr);
-  const [observaciones, setObservaciones] = useState('');
   const [firma, setFirma] = useState('');
-  const [lineas, setLineas] = useState([]);
-
-  // Modal para seleccionar talla al pulsar un material
-  const [materialParaTalla, setMaterialParaTalla] = useState(null);
+  const [lineas, setLineas] = useState([
+    { idTemp: 1, tipo: 'EPI', materialId: '', nombre: '', talla: '', cantidad: 1 },
+  ]);
 
   // Modal para alta rápida de nuevo trabajador
   const [mostrarModalNuevoTrabajador, setMostrarModalNuevoTrabajador] = useState(false);
@@ -82,35 +67,29 @@ export default function KioskoEntregas() {
 
   const resetearFormulario = useCallback(() => {
     setPaso(1);
-    setCategoriaMaterial('EPI');
-    setBusquedaMaterial('');
     setBusquedaTrabajador('');
     setTrabajadorBuscado(false);
     setResetBusqueda((actual) => actual + 1);
     setTrabajadorSeleccionado(null);
     setFechaEntrega(new Date().toISOString().slice(0, 10));
-    setObservaciones('');
     setFirma('');
-    setLineas([]);
+    setLineas([
+      { idTemp: Date.now(), tipo: 'EPI', materialId: '', nombre: '', talla: '', cantidad: 1 },
+    ]);
     setErrorEntrega(null);
     setEntregaGuardada(null);
     setContadorReinicio(5);
   }, []);
 
   // Cargar datos
-  const cargarDatos = useCallback(async () => {
-    try {
-      const [resTrab, dataMat] = await Promise.all([
-        api.get('/trabajadores').catch(() => ({ data: [] })),
-        obtenerMateriales().catch(() => []),
-      ]);
-      setTrabajadores(resTrab.data || []);
-      setMateriales(dataMat || []);
-    } catch (err) {
-      console.error('Error cargando datos:', err);
-    } finally {
-      setCargandoInicial(false);
-    }
+  const cargarDatos = useCallback(() => {
+    return Promise.all([Promise.resolve({ data: [] }), obtenerMateriales().catch(() => [])])
+      .then(([resTrab, dataMat]) => {
+        setTrabajadores(resTrab.data || []);
+        setMateriales(dataMat || []);
+      })
+      .catch((err) => console.error('Error cargando datos:', err))
+      .finally(() => setCargandoInicial(false));
   }, []);
 
   useEffect(() => {
@@ -160,56 +139,11 @@ export default function KioskoEntregas() {
     };
   }, [paso, resetearFormulario]);
 
-  // Toggle Pantalla Completa
-  // Añadir material a la entrega
-  const agregarMaterialConTalla = (mat, talla = '') => {
-    setLineas((prev) => {
-      if (disponibleTalla(mat, talla, prev) < 1) return prev;
-      const indiceExistente = prev.findIndex(
-        (l) => String(l.materialId) === String(mat.id) && l.talla === (talla || ''),
-      );
-      if (indiceExistente !== -1) {
-        const copia = [...prev];
-        copia[indiceExistente] = {
-          ...copia[indiceExistente],
-          cantidad: copia[indiceExistente].cantidad + 1,
-        };
-        return copia;
-      }
-      return [
-        ...prev,
-        {
-          idTemp: Date.now() + Math.random(),
-          materialId: mat.id,
-          nombre: mat.nombre,
-          tipo: mat.tipo,
-          cantidad: 1,
-          talla: talla || '',
-          vidaUtilMeses: mat.vidaUtilMeses,
-          fechaRenovacion:
-            mat.tipo === 'EPI' && mat.vidaUtilMeses && fechaEntrega
-              ? sumarMesesAFecha(fechaEntrega, mat.vidaUtilMeses)
-              : '',
-        },
-      ];
-    });
-    setMaterialParaTalla(null);
-  };
-
-  const modificarCantidadLinea = (idTemp, delta) => {
+  const actualizarLinea = (idTemp, cambios) => {
     setLineas((prev) =>
-      prev
-        .map((l) => {
-          if (l.idTemp === idTemp) {
-            const mat = materiales.find((m) => String(m.id) === String(l.materialId));
-            const nuevaCant = l.cantidad + delta;
-            if (delta > 0 && nuevaCant > disponibleTalla(mat, l.talla, prev, l.idTemp)) return l;
-            return nuevaCant > 0 ? { ...l, cantidad: nuevaCant } : null;
-          }
-          return l;
-        })
-        .filter(Boolean),
+      prev.map((linea) => (linea.idTemp === idTemp ? { ...linea, ...cambios } : linea)),
     );
+    setFirma('');
   };
 
   const eliminarLinea = (idTemp) => {
@@ -286,6 +220,23 @@ export default function KioskoEntregas() {
       setPaso(2);
       return;
     }
+    if (
+      lineas.some((linea) => {
+        const material = materiales.find((m) => String(m.id) === String(linea.materialId));
+        return (
+          !material ||
+          (obtenerTipoTallaje(material) !== 'UNICA' && !linea.talla) ||
+          !Number.isInteger(Number(linea.cantidad)) ||
+          Number(linea.cantidad) < 1 ||
+          Number(linea.cantidad) > disponibleTalla(material, linea.talla, lineas, linea.idTemp)
+        );
+      })
+    ) {
+      setErrorEntrega(
+        'Completa el material, la talla y una cantidad válida en todos los artículos.',
+      );
+      return;
+    }
     if (!firma) {
       setErrorEntrega('Es obligatorio firmar en el recuadro para confirmar la entrega.');
       return;
@@ -298,17 +249,17 @@ export default function KioskoEntregas() {
         trabajadorId: trabajadorSeleccionado.id,
         fechaEntrega,
         firma,
-        observaciones: observaciones.trim() || null,
         lineas: lineas.map((l) => ({
           materialId: l.materialId,
+          observaciones: l.observaciones?.trim() || null,
           cantidad: l.cantidad,
           talla: l.talla || null,
-          fechaRenovacion: l.fechaRenovacion || null,
           estado: 'ENTREGADO',
         })),
       };
 
-      const entregaCreada = await crearEntrega(payload);
+      payload.pdfBase64 = pdfEntregaParaArchivo(payload, trabajadorSeleccionado, materiales);
+      const { data: entregaCreada } = await api.post('/tablet/entregas', payload);
       setMateriales((actuales) =>
         actuales.map((material) => ({
           ...material,
@@ -322,7 +273,7 @@ export default function KioskoEntregas() {
                     .filter(
                       (l) =>
                         String(l.materialId) === String(material.id) &&
-                        (!material.requiereTalla || l.talla === talla),
+                        (obtenerTipoTallaje(material) === 'UNICA' || l.talla === talla),
                     )
                     .reduce((sum, l) => sum + Number(l.cantidad), 0),
               ),
@@ -346,6 +297,7 @@ export default function KioskoEntregas() {
         trabajadorCorreo: trabajadorSeleccionado.correo,
         lineas: lineas.map((l) => ({
           ...l,
+          materialCodigo: materiales.find((m) => String(m.id) === String(l.materialId))?.codigo,
           materialNombre: l.nombre,
           materialTipo: l.tipo,
         })),
@@ -365,20 +317,21 @@ export default function KioskoEntregas() {
     }
   };
 
-  const normalizarBusquedaMaterial = (valor) =>
-    String(valor || '')
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .toLowerCase()
-      .trim();
-  const materialesEncontrados = materiales.filter((material) =>
-    normalizarBusquedaMaterial(material.nombre).includes(
-      normalizarBusquedaMaterial(busquedaMaterial),
-    ),
-  );
-  const materialesVisibles = materialesEncontrados.filter(
-    (material) => material.tipo === categoriaMaterial,
-  );
+  useEffect(() => {
+    if (!validarDniNie(busquedaTrabajador).valido) return;
+    let vigente = true;
+    api
+      .post('/tablet/identificar', { dni: busquedaTrabajador })
+      .then(({ data }) => {
+        if (vigente) setTrabajadores(data);
+      })
+      .catch(() => {
+        if (vigente) setTrabajadores([]);
+      });
+    return () => {
+      vigente = false;
+    };
+  }, [busquedaTrabajador]);
 
   // Filtrado de trabajadores
   const trabajadoresFiltrados = trabajadores.filter(
@@ -388,9 +341,9 @@ export default function KioskoEntregas() {
   );
 
   return (
-    <div className="flex flex-col font-sans select-none">
+    <div className="create-card">
       {/* Contenido principal */}
-      <section aria-label="Entrega de material" className="flex flex-col">
+      <section aria-label="Entrega de material" className="create-content pb-6">
         {cargandoInicial ? (
           <div className="flex-1 flex flex-col items-center justify-center p-12 text-gray-500">
             <div className="w-10 h-10 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mb-4" />
@@ -410,502 +363,374 @@ export default function KioskoEntregas() {
               </div>
             )}
 
-            {/* ========================================================
-                PASO 1: SELECCIÓN O ALTA DE TRABAJADOR
-            ======================================================== */}
-            {paso === 1 && (
-              <div className="flex-1 flex flex-col space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div>
-                    <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">
-                      1. ¿Quién recibe el material?
+            {paso !== 4 && (
+              <form
+                className="space-y-6"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  handleFinalizarEntrega();
+                }}
+              >
+                <header>
+                  <p className="create-eyebrow">Entregas</p>
+                  <h1 className="text-2xl font-bold text-gray-900">
+                    Registrar entrega de material
+                  </h1>
+                  <p className="create-description">
+                    Completa los datos del receptor, añade el material y recoge su firma de
+                    conformidad.
+                  </p>
+                </header>
+                <fieldset disabled={guardandoEntrega} className="space-y-6 disabled:opacity-60">
+                  <section className="workflow-section">
+                    <h2 className="workflow-title">
+                      <span>1</span> Datos del receptor y fecha de entrega
                     </h2>
-                    <p className="text-sm text-gray-500 mt-1">
-                      Introduce tu DNI o NIE completo y toca tu tarjeta para comenzar.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Buscador grande táctil */}
-                <div className="relative">
-                  <SearchInput
-                    key={`trabajador-${resetBusqueda}`}
-                    type="search"
-                    value={busquedaTrabajador}
-                    onChange={(e) => {
-                      setBusquedaTrabajador(e.target.value);
-                      setTrabajadorBuscado(Boolean(e.target.value.trim()));
-                    }}
-                    placeholder="Introduce tu DNI o NIE completo..."
-                    className="w-full h-14 pl-4 pr-10 rounded-2xl bg-white border-2 border-gray-300 text-gray-900 placeholder-gray-400 text-lg font-medium focus:outline-none focus:border-brand-500 transition-all shadow-xs"
-                  />
-                </div>
-
-                {/* Lista de trabajadores táctil en tarjetas claras */}
-                <div className="overflow-y-auto max-h-[500px] grid grid-cols-1 sm:grid-cols-2 auto-rows-min items-start content-start gap-3 pr-1">
-                  {!trabajadorBuscado ? null : trabajadoresFiltrados.length === 0 ? (
-                    <div className="col-span-full p-8 text-center bg-white rounded-2xl border border-gray-200 shadow-xs">
-                      <p className="text-gray-500 font-semibold mb-3">
-                        No se ha encontrado a ningún trabajador con ese DNI / NIE.
-                      </p>
-                    </div>
-                  ) : (
-                    trabajadoresFiltrados.map((t) => {
-                      const seleccionado = trabajadorSeleccionado?.id === t.id;
-                      return (
-                        <button
-                          key={t.id}
-                          onClick={() => {
-                            setTrabajadorSeleccionado(t);
-                            setPaso(2);
-                          }}
-                          className={`min-h-24 self-start p-4 rounded-2xl border-2 text-left flex items-center gap-3.5 transition-all active:scale-[0.98] cursor-pointer shadow-xs ${
-                            seleccionado
-                              ? 'bg-brand-50 border-brand-500 shadow-sm'
-                              : 'bg-white hover:bg-gray-50 border-gray-200 hover:border-brand-300'
-                          }`}
-                        >
-                          <div
-                            className={`w-12 h-12 rounded-xl flex items-center justify-center font-black text-base shrink-0 ${
-                              seleccionado
-                                ? 'bg-brand-600 text-white'
-                                : 'bg-brand-100 text-brand-800'
-                            }`}
-                          >
-                            {t.nombre.charAt(0)}
-                            {t.apellidos.charAt(0)}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="text-base font-bold text-gray-900 truncate">
-                              {t.nombre} {t.apellidos}
-                            </div>
-                            <div className="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
-                              <span className="font-mono text-gray-700 font-semibold">
-                                {t.dni || 'Sin DNI'}
-                              </span>
-                              {t.departamento && (
-                                <span className="inline-block truncate max-w-[140px] px-2 py-0.5 rounded-md bg-gray-100 text-gray-700 font-medium">
-                                  {t.departamento}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          <svg
-                            className="w-5 h-5 text-gray-400 shrink-0"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M9 5l7 7-7 7"
-                            />
-                          </svg>
-                        </button>
-                      );
-                    })
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* ========================================================
-                PASO 2: SELECCIÓN DE MATERIALES / EPIS
-            ======================================================== */}
-            {paso === 2 && (
-              <div className="flex-1 flex flex-col space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-200 pb-4">
-                  <div>
-                    <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">
-                      2. Selecciona el material a entregar
-                    </h2>
-                    <p className="text-sm text-gray-500 mt-0.5">
-                      Receptor:{' '}
-                      <strong className="text-gray-900">
-                        {trabajadorSeleccionado?.nombre} {trabajadorSeleccionado?.apellidos}
-                      </strong>{' '}
-                      ({trabajadorSeleccionado?.dni || 'DNI'})
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => setPaso(1)}
-                      className="px-4 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200/80 border-0 text-gray-700 text-sm font-bold transition-colors cursor-pointer"
-                    >
-                      ← Cambiar trabajador
-                    </button>
-                    <button
-                      onClick={() => setPaso(3)}
-                      disabled={lineas.length === 0}
-                      className="px-6 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 disabled:opacity-40 text-white font-black text-sm shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <span>Ir a Firmar ({lineas.reduce((acc, l) => acc + l.cantidad, 0)})</span>
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2.5}
-                          d="M14 5l7 7m0 0l-7 7m7-7H3"
-                        />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1">
-                  {/* Catálogo de materiales táctil (2 columnas) */}
-                  <div className="lg:col-span-2 space-y-3">
-                    <div className="space-y-2">
-                      <label
-                        htmlFor="buscar-material-tablet"
-                        className="block text-sm font-semibold text-gray-700"
-                      >
-                        Buscar material
-                      </label>
-                      <div className="relative">
-                        <SearchInput
-                          key={`material-${resetBusqueda}`}
-                          id="buscar-material-tablet"
-                          type="search"
-                          value={busquedaMaterial}
-                          onChange={(event) => setBusquedaMaterial(event.target.value)}
-                          placeholder="Escribe el nombre del material…"
+                    <div className="grid sm:grid-cols-2 gap-5">
+                      <div>
+                        <label htmlFor="entrega-dni" className="workflow-label">
+                          DNI / NIE del trabajador *
+                        </label>
+                        <input
+                          type="text"
                           autoComplete="off"
-                          className="w-full h-14 px-4 rounded-2xl bg-white border-2 border-gray-300 text-base focus:outline-none focus:border-brand-500"
-                        />
-                      </div>
-                    </div>
-                    <div className="flex gap-2" role="group" aria-label="Tipo de material">
-                      {[
-                        { tipo: 'EPI', titulo: 'EPIs' },
-                        { tipo: 'VESTUARIO', titulo: 'Vestuario' },
-                      ].map(({ tipo, titulo }) => (
-                        <button
-                          key={tipo}
-                          type="button"
-                          aria-pressed={categoriaMaterial === tipo}
-                          onClick={() => setCategoriaMaterial(tipo)}
-                          className={`flex-1 px-4 py-3 rounded-xl text-sm font-bold transition-colors ${categoriaMaterial === tipo ? 'bg-brand-600 text-white' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-100'}`}
-                        >
-                          {titulo} (
-                          {
-                            materialesEncontrados.filter((material) => material.tipo === tipo)
-                              .length
-                          }
-                          )
-                        </button>
-                      ))}
-                    </div>
-                    <p className="text-xs font-bold uppercase tracking-wider text-gray-500">
-                      Toca un material para añadirlo a la entrega:
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[440px] overflow-y-auto pr-1">
-                      {materialesVisibles.length === 0 && (
-                        <p
-                          role="status"
-                          className="col-span-full p-6 rounded-2xl bg-white border border-gray-200 text-sm text-gray-500"
-                        >
-                          {busquedaMaterial.trim()
-                            ? 'No hay resultados en esta sección. Prueba otro nombre o cambia entre EPIs y Vestuario.'
-                            : 'No hay materiales en esta sección.'}
-                        </p>
-                      )}
-                      {materialesVisibles.map((m) => (
-                        <button
-                          key={m.id}
-                          disabled={
-                            m.requiereTalla
-                              ? !obtenerTallasMaterial(m).some(
-                                  (t) => disponibleTalla(m, t, lineas) > 0,
-                                )
-                              : disponibleTalla(m, '', lineas) < 1
-                          }
-                          onClick={() => {
-                            if (m.requiereTalla) {
-                              setMaterialParaTalla(m);
-                            } else {
-                              agregarMaterialConTalla(m, '');
-                            }
+                          key={`trabajador-${resetBusqueda}`}
+                          id="entrega-dni"
+                          value={busquedaTrabajador}
+                          onChange={(e) => {
+                            setTrabajadores([]);
+                            setBusquedaTrabajador(e.target.value);
+                            setTrabajadorBuscado(Boolean(e.target.value.trim()));
+                            setTrabajadorSeleccionado(null);
+                            setFirma('');
                           }}
-                          className="p-4 rounded-2xl bg-white hover:bg-gray-50 active:scale-95 border-2 border-gray-200 hover:border-brand-500 text-left flex flex-col justify-between transition-all min-h-[95px] shadow-xs cursor-pointer group"
-                        >
-                          <div className="flex items-start justify-between gap-2">
-                            <span className="font-bold text-gray-900 text-base group-hover:text-brand-600 transition-colors">
-                              {m.nombre}
-                            </span>
-                            <span
-                              className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase shrink-0 ${
-                                m.tipo === 'EPI'
-                                  ? 'bg-amber-100 text-amber-900 border border-amber-200'
-                                  : 'bg-blue-100 text-blue-900 border border-blue-200'
-                              }`}
+                          placeholder="Introduce el DNI o NIE completo"
+                        />
+                        {!trabajadorSeleccionado &&
+                          trabajadoresFiltrados.map((t) => (
+                            <button
+                              type="button"
+                              key={t.id}
+                              className="mt-3 w-full rounded-xl bg-white p-3 text-left text-sm font-semibold"
+                              onClick={() => {
+                                setTrabajadorSeleccionado(t);
+                                setFirma('');
+                              }}
                             >
-                              {tiposMaterial[m.tipo] || m.tipo}
-                            </span>
-                          </div>
-
-                          <div className="flex items-center justify-between text-xs text-gray-500 mt-2">
-                            <span>
-                              {tiposTallaje[obtenerTipoTallaje(m)]} · Stock: {m.stock ?? 0}
-                            </span>
-                            <span className="font-bold text-brand-600 group-hover:underline">
-                              + Añadir
-                            </span>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Panel de material añadido */}
-                  <div className="bg-white border-2 border-gray-200 rounded-2xl p-4 flex flex-col justify-between shadow-xs">
-                    <div>
-                      <div className="flex items-center justify-between border-b border-gray-200 pb-3 mb-3">
-                        <h3 className="font-bold text-gray-900 text-sm">Material seleccionado</h3>
-                        <span className="text-xs bg-brand-50 text-brand-700 border border-brand-200 px-2 py-0.5 rounded-md font-bold">
-                          {lineas.reduce((acc, l) => acc + l.cantidad, 0)} uds
-                        </span>
-                      </div>
-
-                      {lineas.length === 0 ? (
-                        <div className="py-12 text-center text-gray-400 text-xs">
-                          Toca los artículos de la izquierda para incluirlos en esta entrega.
-                        </div>
-                      ) : (
-                        <div className="space-y-2.5 max-h-[300px] overflow-y-auto pr-1">
-                          {lineas.map((l) => (
-                            <div
-                              key={l.idTemp}
-                              className="p-2.5 rounded-xl bg-gray-50 border border-gray-200 flex items-center justify-between gap-2"
-                            >
-                              <div className="min-w-0 flex-1">
-                                <span className="font-bold text-gray-900 text-xs block truncate">
-                                  {l.nombre}
-                                </span>
-                                <span className="text-[11px] text-gray-500">
-                                  {l.talla ? `Talla: ${l.talla}` : 'Talla única'}
-                                </span>
-                              </div>
-
-                              {/* Controles de cantidad táctiles */}
-                              <div className="flex items-center gap-1.5 shrink-0">
-                                <button
-                                  onClick={() => modificarCantidadLinea(l.idTemp, -1)}
-                                  className="disabled:opacity-40 disabled:cursor-not-allowed w-7 h-7 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-800 font-black text-sm flex items-center justify-center active:scale-95 cursor-pointer"
-                                >
-                                  -
-                                </button>
-                                <span className="w-6 text-center font-bold text-sm text-gray-900">
-                                  {l.cantidad}
-                                </span>
-                                <button
-                                  disabled={
-                                    disponibleTalla(
-                                      materiales.find((m) => String(m.id) === String(l.materialId)),
-                                      l.talla,
-                                      lineas,
-                                    ) < 1
-                                  }
-                                  onClick={() => modificarCantidadLinea(l.idTemp, 1)}
-                                  className="disabled:opacity-40 disabled:cursor-not-allowed w-7 h-7 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-800 font-black text-sm flex items-center justify-center active:scale-95 cursor-pointer"
-                                >
-                                  +
-                                </button>
-                                <button
-                                  onClick={() => eliminarLinea(l.idTemp)}
-                                  className="ml-1 text-gray-400 hover:text-red-600 p-1 cursor-pointer"
-                                  title="Eliminar"
-                                >
-                                  ✕
-                                </button>
-                              </div>
-                            </div>
+                              Seleccionar: {t.nombre} {t.apellidos} · {t.dni}
+                            </button>
                           ))}
-                        </div>
-                      )}
-                    </div>
-
-                    <button
-                      onClick={() => setPaso(3)}
-                      disabled={lineas.length === 0}
-                      className="w-full py-3.5 mt-4 rounded-xl bg-brand-600 hover:bg-brand-500 disabled:opacity-40 text-white font-black text-sm transition-all shadow-sm cursor-pointer"
-                    >
-                      Continuar a la firma →
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* ========================================================
-                PASO 3: FIRMA DIGITAL Y CONFIRMACIÓN
-            ======================================================== */}
-            {paso === 3 && (
-              <div className="flex-1 flex flex-col space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-200 pb-4">
-                  <div>
-                    <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">
-                      3. Firma de recepción
-                    </h2>
-                    <p className="text-sm text-gray-500 mt-0.5">
-                      Revisa los datos y firma en el panel para registrar la entrega oficial.
-                    </p>
-                  </div>
-
-                  <button
-                    onClick={() => setPaso(2)}
-                    className="px-4 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200/80 border-0 text-gray-700 text-sm font-bold shrink-0 cursor-pointer"
-                  >
-                    ← Modificar artículos
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  {/* Resumen del receptor y material */}
-                  <div className="bg-white border-2 border-gray-200 rounded-2xl p-4 sm:p-5 space-y-4 shadow-xs">
-                    <div>
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 block">
-                        Receptor del material:
-                      </span>
-                      <span className="font-bold text-gray-900 text-base block mt-0.5">
-                        {trabajadorSeleccionado?.nombre} {trabajadorSeleccionado?.apellidos}
-                      </span>
-                      <span className="text-xs text-gray-600 block font-mono">
-                        DNI: {trabajadorSeleccionado?.dni || '—'}
-                      </span>
-                      <span className="text-xs text-brand-700 block font-bold mt-1">
-                        Dpto: {trabajadorSeleccionado?.departamento || 'Fábrica'}
-                      </span>
-                    </div>
-
-                    <div className="border-t border-gray-200 pt-3">
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 block mb-2">
-                        Artículos incluidos ({lineas.length}):
-                      </span>
-                      <ul className="space-y-1.5 text-xs text-gray-800 max-h-40 overflow-y-auto pr-1">
-                        {lineas.map((l) => (
-                          <li
-                            key={l.idTemp}
-                            className="flex justify-between items-center bg-gray-50 border border-gray-200 p-2 rounded-lg"
-                          >
-                            <span className="font-semibold truncate max-w-[150px]">{l.nombre}</span>
-                            <span className="text-brand-700 font-bold shrink-0">
-                              {l.cantidad} ud{l.cantidad > 1 ? 's' : ''}{' '}
-                              {l.talla ? `(T. ${l.talla})` : ''}
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-
-                    <div className="border-t border-gray-200 pt-3">
-                      <label className="text-[11px] font-bold uppercase tracking-wider text-gray-500 block mb-1">
-                        Notas u observaciones (opcional):
-                      </label>
-                      <input
-                        type="text"
-                        value={observaciones}
-                        onChange={(e) => setObservaciones(e.target.value)}
-                        placeholder="Ej: Reposición por rotura..."
-                        className="w-full p-2.5 text-xs rounded-xl bg-white border border-gray-300 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-brand-500"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Panel de Firma táctil */}
-                  <div className="lg:col-span-2 bg-white border-2 border-gray-200 rounded-2xl p-4 sm:p-6 flex flex-col justify-between space-y-4 shadow-xs">
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs sm:text-sm font-bold text-gray-900 uppercase tracking-wider">
-                          Dibuja tu firma en el recuadro blanco:
-                        </span>
+                        {trabajadorBuscado &&
+                          !trabajadorSeleccionado &&
+                          !validarDniNie(busquedaTrabajador).valido && (
+                            <p className="mt-2 text-xs text-gray-500">
+                              Introduce el DNI o NIE completo para identificar al receptor.
+                            </p>
+                          )}
+                        {trabajadorSeleccionado && (
+                          <p className="mt-3 rounded-xl bg-white p-3 text-sm">
+                            <strong>
+                              {trabajadorSeleccionado.nombre} {trabajadorSeleccionado.apellidos}
+                            </strong>
+                            <br />
+                            {trabajadorSeleccionado.dni} ·{' '}
+                            {trabajadorSeleccionado.departamento || 'Sin departamento'}
+                          </p>
+                        )}
                       </div>
-
-                      {/* Signature Pad */}
-                      <div className="rounded-xl overflow-hidden border-2 border-gray-300 bg-white">
-                        <SignaturePad
-                          value={firma}
-                          onChange={setFirma}
-                          disabled={guardandoEntrega}
-                          mostrarGuia={false}
+                      <div>
+                        <label htmlFor="entrega-fecha" className="workflow-label">
+                          Fecha de entrega *
+                        </label>
+                        <CustomDatePicker
+                          id="entrega-fecha"
+                          value={fechaEntrega}
+                          required
+                          onChange={(e) => {
+                            setFechaEntrega(e.target.value);
+                            setFirma('');
+                          }}
                         />
                       </div>
                     </div>
-
-                    <p className="text-[10px] text-gray-500 text-justify leading-tight">
-                      * Certifico haber recibido los equipos de protección individual en perfecto
-                      estado y con las instrucciones pertinentes conforme a la Ley de Prevención de
-                      Riesgos Laborales y RD 773/1997.
-                    </p>
-
-                    <button
-                      onClick={handleFinalizarEntrega}
-                      disabled={guardandoEntrega || !firma}
-                      className="w-full py-4 rounded-2xl bg-emerald-600 hover:bg-emerald-500 active:scale-95 disabled:opacity-40 text-white font-black text-base shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
-                    >
-                      {guardandoEntrega ? (
-                        <span>Guardando entrega…</span>
-                      ) : (
-                        <>
-                          <svg
-                            className="w-5 h-5"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={3}
-                              d="M5 13l4 4L19 7"
+                  </section>
+                  <section className="workflow-section">
+                    <h2 className="workflow-title">
+                      <span>2</span> Artículos entregados (EPIS y vestuario)
+                    </h2>
+                    {lineas.map((linea, index) => {
+                      const material = materiales.find(
+                        (m) => String(m.id) === String(linea.materialId),
+                      );
+                      const necesitaTalla = material && obtenerTipoTallaje(material) !== 'UNICA';
+                      return (
+                        <div
+                          key={linea.idTemp}
+                          className="rounded-2xl bg-white p-4 sm:p-5 space-y-4"
+                        >
+                          <div className="flex items-center justify-between gap-3">
+                            <h3 className="text-sm font-semibold text-gray-700">
+                              Material {index + 1}
+                            </h3>
+                            {lineas.length > 1 && (
+                              <button
+                                type="button"
+                                className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                                aria-label={`Eliminar material ${index + 1}`}
+                                title={`Eliminar material ${index + 1}`}
+                                onClick={() => {
+                                  eliminarLinea(linea.idTemp);
+                                  setFirma('');
+                                }}
+                              >
+                                <svg
+                                  aria-hidden="true"
+                                  className="h-5 w-5"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                  />
+                                </svg>
+                              </button>
+                            )}
+                          </div>
+                          <div className="grid sm:grid-cols-2 gap-4">
+                            <div>
+                              <label htmlFor={`tipo-${linea.idTemp}`} className="workflow-label">
+                                Tipo de material *
+                              </label>
+                              <CustomSelect
+                                id={`tipo-${linea.idTemp}`}
+                                value={linea.tipo}
+                                onChange={(e) =>
+                                  actualizarLinea(linea.idTemp, {
+                                    tipo: e.target.value,
+                                    materialId: '',
+                                    nombre: '',
+                                    talla: '',
+                                    cantidad: 1,
+                                  })
+                                }
+                              >
+                                <option value="EPI">EPI</option>
+                                <option value="VESTUARIO">Vestuario</option>
+                              </CustomSelect>
+                            </div>
+                            <div>
+                              <label
+                                htmlFor={`material-${linea.idTemp}`}
+                                className="workflow-label"
+                              >
+                                Material *
+                              </label>
+                              <CustomSelect
+                                id={`material-${linea.idTemp}`}
+                                required
+                                searchable
+                                value={linea.materialId}
+                                placeholder="Selecciona un material"
+                                onChange={(e) => {
+                                  const seleccionado = materiales.find(
+                                    (m) => String(m.id) === String(e.target.value),
+                                  );
+                                  actualizarLinea(linea.idTemp, {
+                                    materialId: e.target.value,
+                                    nombre: seleccionado?.nombre || '',
+                                    talla: '',
+                                    cantidad: 1,
+                                  });
+                                }}
+                              >
+                                {materiales
+                                  .filter((m) => m.tipo === linea.tipo)
+                                  .map((m) => (
+                                    <option key={m.id} value={String(m.id)}>
+                                      {m.nombre} · Stock: {m.stock ?? 0}
+                                    </option>
+                                  ))}
+                              </CustomSelect>
+                            </div>
+                            <div>
+                              <label htmlFor={`talla-${linea.idTemp}`} className="workflow-label">
+                                Talla {necesitaTalla ? '*' : ''}
+                              </label>
+                              <CustomSelect
+                                id={`talla-${linea.idTemp}`}
+                                required={Boolean(necesitaTalla)}
+                                disabled={!necesitaTalla}
+                                value={linea.talla}
+                                placeholder={
+                                  material && !necesitaTalla ? 'Talla única' : 'Selecciona talla'
+                                }
+                                onChange={(e) =>
+                                  actualizarLinea(linea.idTemp, {
+                                    talla: e.target.value,
+                                    cantidad: 1,
+                                  })
+                                }
+                              >
+                                {obtenerTallasMaterial(material)
+                                  .filter(
+                                    (t) => disponibleTalla(material, t, lineas, linea.idTemp) > 0,
+                                  )
+                                  .map((t) => (
+                                    <option key={t} value={t}>
+                                      {t} · {disponibleTalla(material, t, lineas, linea.idTemp)}{' '}
+                                      disponibles
+                                    </option>
+                                  ))}
+                              </CustomSelect>
+                            </div>
+                            <div>
+                              <label
+                                htmlFor={`cantidad-${linea.idTemp}`}
+                                className="workflow-label"
+                              >
+                                Cantidad *
+                              </label>
+                              <input
+                                id={`cantidad-${linea.idTemp}`}
+                                type="number"
+                                min="1"
+                                step="1"
+                                required
+                                value={linea.cantidad}
+                                disabled={!material || (necesitaTalla && !linea.talla)}
+                                max={
+                                  material
+                                    ? disponibleTalla(material, linea.talla, lineas, linea.idTemp)
+                                    : undefined
+                                }
+                                onChange={(e) =>
+                                  actualizarLinea(linea.idTemp, {
+                                    cantidad: e.target.value === '' ? '' : Number(e.target.value),
+                                  })
+                                }
+                              />
+                            </div>
+                          </div>
+                          <div>
+                            <label
+                              htmlFor={`observaciones-${linea.idTemp}`}
+                              className="workflow-label"
+                            >
+                              Observaciones
+                            </label>
+                            <input
+                              id={`observaciones-${linea.idTemp}`}
+                              rows={2}
+                              value={linea.observaciones || ''}
+                              onChange={(e) =>
+                                actualizarLinea(linea.idTemp, { observaciones: e.target.value })
+                              }
                             />
-                          </svg>
-                          <span>CONFIRMAR Y FINALIZAR ENTREGA</span>
-                        </>
-                      )}
-                    </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    <div>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => {
+                          setLineas((prev) => [
+                            ...prev,
+                            {
+                              idTemp: Date.now() + Math.random(),
+                              tipo: 'EPI',
+                              materialId: '',
+                              nombre: '',
+                              talla: '',
+                              cantidad: 1,
+                            },
+                          ]);
+                          setFirma('');
+                        }}
+                      >
+                        Añadir material
+                      </Button>
+                    </div>
+                  </section>
+                  <section className="workflow-section">
+                    <h2 className="workflow-title">
+                      <span>3</span> Firma de conformidad del trabajador *
+                    </h2>
+                    <DeclaracionEntrega />
+                    {(!trabajadorSeleccionado || !lineas.length) && (
+                      <p className="text-sm text-gray-500">
+                        Selecciona al receptor y añade el material antes de firmar.
+                      </p>
+                    )}
+                    <SignaturePad
+                      value={firma}
+                      onChange={setFirma}
+                      disabled={guardandoEntrega || !trabajadorSeleccionado || !lineas.length}
+                    />
+                  </section>
+                  <div className="create-actions">
+                    <Button type="button" variant="secondary" onClick={resetearFormulario}>
+                      Cancelar
+                    </Button>
+                    <Button
+                      type="submit"
+                      disabled={
+                        guardandoEntrega || !trabajadorSeleccionado || !lineas.length || !firma
+                      }
+                    >
+                      {guardandoEntrega
+                        ? 'Registrando entrega…'
+                        : 'Registrar entrega y generar justificante'}
+                    </Button>
                   </div>
-                </div>
-              </div>
+                </fieldset>
+              </form>
             )}
 
             {/* ========================================================
                 PASO 4: ÉXITO Y DESCARGA DE PDF
             ======================================================== */}
             {paso === 4 && entregaGuardada && (
-              <div className="flex-1 flex flex-col items-center justify-center text-center p-6 sm:p-12 space-y-6 bg-white rounded-3xl border-2 border-gray-200 shadow-sm my-auto">
-                <div className="w-20 h-20 rounded-full bg-emerald-100 text-emerald-600 border-2 border-emerald-400 flex items-center justify-center text-4xl shadow-sm animate-bounce">
+              <div
+                role="status"
+                className="flex flex-col items-center text-center py-8 sm:py-10 space-y-6"
+              >
+                <div
+                  aria-hidden="true"
+                  className="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center text-3xl"
+                >
                   ✓
                 </div>
 
-                <div className="space-y-2 max-w-lg">
-                  <h2 className="text-3xl font-black text-gray-900 tracking-tight">
-                    ¡Entrega Registrada Correctamente!
+                <div className="space-y-3 max-w-xl">
+                  <h2 className="text-2xl font-bold text-gray-900 tracking-tight">
+                    Entrega registrada correctamente
                   </h2>
                   <p className="text-gray-600 text-sm">
                     Se ha registrado la entrega para{' '}
                     <strong className="text-gray-900 font-bold">
                       {entregaGuardada.trabajadorNombre} {entregaGuardada.trabajadorApellidos}
                     </strong>{' '}
-                    con fecha {fechaEntrega}.
+                    con fecha{' '}
+                    <span className="whitespace-nowrap">
+                      {fechaEntrega.split('-').reverse().join('/')}
+                    </span>
+                    .
                   </p>
                 </div>
 
-                <div className="flex flex-col sm:flex-row items-center gap-3 w-full max-w-md pt-2">
+                <div className="flex flex-col sm:flex-row items-stretch gap-3 w-full max-w-xl pt-2">
                   <button
-                    onClick={() => imprimirOdescargarPdfEntrega(entregaGuardada)}
+                    onClick={() => descargarPdfEntrega(entregaGuardada)}
                     className="w-full py-3.5 px-4 rounded-xl bg-gray-100 hover:bg-gray-200/80 active:scale-95 text-gray-800 font-bold text-sm border-0 flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs"
                   >
                     <svg
-                      className="w-4 h-4 text-brand-600"
+                      className="w-4 h-4 shrink-0 text-brand-600"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -917,20 +742,22 @@ export default function KioskoEntregas() {
                         d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                       />
                     </svg>
-                    <span>Descargar Justificante en PDF</span>
+                    <span>Descargar justificante PDF</span>
                   </button>
 
                   <button
                     onClick={resetearFormulario}
                     className="w-full py-3.5 px-4 rounded-xl bg-brand-600 hover:bg-brand-500 active:scale-95 text-white font-black text-sm shadow-md transition-all cursor-pointer"
                   >
-                    Siguiente trabajador ahora
+                    Siguiente trabajador
                   </button>
                 </div>
 
                 <div className="text-xs text-gray-500 pt-4">
                   Reiniciando automáticamente en{' '}
-                  <strong className="text-gray-900 font-bold">{contadorReinicio} segundos</strong>
+                  <strong className="text-gray-900 font-semibold">
+                    {contadorReinicio} {contadorReinicio === 1 ? 'segundo' : 'segundos'}
+                  </strong>
                   ...
                 </div>
               </div>
@@ -938,49 +765,6 @@ export default function KioskoEntregas() {
           </div>
         )}
       </section>
-
-      {/* ========================================================
-          MODAL: SELECCIÓN RÁPIDA DE TALLA
-      ======================================================== */}
-      {materialParaTalla && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white border border-gray-200 rounded-3xl max-w-lg w-full p-6 space-y-5 shadow-2xl animate-in fade-in zoom-in-95">
-            <div className="flex items-center justify-between border-b border-gray-200 pb-3">
-              <div>
-                <h3 className="text-lg font-black text-gray-900">{materialParaTalla.nombre}</h3>
-                <p className="text-xs text-gray-500">Selecciona la talla deseada:</p>
-              </div>
-              <button
-                onClick={() => setMaterialParaTalla(null)}
-                className="text-gray-400 hover:text-gray-700 p-2 text-lg cursor-pointer font-bold"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="grid grid-cols-4 sm:grid-cols-6 gap-2.5 max-h-64 overflow-y-auto p-1">
-              {obtenerTallasMaterial(materialParaTalla)
-                .filter((t) => disponibleTalla(materialParaTalla, t, lineas) > 0)
-                .map((talla) => (
-                  <button
-                    key={talla}
-                    onClick={() => agregarMaterialConTalla(materialParaTalla, talla)}
-                    className="py-3 px-2 rounded-xl bg-gray-100 hover:bg-brand-600 hover:text-white active:scale-95 text-gray-800 font-bold text-sm border-0 transition-all text-center cursor-pointer"
-                  >
-                    {talla}
-                  </button>
-                ))}
-            </div>
-
-            <button
-              onClick={() => setMaterialParaTalla(null)}
-              className="w-full py-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold cursor-pointer transition-colors"
-            >
-              Cancelar
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* ========================================================
           MODAL: ALTA RÁPIDA DE TRABAJADOR

@@ -1,5 +1,96 @@
 @import 'tailwindcss';
 
+.install-app {
+  position: fixed;
+  right: max(16px, env(safe-area-inset-right));
+  bottom: max(16px, env(safe-area-inset-bottom));
+  z-index: 40;
+}
+.install-app > button,
+.install-app-help button {
+  border: 0;
+  border-radius: 12px;
+  background: #fa8954;
+  color: #27150c;
+  padding: 12px 18px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 16px #0f172a18;
+}
+.install-app button:focus-visible {
+  outline: 3px solid #475569;
+  outline-offset: 3px;
+}
+.install-app-help {
+  width: min(340px, calc(100vw - 32px));
+  margin-bottom: 12px;
+  padding: 20px;
+  border-radius: 16px;
+  background: white;
+  color: #334155;
+  box-shadow: 0 8px 32px #0f172a26;
+  font-size: 14px;
+}
+.install-app-help p {
+  margin-block: 12px;
+}
+@media (display-mode: standalone) {
+  body {
+    overscroll-behavior-y: none;
+  }
+  #root {
+    min-height: 100dvh;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Criterio común para todas las tablas, incluidas las de las fichas y modales. */
+table,
+table.table-fixed {
+  width: 100%;
+  table-layout: auto;
+}
+
+table > thead > tr > th {
+  width: auto;
+  background-color: #f3f5f7;
+  color: #475569;
+  font-weight: 600;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+table > :is(thead, tbody, tfoot) > tr > :is(th, td) {
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
+table > :is(thead, tbody, tfoot) > tr > :is(th, td):last-child:not([colspan]) {
+  /* Evita reservar una columna vacía antes del contenido alineado a la derecha. */
+  width: 1%;
+  white-space: nowrap;
+  text-align: right;
+}
+
+/* Los grupos de acciones también deben llegar al extremo de su columna. */
+table
+  > :is(thead, tbody, tfoot)
+  > tr
+  > :is(th, td):last-child:not([colspan])
+  > :is(.flex, .inline-flex):not(.flex-col) {
+  justify-content: flex-end;
+}
+
+table
+  > :is(thead, tbody, tfoot)
+  > tr
+  > :is(th, td):last-child:not([colspan])
+  > :is(.flex, .inline-flex, .animate-pulse) {
+  margin-left: auto;
+}
+
 @theme {
   /* Brand / Naranja Sofás Valencia: Melocotón y albaricoque pastel cálido, suave y unificado (#fa8954) */
   --color-brand-50: #fff9f5;
@@ -558,5 +649,68 @@ html {
 @media (min-width: 1024px) {
   .inicio-accesos {
     grid-template-columns: repeat(min(6, var(--accesos-columnas)), minmax(0, 1fr));
+  }
+}
+
+/* Validación junto al campo correspondiente. */
+[aria-invalid='true'],
+:root
+  .create-content
+  .create-form
+  input[aria-invalid='true']:not([type='checkbox']):not([type='radio']),
+:root .create-content .create-form [aria-invalid='true']:is(button, select, textarea, div, label) {
+  background-color: #fef2f2 !important;
+  box-shadow: 0 0 0 1px #dc2626 !important;
+  outline: 0px solid #dc2626 !important;
+  outline-offset: 0px;
+}
+.create-form .field-error,
+.field-error {
+  margin-top: 8px;
+  color: #b91c1c;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* Estructura de los formularios de entrega en escritorio y tablet. */
+.workflow-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 24px;
+  border-radius: 20px;
+  background: #f8fafc;
+  min-width: 0;
+}
+.workflow-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+}
+.workflow-title > span:first-child {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #ffedd5;
+  color: #9a3412;
+  font-size: 12px;
+}
+.workflow-label {
+  display: block;
+  margin-bottom: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}
+@media (max-width: 639px) {
+  .workflow-section {
+    padding: 18px;
   }
 }

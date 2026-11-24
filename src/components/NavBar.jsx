@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
 import NotificationBell from './NotificationBell';
 
-const principales = [
+const opcionesPrincipales = [
   { label: 'Inicio', path: '/' },
   { label: 'Calendario', path: '/calendario' },
   {
@@ -24,6 +24,8 @@ const principales = [
       { label: 'Entregas de material', path: '/entregas' },
     ],
   },
+  { label: 'Firmas', path: '/firmas' },
+  { label: 'Gestión de usuarios', path: '/usuarios' },
 ];
 const linkBaseClass =
   'inline-flex items-center gap-1.5 whitespace-nowrap px-3.5 py-1.5 rounded-xl text-sm font-medium transition-colors select-none border-0';
@@ -33,11 +35,10 @@ const panelClass =
 export default function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { usuario, logout, esAdmin } = useAuth();
-  const secundarios = [
-    { label: 'Firmas', path: '/firmas' },
-    ...(esAdmin ? [{ label: 'Gestión de usuarios', path: '/usuarios' }] : []),
-  ];
+  const { usuario, logout, esAdmin, puedeGestionarUsuarios } = useAuth();
+  const principales = esAdmin
+    ? opcionesPrincipales.filter((opcion) => opcion.path !== '/usuarios' || puedeGestionarUsuarios)
+    : opcionesPrincipales.slice(0, 1);
   const [abierto, setAbierto] = useState(null);
   const [grupoExpandido, setGrupoExpandido] = useState(null);
   const [visibles, setVisibles] = useState(0);
@@ -54,11 +55,18 @@ export default function Navbar() {
   useLayoutEffect(() => {
     const ajustar = () => {
       const medidas = Array.from(medidaRef.current.children);
-      const disponible = navRef.current.clientWidth;
+      const disponible = navRef.current.getBoundingClientRect().width;
       const anchos = medidas.slice(0, -1).map((item) => item.getBoundingClientRect().width);
       const separacion = 4;
       const mas = medidas[medidas.length - 1].getBoundingClientRect().width;
-      let usado = mas;
+      const anchoTotal =
+        anchos.reduce((total, ancho) => total + ancho, 0) +
+        Math.max(0, anchos.length - 1) * separacion;
+      if (anchoTotal <= disponible) {
+        setVisibles(anchos.length);
+        return;
+      }
+      let usado = esAdmin ? mas : 0;
       let cantidad = 0;
       for (const ancho of anchos) {
         if (usado + separacion + ancho > disponible) break;
@@ -70,9 +78,10 @@ export default function Navbar() {
     const observer = new ResizeObserver(ajustar);
     observer.observe(navRef.current);
     observer.observe(medidaRef.current);
+    Array.from(medidaRef.current.children).forEach((item) => observer.observe(item));
     ajustar();
     return () => observer.disconnect();
-  }, []);
+  }, [esAdmin, puedeGestionarUsuarios]);
 
   useEffect(() => {
     const cerrarFuera = (event) => {
@@ -120,44 +129,56 @@ export default function Navbar() {
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
     </svg>
   );
-  const ocultos = principales.slice(visibles);
-  const masActivo = [...ocultos, ...secundarios].some(activo);
+  const ocultos = esAdmin ? principales.slice(visibles) : [];
+  const masActivo = ocultos.some(activo);
+  const iconoMenu = (
+    <svg
+      aria-hidden="true"
+      className="w-5 h-5 shrink-0"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path strokeLinecap="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+    </svg>
+  );
 
   return (
     <nav
       aria-label="Navegación principal"
       className="bg-white/95 backdrop-blur-md shadow-xs border-b border-gray-200/70 sticky top-0 z-50 print:hidden"
     >
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+      <div className="w-full px-3 sm:px-4">
         <div className="flex justify-between items-center h-16 gap-2 sm:gap-4">
           <Link
             to="/"
-            className="flex items-center shrink-0 hover:opacity-90 transition-opacity select-none"
+            className="flex items-center shrink-0 mx-2 sm:mx-3 hover:opacity-90 transition-opacity select-none"
             title="Sofás Valencia"
           >
             <img
               src="/logo.png"
               alt="Sofás Valencia"
-              className="h-8 sm:h-9 md:h-10 w-auto object-contain"
+              className="h-9 sm:h-10 md:h-12 w-auto object-contain"
             />
           </Link>
+          <div aria-hidden="true" className="h-7 w-px bg-gray-200 shrink-0 mx-1 sm:mx-2" />
           <div ref={navRef} className="flex flex-1 min-w-0 items-center gap-1 h-full">
             {/* Medir todas las opciones permite moverlas una a una según el espacio real. */}
             <div
               ref={medidaRef}
               aria-hidden="true"
               className="fixed invisible pointer-events-none flex w-max"
-              style={{ top: -1000 }}
+              style={{ top: -1000, left: -100000, width: 'max-content' }}
             >
               {principales.map((item) => (
-                <span key={item.label} className={`${linkBaseClass} font-bold`}>
+                <span key={item.label} className={`${linkBaseClass} shrink-0 font-bold`}>
                   {item.label}
                   {item.children && flecha(false)}
                 </span>
               ))}
-              <span className={linkBaseClass}>Más{flecha(false)}</span>
+              <span className={`${linkBaseClass} shrink-0`}>{iconoMenu}</span>
             </div>
-            {principales.slice(0, visibles).map((item) =>
+            {principales.slice(0, esAdmin ? visibles : principales.length).map((item) =>
               item.children ? (
                 <div key={item.label} className="relative flex items-center h-full shrink-0">
                   <button
@@ -187,73 +208,71 @@ export default function Navbar() {
                 </Link>
               ),
             )}
-            <div className="relative flex items-center h-full shrink-0">
-              <button
-                type="button"
-                onClick={() => setAbierto(abierto === 'mas' ? null : 'mas')}
-                aria-expanded={abierto === 'mas'}
-                aria-controls="menu-mas"
-                className={`${linkBaseClass} bg-transparent hover:bg-transparent cursor-pointer focus-visible:outline-2 focus-visible:outline-brand-500 ${masActivo || abierto === 'mas' ? 'text-brand-600' : 'text-gray-500 hover:text-gray-900'}`}
-              >
-                Más{flecha(abierto === 'mas')}
-              </button>
-              {abierto === 'mas' && (
-                <div id="menu-mas" className={panelClass}>
-                  <div className="md:hidden px-3 py-2 mb-2 border-b border-gray-100 text-sm font-semibold text-gray-800">
-                    {usuario?.nombre || 'Usuario'}
-                  </div>
-                  {ocultos.map((item) =>
-                    item.children ? (
-                      <div key={item.label}>
-                        <button
-                          type="button"
-                          aria-expanded={grupoExpandido === item.id}
-                          aria-controls={`${item.id}-en-mas`}
-                          onClick={() =>
-                            setGrupoExpandido(grupoExpandido === item.id ? null : item.id)
-                          }
-                          className={`flex items-center justify-between w-full px-3 py-2.5 rounded-xl text-sm cursor-pointer ${color(item)}`}
-                        >
-                          {item.label}
-                          {flecha(grupoExpandido === item.id)}
-                        </button>
-                        {grupoExpandido === item.id && (
-                          <div
-                            id={`${item.id}-en-mas`}
-                            className="ml-3 border-l border-gray-100 pl-2"
+            {esAdmin && ocultos.length > 0 && (
+              <div className="relative flex items-center h-full shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setAbierto(abierto === 'mas' ? null : 'mas')}
+                  aria-expanded={abierto === 'mas'}
+                  aria-controls="menu-mas"
+                  aria-label="Más opciones"
+                  title="Más opciones"
+                  className={`${linkBaseClass} bg-transparent hover:bg-transparent cursor-pointer focus-visible:outline-2 focus-visible:outline-brand-500 ${masActivo || abierto === 'mas' ? 'text-brand-600' : 'text-gray-500 hover:text-gray-900'}`}
+                >
+                  {iconoMenu}
+                </button>
+                {abierto === 'mas' && (
+                  <div id="menu-mas" className={panelClass}>
+                    {ocultos.map((item) =>
+                      item.children ? (
+                        <div key={item.label}>
+                          <button
+                            type="button"
+                            aria-expanded={grupoExpandido === item.id}
+                            aria-controls={`${item.id}-en-mas`}
+                            onClick={() =>
+                              setGrupoExpandido(grupoExpandido === item.id ? null : item.id)
+                            }
+                            className={`flex items-center justify-between w-full px-3 py-2.5 rounded-xl text-sm cursor-pointer ${color(item)}`}
                           >
-                            {item.children.map(enlace)}
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      enlace(item)
-                    ),
-                  )}
-                  <div className={ocultos.length ? 'border-t border-gray-100 mt-2 pt-2' : ''}>
-                    {secundarios.map(enlace)}
+                            {item.label}
+                            {flecha(grupoExpandido === item.id)}
+                          </button>
+                          {grupoExpandido === item.id && (
+                            <div
+                              id={`${item.id}-en-mas`}
+                              className="ml-3 border-l border-gray-100 pl-2"
+                            >
+                              {item.children.map(enlace)}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        enlace(item)
+                      ),
+                    )}
+                    <div className="md:hidden border-t border-gray-100 mt-2 pt-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          cerrar();
+                          logout();
+                          navigate('/login');
+                        }}
+                        className="w-full text-left px-3 py-2.5 rounded-xl text-sm text-red-600 hover:bg-red-50 cursor-pointer"
+                      >
+                        Cerrar sesión
+                      </button>
+                    </div>
                   </div>
-                  <div className="md:hidden border-t border-gray-100 mt-2 pt-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        cerrar();
-                        logout();
-                        navigate('/login');
-                      }}
-                      className="w-full text-left px-3 py-2.5 rounded-xl text-sm text-red-600 hover:bg-red-50 cursor-pointer"
-                    >
-                      Cerrar sesión
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Iconos de la derecha: Campana, Avatar, Cerrar sesión */}
           <div className="flex items-center gap-1 sm:gap-2.5 shrink-0">
-            <NotificationBell />
+            {esAdmin && <NotificationBell />}
 
             <div className="h-6 w-px bg-gray-200 hidden sm:block mx-1"></div>
 
@@ -264,9 +283,6 @@ export default function Navbar() {
               <div className="hidden md:flex flex-col text-left">
                 <span className="text-sm font-semibold text-gray-800 leading-tight truncate max-w-[120px]">
                   {usuario?.nombre || 'Usuario'}
-                </span>
-                <span className="text-[11px] text-gray-400 truncate max-w-[120px]">
-                  {usuario?.admin ? 'Administrador' : usuario?.correo || 'Conectado'}
                 </span>
               </div>
             </div>

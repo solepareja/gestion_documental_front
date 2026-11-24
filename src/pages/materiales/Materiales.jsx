@@ -1,8 +1,10 @@
+import useEstadoApartado from '../../components/useEstadoApartado';
 import usePagedList from '../../components/usePagedList';
 import SearchInput from '../../components/SearchInput';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { tiposMaterial, tiposTallaje, obtenerTipoTallaje } from '../../services/materiales';
+import { tiposMaterial } from '../../services/materiales';
+import ModalStockMaterial from '../../components/ModalStockMaterial';
 import Button from '../../components/Button';
 import DeleteButton from '../../components/DeleteButton';
 import Table from '../../components/Table';
@@ -11,12 +13,14 @@ import { useSearchParams } from 'react-router-dom';
 
 export default function Materiales() {
   const [searchParams] = useSearchParams();
-  const [filtroTipo, setFiltroTipo] = useState(
+  const [filtroTipo, setFiltroTipo] = useEstadoApartado(
+    'materiales.tipo',
     searchParams.get('tipo') === 'VESTUARIO' ? 'VESTUARIO' : 'TODOS',
   ); // 'TODOS' | 'EPI' | 'VESTUARIO'
-  const [busqueda, setBusqueda] = useState('');
+  const [busqueda, setBusqueda] = useEstadoApartado('materiales.busqueda', '');
   const [recargaTick, setRecargaTick] = useState(0);
   const navigate = useNavigate();
+  const [materialStock, setMaterialStock] = useState(null);
 
   const {
     data: materiales,
@@ -32,8 +36,9 @@ export default function Materiales() {
   const recargar = () => setRecargaTick((valor) => valor + 1);
 
   const columns = [
+    { header: 'Código', render: (m) => m.codigo || '—' },
     {
-      header: 'Nombre del material',
+      header: 'Tipo',
       render: (m) => (
         <div className="flex flex-col">
           <Link
@@ -45,49 +50,25 @@ export default function Materiales() {
         </div>
       ),
     },
-    {
-      header: 'Tipo',
-      render: (m) => {
-        const esEPI = m.tipo === 'EPI';
-        return (
-          <span
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${
-              esEPI ? 'bg-amber-50 text-amber-800' : 'bg-blue-50 text-blue-800'
-            }`}
-          >
-            <span
-              className={`w-1.5 h-1.5 rounded-full ${esEPI ? 'bg-amber-500' : 'bg-blue-500'}`}
-            />
-            {tiposMaterial[m.tipo] || m.tipo}
-          </span>
-        );
-      },
-    },
+    { header: 'Marca/modelo', render: (m) => m.marcaModelo || '—' },
+    { header: 'Normativa', render: (m) => (m.tipo === 'EPI' ? m.normativa || '—' : '—') },
     {
       header: 'Stock total',
       render: (m) => <span>{m.stock ?? 0} uds.</span>,
     },
     {
-      header: 'Talla',
-      render: (m) => <span>{tiposTallaje[obtenerTipoTallaje(m)]}</span>,
-    },
-    {
-      header: 'Vida útil estimada',
-      render: (m) => (
-        <span>
-          {m.tipo === 'VESTUARIO'
-            ? 'Renovación general'
-            : m.vidaUtilMeses
-              ? `${m.vidaUtilMeses} mes${m.vidaUtilMeses > 1 ? 'es' : ''}`
-              : 'Sin definir'}
-        </span>
-      ),
-    },
-    {
       header: 'Acciones',
-      width: '150px',
+      width: '260px',
       render: (m) => (
         <div className="flex items-center gap-1.5">
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => setMaterialStock(m)}
+            aria-label={`Añadir stock a ${m.nombre}`}
+          >
+            Añadir stock
+          </Button>
           <Button
             size="sm"
             variant="secondary"
@@ -127,6 +108,13 @@ export default function Materiales() {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
+      {materialStock && (
+        <ModalStockMaterial
+          material={materialStock}
+          onClose={() => setMaterialStock(null)}
+          onSaved={recargar}
+        />
+      )}
       {/* Cabecera y acciones */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>

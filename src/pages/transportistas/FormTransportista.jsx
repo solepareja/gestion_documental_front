@@ -1,3 +1,4 @@
+import RequiredField from '../../components/RequiredField';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import useEditRecord from '../../components/useEditRecord';
@@ -340,11 +341,16 @@ export default function FormTransportista() {
                 <h2 className="text-xs font-bold uppercase tracking-wider text-gray-500">
                   Permisos de conducir *
                 </h2>
-                <TablaPermisosCarnet
-                  permisos={conduccion.permisos}
-                  onChange={(permisos) => setConduccion((actual) => ({ ...actual, permisos }))}
-                  disabled={guardando}
-                />
+                <RequiredField
+                  value={conduccion.permisos.length}
+                  message="Añade al menos un permiso de conducir."
+                >
+                  <TablaPermisosCarnet
+                    permisos={conduccion.permisos}
+                    onChange={(permisos) => setConduccion((actual) => ({ ...actual, permisos }))}
+                    disabled={guardando}
+                  />
+                </RequiredField>
               </div>
               <div className="col-span-full space-y-4">
                 <h2 className="text-xs font-bold uppercase tracking-wider text-gray-500">

@@ -1,3 +1,4 @@
+import useEstadoApartado from '../../components/useEstadoApartado';
 import usePagedList from '../../components/usePagedList';
 import { useState } from 'react';
 import Table from '../../components/Table';
@@ -9,7 +10,7 @@ import ListFilters from '../../components/ListFilters';
 export default function Usuarios() {
   const navigate = useNavigate();
 
-  const [filtros, setFiltros] = useState({ busqueda: '', rol: '' });
+  const [filtros, setFiltros] = useEstadoApartado('usuarios.filtros', { busqueda: '', rol: '' });
   const cambiarFiltro = (key, value) => setFiltros((current) => ({ ...current, [key]: value }));
   const [recarga, setRecarga] = useState(0);
   const {
@@ -35,6 +36,9 @@ export default function Usuarios() {
         if (rol === 'ADMIN') {
           badgeClass = 'bg-brand-100 text-brand-800 font-semibold';
           label = 'Administrador';
+        } else if (rol === 'GESTOR') {
+          badgeClass = 'bg-violet-100 text-violet-800 font-semibold';
+          label = 'Gestor';
         } else if (rol === 'KIOSKO') {
           badgeClass = 'bg-amber-100 text-amber-800 font-semibold';
           label = 'Usuario (antiguo kiosko)';
@@ -120,6 +124,7 @@ export default function Usuarios() {
             onChange: (value) => cambiarFiltro('rol', value),
             options: [
               { value: 'ADMIN', label: 'Administrador' },
+              { value: 'GESTOR', label: 'Gestor' },
               { value: 'USUARIO', label: 'Usuario estándar' },
             ],
           },

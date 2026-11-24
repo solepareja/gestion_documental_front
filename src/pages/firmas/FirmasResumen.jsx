@@ -1,3 +1,4 @@
+import useEstadoApartado from '../../components/useEstadoApartado';
 import Pagination from '../../components/Pagination';
 import useLocalPagination from '../../components/useLocalPagination';
 import SearchInput from '../../components/SearchInput';
@@ -16,33 +17,34 @@ export default function FirmasResumen() {
   const [documentos, setDocumentos] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [cargandoModelos, setCargandoModelos] = useState(false);
-  const [filtroTexto, setFiltroTexto] = useState('');
+  const [filtroTexto, setFiltroTexto] = useEstadoApartado('firmas.busqueda', '');
   const [mostrarModalCrear, setMostrarModalCrear] = useState(false);
   const [documentoAEliminar, setDocumentoAEliminar] = useState(null);
   const [eliminando, setEliminando] = useState(false);
   const navigate = useNavigate();
 
+  const [recarga, setRecarga] = useState(0);
   useEffect(() => {
-    cargarResumen();
-  }, []);
-
-  const cargarResumen = async () => {
-    try {
-      setCargando(true);
-      const data = await obtenerResumenFirmas();
-      setDocumentos(data || []);
-    } catch (err) {
-      console.error('Error cargando el resumen de firmas:', err);
-    } finally {
-      setCargando(false);
-    }
-  };
+    let activo = true;
+    obtenerResumenFirmas()
+      .then((data) => {
+        if (activo) setDocumentos(data || []);
+      })
+      .catch((err) => console.error('Error cargando el resumen de firmas:', err))
+      .finally(() => {
+        if (activo) setCargando(false);
+      });
+    return () => {
+      activo = false;
+    };
+  }, [recarga]);
 
   const handleCargarModelosPorDefecto = async () => {
     try {
       setCargandoModelos(true);
       await inicializarPlantillasPorDefecto();
-      await cargarResumen();
+      setCargando(true);
+      setRecarga((valor) => valor + 1);
     } catch (err) {
       console.error('Error cargando modelos por defecto:', err);
       alert('Error al inicializar los modelos por defecto.');
@@ -136,7 +138,10 @@ export default function FirmasResumen() {
         </div>
 
         <button
-          onClick={cargarResumen}
+          onClick={() => {
+            setCargando(true);
+            setRecarga((valor) => valor + 1);
+          }}
           title="Recargar datos"
           className="p-2 text-gray-500 hover:text-gray-700 rounded-xl hover:bg-gray-100 transition"
         >
@@ -341,7 +346,8 @@ export default function FirmasResumen() {
         <ModalCrearPlantilla
           onClose={() => setMostrarModalCrear(false)}
           onPlantillaCreada={async () => {
-            await cargarResumen();
+            setCargando(true);
+            setRecarga((valor) => valor + 1);
           }}
         />
       )}

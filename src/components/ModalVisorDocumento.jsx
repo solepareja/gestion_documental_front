@@ -1,4 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import api from '../services/api';
+import { urlArchivoDocumento } from '../services/archivoDocumento';
 
 /**
  * Modal visor para visualizar tanto documentos PDF como imágenes (JPG, PNG, WebP).
@@ -7,10 +9,63 @@ import { useEffect } from 'react';
 export default function ModalVisorDocumento({
   abierto,
   onCerrar,
-  archivo,
+  archivo: referenciaArchivo,
   archivoNombre = 'documento',
   titulo = 'Documento del vehículo',
 }) {
+  const origen = urlArchivoDocumento(referenciaArchivo);
+  const esPdf =
+    origen?.startsWith('data:application/pdf') || archivoNombre?.toLowerCase().endsWith('.pdf');
+  const [carga, setCarga] = useState(null);
+  const preparado = carga?.origen === origen && carga?.esPdf === esPdf;
+  const archivo = preparado ? carga.url : null;
+  const error = preparado ? carga.error : null;
+
+  useEffect(() => {
+    if (!abierto || !origen) return;
+    const controller = new AbortController();
+    let url;
+    const cargar = async () => {
+      try {
+        // Fetch with the session, then embed a local Blob: API frame headers
+        // must not prevent the browser's PDF viewer from opening the file.
+        // Data URLs from the uploader and Blob URLs belong to the browser.
+        // Axios treats them as relative paths and prepends the API base URL.
+        let blob;
+        if (/^(data:|blob:)/i.test(origen)) {
+          const response = await fetch(origen, { signal: controller.signal });
+          if (!response.ok) throw new Error('No se pudo leer el archivo local.');
+          blob = await response.blob();
+        } else {
+          const response = await api.get(origen, {
+            responseType: 'blob',
+            signal: controller.signal,
+          });
+          blob = response.data;
+        }
+        const contenido = esPdf
+          ? new Blob([blob], { type: 'application/pdf' })
+          : blob;
+        if (controller.signal.aborted) return;
+        url = URL.createObjectURL(contenido);
+        setCarga({ origen, esPdf, url });
+      } catch {
+        if (!controller.signal.aborted) {
+          setCarga({
+            origen,
+            esPdf,
+            error: 'No se pudo cargar el archivo adjunto. Cierra el visor e inténtalo de nuevo.',
+          });
+        }
+      }
+    };
+    cargar();
+    return () => {
+      controller.abort();
+      setCarga(null);
+      if (url) URL.revokeObjectURL(url);
+    };
+  }, [abierto, origen, esPdf]);
   useEffect(() => {
     if (!abierto) return;
     const handleKeyDown = (e) => {
@@ -20,10 +75,7 @@ export default function ModalVisorDocumento({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [abierto, onCerrar]);
 
-  if (!abierto || !archivo) return null;
-
-  const esPdf =
-    archivo.startsWith('data:application/pdf') || archivoNombre?.toLowerCase().endsWith('.pdf');
+  if (!abierto || !origen) return null;
 
   const handleDescargar = () => {
     try {
@@ -40,21 +92,7 @@ export default function ModalVisorDocumento({
   };
 
   const handleAbrirPestana = () => {
-    // Abrir el archivo en nueva pestaña
-    const nuevaVentana = window.open();
-    if (nuevaVentana) {
-      if (esPdf) {
-        nuevaVentana.document.write(
-          `<iframe src="${archivo}" frameborder="0" style="border:0; top:0; left:0; bottom:0; right:0; width:100%; height:100%;" allowfullscreen></iframe>`,
-        );
-        nuevaVentana.document.title = archivoNombre || 'Documento PDF';
-      } else {
-        nuevaVentana.document.write(
-          `<div style="display:flex;justify-content:center;align-items:center;min-height:100vh;background:#0f172a;margin:0;"><img src="${archivo}" style="max-width:100%;max-height:100vh;object-fit:contain;" /></div>`,
-        );
-        nuevaVentana.document.title = archivoNombre || 'Imagen del documento';
-      }
-    }
+    if (archivo) window.open(archivo, '_blank', 'noopener,noreferrer');
   };
 
   return (
@@ -93,6 +131,7 @@ export default function ModalVisorDocumento({
             <button
               type="button"
               onClick={handleAbrirPestana}
+              disabled={!archivo}
               title="Abrir en una nueva pestaña"
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200/80 border-0 rounded-xl transition-colors cursor-pointer"
             >
@@ -110,6 +149,7 @@ export default function ModalVisorDocumento({
             <button
               type="button"
               onClick={handleDescargar}
+              disabled={!archivo}
               title="Descargar archivo en tu dispositivo"
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-brand-700 bg-brand-500/15 hover:bg-brand-500/25 border-0 rounded-xl transition-colors cursor-pointer"
             >
@@ -144,23 +184,21 @@ export default function ModalVisorDocumento({
 
         {/* Contenido visor */}
         <div className="flex-1 overflow-auto bg-gray-900/5 p-4 flex items-center justify-center min-h-[420px] max-h-[78vh]">
-          {esPdf ? (
+          {error ? (
+            <p role="alert" className="text-sm text-red-700 text-center">
+              {error}
+            </p>
+          ) : !archivo ? (
+            <p role="status" className="text-sm text-gray-500">
+              Cargando archivo…
+            </p>
+          ) : esPdf ? (
             <div className="w-full h-full flex flex-col items-center">
               <iframe
                 src={archivo}
                 title={archivoNombre || 'Documento PDF'}
                 className="w-full h-[70vh] rounded-2xl border border-gray-200 bg-white shadow-inner"
               />
-              <p className="text-xs text-gray-500 mt-2 text-center">
-                ¿No puedes visualizar el PDF dentro del recuadro?{' '}
-                <button
-                  type="button"
-                  onClick={handleAbrirPestana}
-                  className="text-brand-600 hover:underline font-semibold cursor-pointer"
-                >
-                  Ábrelo en una pestaña independiente
-                </button>
-              </p>
             </div>
           ) : (
             <div className="flex items-center justify-center w-full h-full p-2">

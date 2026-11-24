@@ -10,7 +10,6 @@ export const estadosLineaEntrega = {
   DEVUELTO: 'Devuelto',
   PENDIENTE_RENOVACION: 'Pendiente de renovaciÃ³n',
   RENOVADO: 'Renovado',
-  CADUCADO: 'Caducado',
 };
 
 export const opcionesTallasComunes = [
@@ -50,8 +49,8 @@ export function obtenerTipoTallaje(material) {
 export function stockTalla(material, talla = '') {
   const stocks = material?.stockPorTalla || {};
   if (Object.keys(stocks).length)
-    return Number(stocks[material?.requiereTalla ? talla : 'ÚNICA'] || 0);
-  return material?.requiereTalla ? 0 : Number(material?.stock || 0);
+    return Number(stocks[obtenerTipoTallaje(material) !== 'UNICA' ? talla : 'ÚNICA'] || 0);
+  return obtenerTipoTallaje(material) !== 'UNICA' ? 0 : Number(material?.stock || 0);
 }
 
 export function disponibleTalla(material, talla, lineas = [], excluirId) {
@@ -63,16 +62,37 @@ export function disponibleTalla(material, talla, lineas = [], excluirId) {
           (l) =>
             l.idTemp !== excluirId &&
             String(l.materialId) === String(material?.id) &&
-            (!material?.requiereTalla || l.talla === talla),
+            (obtenerTipoTallaje(material) === 'UNICA' || l.talla === talla),
         )
         .reduce((sum, l) => sum + Number(l.cantidad || 0), 0),
   );
 }
 
+// Las equivalencias (XXL / 2XL, XXXL / 3XL) comparten posición.
+export function compararTallas(a, b) {
+  const rango = (talla) => {
+    const valor = String(talla).trim().toUpperCase();
+    if (valor === 'S') return -1;
+    if (valor === 'M') return 0;
+    if (valor === 'L') return 1;
+    const letras = valor.match(/^(X+)(S|L)$/);
+    if (letras) return letras[2] === 'S' ? -1 - letras[1].length : 1 + letras[1].length;
+    const numero = valor.match(/^(\d+)X(S|L)$/);
+    if (numero) return numero[2] === 'S' ? -1 - Number(numero[1]) : 1 + Number(numero[1]);
+    return null;
+  };
+  const rangoA = rango(a);
+  const rangoB = rango(b);
+  if (rangoA !== null && rangoB !== null) return rangoA - rangoB;
+  if (rangoA !== null) return -1;
+  if (rangoB !== null) return 1;
+  return String(a).localeCompare(String(b), 'es', { numeric: true, sensitivity: 'base' });
+}
+
 export function obtenerTallasMaterial(material) {
-  return Object.keys(material?.stockPorTalla || {}).filter(
-    (talla) => stockTalla(material, talla) > 0,
-  );
+  return Object.keys(material?.stockPorTalla || {})
+    .filter((talla) => stockTalla(material, talla) > 0)
+    .sort(compararTallas);
 }
 
 export async function obtenerMateriales(tipo = null) {
@@ -124,5 +144,10 @@ export async function eliminarEntrega(id) {
 
 export async function actualizarEstadoLineaEntrega(lineaId, estado) {
   const response = await api.patch(`/entregas/lineas/${lineaId}/estado`, { estado });
+  return response.data;
+}
+
+export async function agregarStockMaterial(id, datos) {
+  const response = await api.post(`/materiales/${id}/stock`, datos);
   return response.data;
 }

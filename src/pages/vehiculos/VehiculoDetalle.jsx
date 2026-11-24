@@ -6,9 +6,12 @@ import DeleteButton from '../../components/DeleteButton';
 import ModalConfirmacion from '../../components/ModalConfirmacion';
 import DocumentacionVehiculo from '../../components/DocumentacionVehiculo';
 import CustomSelect from '../../components/CustomSelect';
+import DisponibilidadVehiculo from '../../components/DisponibilidadVehiculo';
 
 export default function VehiculoDetalle() {
   const [vehiculo, setVehiculo] = useState(null);
+  const [guardandoDisponibilidad, setGuardandoDisponibilidad] = useState(false);
+  const [errorDisponibilidad, setErrorDisponibilidad] = useState(null);
   const [conductores, setConductores] = useState([]);
   const [conductorAsignado, setConductorAsignado] = useState(null);
   const [cargando, setCargando] = useState(true);
@@ -58,6 +61,21 @@ export default function VehiculoDetalle() {
       cargarDatos();
     }
   }, [id]);
+
+  const cambiarDisponibilidad = async () => {
+    setGuardandoDisponibilidad(true);
+    setErrorDisponibilidad(null);
+    try {
+      const { data } = await api.patch(`/vehiculos/${id}/disponibilidad-forzada`, {
+        forzada: !vehiculo.disponibilidadForzada,
+      });
+      setVehiculo(data);
+    } catch {
+      setErrorDisponibilidad('No se pudo cambiar la disponibilidad. Inténtalo de nuevo.');
+    } finally {
+      setGuardandoDisponibilidad(false);
+    }
+  };
 
   // Normalizar fecha de caducidad para el backend (dd/MM/yyyy)
   const formatearFechaParaBack = (fecha) => {
@@ -275,12 +293,30 @@ export default function VehiculoDetalle() {
               >
                 {vehiculo.activo !== false ? 'Activo' : 'Inactivo'}
               </span>
+              <DisponibilidadVehiculo
+                disponible={vehiculo.disponible}
+                motivos={vehiculo.motivosNoDisponibilidad}
+                forzada={vehiculo.disponibilidadForzada}
+              />
             </div>
           </div>
         </div>
 
         {/* Botones de acción */}
         <div className="flex items-center gap-2 flex-wrap">
+          {(vehiculo.disponibilidadForzada || !vehiculo.disponible) && (
+            <Button
+              variant="secondary"
+              onClick={cambiarDisponibilidad}
+              disabled={guardandoDisponibilidad}
+            >
+              {guardandoDisponibilidad
+                ? 'Guardando…'
+                : vehiculo.disponibilidadForzada
+                  ? 'Volver a disponibilidad automática'
+                  : 'Forzar disponible'}
+            </Button>
+          )}
           <Button
             variant="secondary"
             onClick={() => navigate(`/vehiculos/${id}/editar`)}
@@ -312,6 +348,17 @@ export default function VehiculoDetalle() {
         </div>
       </div>
 
+      {errorDisponibilidad && (
+        <p role="alert" className="mb-4 text-sm text-red-600">
+          {errorDisponibilidad}
+        </p>
+      )}
+      {vehiculo.disponibilidadForzada && (
+        <p role="status" className="mb-4 rounded-xl bg-amber-50 p-4 text-sm text-amber-800">
+          Disponibilidad forzada manualmente. Puedes volver al cálculo automático con el botón de
+          arriba.
+        </p>
+      )}
       {/* Grid de Bloques de Información */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         {/* Tarjeta: Datos del vehículo */}
@@ -381,12 +428,6 @@ export default function VehiculoDetalle() {
       <section className="mb-6">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
           <h2 className="text-base font-bold text-gray-900">Documentación del vehículo</h2>
-          <Link
-            to={`/documentos?vehiculoId=${id}`}
-            className="text-sm font-semibold text-brand-700 hover:underline"
-          >
-            Ver en Documentos
-          </Link>
         </div>
         <DocumentacionVehiculo vehiculoId={id} />
       </section>

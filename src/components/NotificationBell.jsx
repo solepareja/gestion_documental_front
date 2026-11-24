@@ -455,13 +455,6 @@ export default function NotificationBell() {
             >
               Ver en el calendario →
             </Link>
-            <Link
-              to="/documentos"
-              onClick={() => setAbierto(false)}
-              className="text-gray-500 hover:text-gray-800 font-medium"
-            >
-              Documentación
-            </Link>
           </div>
         </div>
       )}

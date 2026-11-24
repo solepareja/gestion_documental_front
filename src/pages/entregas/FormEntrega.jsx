@@ -1,3 +1,6 @@
+import DeclaracionEntrega from '../../components/DeclaracionEntrega';
+import { pdfEntregaParaArchivo } from '../../utils/pdfGenerator';
+import RequiredField from '../../components/RequiredField';
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import api from '../../services/api';
@@ -5,6 +8,7 @@ import {
   obtenerMateriales,
   crearEntrega,
   obtenerTallasMaterial,
+  obtenerTipoTallaje,
   disponibleTalla,
 } from '../../services/materiales';
 import Button from '../../components/Button';
@@ -12,17 +16,6 @@ import CreateFormLayout from '../../components/CreateFormLayout';
 import SignaturePad from '../../components/SignaturePad';
 import CustomSelect from '../../components/CustomSelect';
 import CustomDatePicker from '../../components/CustomDatePicker';
-
-function sumarMesesAFecha(fechaStr, meses) {
-  if (!fechaStr || !meses) return '';
-  try {
-    const d = new Date(fechaStr);
-    d.setMonth(d.getMonth() + parseInt(meses, 10));
-    return d.toISOString().slice(0, 10);
-  } catch {
-    return '';
-  }
-}
 
 export default function FormEntrega() {
   const navigate = useNavigate();
@@ -38,7 +31,6 @@ export default function FormEntrega() {
 
   const [trabajadorId, setTrabajadorId] = useState(trabajadorIdParam || '');
   const [fechaEntrega, setFechaEntrega] = useState(hoyStr);
-  const [observaciones, setObservaciones] = useState('');
   const [firma, setFirma] = useState('');
 
   const [lineas, setLineas] = useState([
@@ -48,7 +40,6 @@ export default function FormEntrega() {
       tipoMaterial: '',
       cantidad: 1,
       talla: '',
-      fechaRenovacion: '',
     },
   ]);
 
@@ -84,10 +75,6 @@ export default function FormEntrega() {
               tipoMaterial: mat.tipo,
               cantidad: 1,
               talla: '',
-              fechaRenovacion:
-                mat?.tipo !== 'VESTUARIO' && mat?.vidaUtilMeses && hoyStr
-                  ? sumarMesesAFecha(hoyStr, mat.vidaUtilMeses)
-                  : '',
             },
           ]);
         }
@@ -104,7 +91,7 @@ export default function FormEntrega() {
     return () => {
       activo = false;
     };
-  }, [trabajadorIdParam, materialIdParam]);
+  }, [trabajadorIdParam, materialIdParam, hoyStr]);
 
   // Manejar cambio en selección de material de una línea
   const handleMaterialChange = (index, nuevoMaterialId) => {
@@ -116,15 +103,8 @@ export default function FormEntrega() {
       linea.talla = '';
       linea.cantidad = 1;
 
-      // Calcular fecha de renovación automática si el material tiene vida útil
-      if (mat?.tipo !== 'VESTUARIO' && mat?.vidaUtilMeses && fechaEntrega) {
-        linea.fechaRenovacion = sumarMesesAFecha(fechaEntrega, mat.vidaUtilMeses);
-      } else {
-        linea.fechaRenovacion = '';
-      }
-
       // Si no requiere talla, limpiar la talla
-      if (!mat?.requiereTalla) {
+      if (obtenerTipoTallaje(mat) === 'UNICA') {
         linea.talla = '';
       }
 
@@ -136,11 +116,6 @@ export default function FormEntrega() {
   const handleLineaChange = (index, campo, valor) => {
     setLineas((prev) => {
       const copy = [...prev];
-      if (campo === 'cantidad' && valor !== '') {
-        const mat = materiales.find((m) => String(m.id) === String(copy[index].materialId));
-        const disponible = disponibleTalla(mat, copy[index].talla, prev, copy[index].idTemp);
-        if (Number(valor) > disponible) return prev;
-      }
       copy[index] = { ...copy[index], [campo]: valor };
       return copy;
     });
@@ -155,7 +130,6 @@ export default function FormEntrega() {
         tipoMaterial: '',
         cantidad: 1,
         talla: '',
-        fechaRenovacion: '',
       },
     ]);
   };
@@ -182,8 +156,8 @@ export default function FormEntrega() {
     if (
       lineas.some(
         (l) =>
-          materiales.find((m) => String(m.id) === String(l.materialId))?.requiereTalla &&
-          !l.talla.trim(),
+          obtenerTipoTallaje(materiales.find((m) => String(m.id) === String(l.materialId))) !==
+            'UNICA' && !l.talla.trim(),
       )
     ) {
       setError('Indica la talla de todos los materiales que la necesitan.');
@@ -201,7 +175,7 @@ export default function FormEntrega() {
       })
     ) {
       setError(
-        'La cantidad supera el stock disponible de esa talla. Revisa las líneas de entrega.',
+        'La cantidad debe ser un número entero mayor que cero y no superar el stock disponible. Revisa las líneas de entrega.',
       );
       return;
     }
@@ -218,16 +192,24 @@ export default function FormEntrega() {
         trabajadorId: parseInt(trabajadorId, 10),
         fechaEntrega,
         firma,
-        observaciones: observaciones.trim() || null,
         lineas: lineas.map((l) => ({
           materialId: parseInt(l.materialId, 10),
+          observaciones: l.observaciones?.trim() || null,
           cantidad: parseInt(l.cantidad, 10) || 1,
-          talla: l.talla.trim() || null,
-          fechaRenovacion: l.fechaRenovacion || null,
+          talla:
+            obtenerTipoTallaje(materiales.find((m) => String(m.id) === String(l.materialId))) ===
+            'UNICA'
+              ? null
+              : l.talla.trim() || null,
           estado: 'ENTREGADO',
         })),
       };
 
+      payload.pdfBase64 = pdfEntregaParaArchivo(
+        payload,
+        trabajadores.find((t) => String(t.id) === String(trabajadorId)),
+        materiales,
+      );
       const entregaCreada = await crearEntrega(payload);
       navigate(`/entregas/${entregaCreada.id}`);
     } catch (err) {
@@ -265,7 +247,7 @@ export default function FormEntrega() {
       <form onSubmit={handleSubmit}>
         <fieldset disabled={cargandoDatos || cargando} className="space-y-8 disabled:opacity-60">
           {/* Bloque 1: Trabajador y Fecha */}
-          <div className="bg-gray-50/70 p-5 sm:p-6 rounded-3xl border-0 space-y-5">
+          <div className="workflow-section">
             <h2 className="text-base font-bold text-gray-900 pb-1 flex items-center gap-2.5">
               <span className="w-6 h-6 rounded-full bg-brand-500/15 text-brand-700 font-bold text-xs flex items-center justify-center shrink-0">
                 1
@@ -283,6 +265,9 @@ export default function FormEntrega() {
                   Trabajador *
                 </label>
                 <CustomSelect
+                  searchable
+                  searchPlaceholder="Buscar por nombre o DNI…"
+                  placeholder="Selecciona o busca un trabajador"
                   id="trabajadorId"
                   value={trabajadorId}
                   onChange={(e) => setTrabajadorId(e.target.value)}
@@ -327,29 +312,11 @@ export default function FormEntrega() {
                   required
                 />
               </div>
-
-              {/* Observaciones */}
-              <div className="col-span-full">
-                <label
-                  className="block text-sm font-semibold text-gray-700 mb-1"
-                  htmlFor="observaciones"
-                >
-                  Observaciones o notas adicionales (opcional)
-                </label>
-                <input
-                  type="text"
-                  id="observaciones"
-                  value={observaciones}
-                  onChange={(e) => setObservaciones(e.target.value)}
-                  placeholder="Ej: Entrega por inicio de contrato, renovación anual, sustitución por desgaste…"
-                  className="w-full min-h-[46px] px-4 py-3 border-0 rounded-2xl bg-white text-sm font-medium text-gray-900 hover:bg-gray-100/60 focus:bg-white focus:ring-2 focus:ring-brand-500 transition-all"
-                />
-              </div>
             </div>
           </div>
 
           {/* Bloque 2: Líneas de material */}
-          <div className="bg-gray-50/70 p-5 sm:p-6 rounded-3xl border-0 space-y-4">
+          <div className="workflow-section">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1">
               <h2 className="text-base font-bold text-gray-900 flex items-center gap-2.5">
                 <span className="w-6 h-6 rounded-full bg-brand-500/15 text-brand-700 font-bold text-xs flex items-center justify-center shrink-0">
@@ -393,7 +360,7 @@ export default function FormEntrega() {
             <div className="space-y-3">
               {lineas.map((linea, index) => {
                 const matSel = materiales.find((m) => String(m.id) === String(linea.materialId));
-                const pideTalla = Boolean(matSel?.requiereTalla);
+                const pideTalla = obtenerTipoTallaje(matSel) !== 'UNICA';
 
                 return (
                   <div
@@ -422,7 +389,6 @@ export default function FormEntrega() {
                                     materialId: '',
                                     talla: '',
                                     cantidad: 1,
-                                    fechaRenovacion: '',
                                   }
                                 : l,
                             ),
@@ -485,10 +451,43 @@ export default function FormEntrega() {
                       </div>
                     </div>
 
-                    {/* Fila 2: Cantidad, Talla y Fecha de renovación en columnas */}
+                    {/* Primero talla y después cantidad */}
                     <div
-                      className={`grid grid-cols-1 ${matSel?.tipo === 'EPI' ? 'sm:grid-cols-3' : 'sm:grid-cols-2'} gap-3 pt-1`}
+                      className={`grid grid-cols-1 ${pideTalla ? 'sm:grid-cols-2' : ''} gap-3 pt-1`}
                     >
+                      {/* Talla */}
+                      {pideTalla && (
+                        <div>
+                          <label className="block text-xs font-bold text-gray-700 mb-1">
+                            Talla {pideTalla && '*'}
+                          </label>
+                          {
+                            <div className="relative">
+                              <CustomSelect
+                                value={linea.talla}
+                                required
+                                onChange={(e) => {
+                                  handleLineaChange(index, 'talla', e.target.value);
+                                  handleLineaChange(index, 'cantidad', 1);
+                                }}
+                              >
+                                <option value="">Selecciona talla</option>
+                                {obtenerTallasMaterial(matSel)
+                                  .filter(
+                                    (t) => disponibleTalla(matSel, t, lineas, linea.idTemp) > 0,
+                                  )
+                                  .map((t) => (
+                                    <option key={t} value={t}>
+                                      {t} · {disponibleTalla(matSel, t, lineas, linea.idTemp)}{' '}
+                                      disponibles
+                                    </option>
+                                  ))}
+                              </CustomSelect>
+                            </div>
+                          }
+                        </div>
+                      )}
+
                       {/* Cantidad */}
                       <div>
                         <label className="block text-xs font-bold text-gray-700 mb-1">
@@ -497,66 +496,29 @@ export default function FormEntrega() {
                         <input
                           type="number"
                           min="1"
-                          max={disponibleTalla(matSel, linea.talla, lineas, linea.idTemp)}
+                          max={
+                            matSel && (!pideTalla || linea.talla)
+                              ? disponibleTalla(matSel, linea.talla, lineas, linea.idTemp)
+                              : undefined
+                          }
+                          disabled={!matSel || (pideTalla && !linea.talla)}
                           value={linea.cantidad}
                           onChange={(e) => handleLineaChange(index, 'cantidad', e.target.value)}
                           required
                           className="w-full min-h-[44px] px-3 py-2 border-0 rounded-xl bg-gray-100/80 hover:bg-gray-200/60 text-sm font-bold text-gray-900 text-center focus:bg-white focus:ring-2 focus:ring-brand-500 transition-all"
                         />
                       </div>
-
-                      {/* Talla */}
-                      <div>
-                        <label className="block text-xs font-bold text-gray-700 mb-1">
-                          Talla {pideTalla && '*'}
-                        </label>
-                        {pideTalla ? (
-                          <div className="relative">
-                            <CustomSelect
-                              value={linea.talla}
-                              required
-                              onChange={(e) => {
-                                handleLineaChange(index, 'talla', e.target.value);
-                                handleLineaChange(index, 'cantidad', 1);
-                              }}
-                            >
-                              <option value="">Selecciona talla</option>
-                              {obtenerTallasMaterial(matSel)
-                                .filter((t) => disponibleTalla(matSel, t, lineas, linea.idTemp) > 0)
-                                .map((t) => (
-                                  <option key={t} value={t}>
-                                    {t} · {disponibleTalla(matSel, t, lineas, linea.idTemp)}{' '}
-                                    disponibles
-                                  </option>
-                                ))}
-                            </CustomSelect>
-                          </div>
-                        ) : (
-                          <input
-                            type="text"
-                            value="Talla única"
-                            disabled
-                            className="w-full min-h-[44px] px-3 py-2 border-0 rounded-xl bg-gray-100/50 text-gray-400 text-xs italic"
-                          />
-                        )}
-                      </div>
-
-                      {/* Fecha de renovación individual solo para EPI */}
-                      {matSel?.tipo === 'EPI' && (
-                        <div>
-                          <label className="block text-xs font-bold text-gray-700 mb-1">
-                            Renovación prevista
-                          </label>
-                          <CustomDatePicker
-                            value={linea.fechaRenovacion}
-                            onChange={(e) =>
-                              handleLineaChange(index, 'fechaRenovacion', e.target.value)
-                            }
-                            placeholder="dd/mm/aaaa"
-                            size="sm"
-                          />
-                        </div>
-                      )}
+                    </div>
+                    <div>
+                      <label htmlFor={`observaciones-${linea.idTemp}`} className="workflow-label">
+                        Observaciones
+                      </label>
+                      <input
+                        id={`observaciones-${linea.idTemp}`}
+                        rows={2}
+                        value={linea.observaciones || ''}
+                        onChange={(e) => handleLineaChange(index, 'observaciones', e.target.value)}
+                      />
                     </div>
                   </div>
                 );
@@ -565,7 +527,7 @@ export default function FormEntrega() {
           </div>
 
           {/* Bloque 3: Firma digital interactiva */}
-          <div className="bg-gray-50/70 p-5 sm:p-6 rounded-3xl border-0 space-y-4">
+          <div className="workflow-section">
             <h2 className="text-base font-bold text-gray-900 pb-1 flex items-center gap-2.5">
               <span className="w-6 h-6 rounded-full bg-brand-500/15 text-brand-700 font-bold text-xs flex items-center justify-center shrink-0">
                 3
@@ -573,17 +535,15 @@ export default function FormEntrega() {
               <span>Firma digital de conformidad del trabajador *</span>
             </h2>
 
-            <div className="bg-brand-500/10 p-4 rounded-2xl border-0 text-xs text-brand-950 space-y-1.5">
-              <p className="font-bold">Declaración de recepción:</p>
-              <p className="text-gray-600 leading-relaxed">
-                El/la trabajador/a declara haber recibido en perfecto estado los equipos de
-                protección individual (EPI) y prendas de vestuario laboral arriba indicados,
-                comprometiéndose a su uso exclusivo en el puesto de trabajo y a su conservación
-                conforme a la Ley de Prevención de Riesgos Laborales.
-              </p>
-            </div>
+            <DeclaracionEntrega />
 
-            <SignaturePad value={firma} onChange={setFirma} disabled={cargando} />
+            <RequiredField
+              value={firma}
+              disabled={cargando}
+              message="Es obligatorio añadir la firma del trabajador."
+            >
+              <SignaturePad value={firma} onChange={setFirma} disabled={cargando} />
+            </RequiredField>
           </div>
 
           {/* Acciones finales */}
@@ -591,7 +551,7 @@ export default function FormEntrega() {
             <Button type="button" variant="secondary" onClick={() => navigate('/entregas')}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={cargando || !firma}>
+            <Button type="submit" disabled={cargando}>
               {cargando ? 'Registrando entrega…' : 'Registrar entrega y generar justificante'}
             </Button>
           </div>

@@ -1,12 +1,4 @@
-import React, {
-  useState,
-  useRef,
-  useEffect,
-  useLayoutEffect,
-  useId,
-  useMemo,
-  useCallback,
-} from 'react';
+import { useState, useRef, useEffect, useLayoutEffect, useId, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 
 const MESES = [
@@ -32,6 +24,8 @@ const DIAS_SEMANA = ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá', 'Do'];
  * Emite onChange con formato YYYY-MM-DD compatible con formularios estándar.
  */
 export default function CustomDatePicker({
+  'aria-invalid': ariaInvalid,
+  'aria-describedby': ariaDescribedBy,
   value,
   onChange,
   name,
@@ -74,12 +68,12 @@ export default function CustomDatePicker({
   // Mes y año mostrados en la vista del calendario
   const [vistaFecha, setVistaFecha] = useState(() => fechaValor || new Date());
 
-  // Sincronizar vista cuando cambia value
-  useEffect(() => {
-    if (fechaValor) {
-      setVistaFecha(fechaValor);
-    }
-  }, [fechaValor]);
+  // Ajustar la vista al recibir un valor distinto, antes de mostrar el calendario.
+  const [valorAnterior, setValorAnterior] = useState(value);
+  if (value !== valorAnterior) {
+    setValorAnterior(value);
+    if (fechaValor) setVistaFecha(fechaValor);
+  }
 
   const anyoVista = vistaFecha.getFullYear();
   const mesVista = vistaFecha.getMonth();
@@ -161,7 +155,7 @@ export default function CustomDatePicker({
     if (abierto) {
       calcularPosicion();
     }
-  }, [abierto, calcularPosicion]);
+  }, [abierto, calcularPosicion, menuAbierto]);
 
   // Manejo de eventos cuando está abierto (click fuera, escape, resize, scroll)
   useEffect(() => {
@@ -203,7 +197,7 @@ export default function CustomDatePicker({
       window.removeEventListener('resize', onScrollOrResize);
       window.removeEventListener('scroll', onScrollOrResize, true);
     };
-  }, [abierto, calcularPosicion]);
+  }, [abierto, calcularPosicion, menuAbierto]);
 
   // Centrar el año seleccionado cuando se abre el desplegable de año
   useEffect(() => {
@@ -308,18 +302,6 @@ export default function CustomDatePicker({
     setVistaFecha(new Date(anyoVista, mesVista + 1, 1));
   };
 
-  const manejarCambioMes = (e) => {
-    e.stopPropagation();
-    const nuevoMes = parseInt(e.target.value, 10);
-    setVistaFecha(new Date(anyoVista, nuevoMes, 1));
-  };
-
-  const manejarCambioAnyo = (e) => {
-    e.stopPropagation();
-    const nuevoAnyo = parseInt(e.target.value, 10);
-    setVistaFecha(new Date(nuevoAnyo, mesVista, 1));
-  };
-
   const alturaClasses = size === 'sm' ? 'py-1.5 px-3 text-xs' : 'py-2.5 px-3.5 text-sm';
 
   return (
@@ -330,6 +312,8 @@ export default function CustomDatePicker({
       {/* Botón trigger principal que simula el input */}
       <button
         type="button"
+        aria-invalid={ariaInvalid}
+        aria-describedby={ariaDescribedBy}
         id={inputId}
         disabled={disabled}
         onClick={alternarAbierto}

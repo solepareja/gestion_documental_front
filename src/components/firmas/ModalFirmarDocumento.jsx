@@ -56,14 +56,24 @@ export default function ModalFirmarDocumento({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[94vh] flex flex-col border-0 overflow-hidden">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="firma-documento-titulo"
+        className="bg-white rounded-3xl shadow-2xl max-w-3xl w-full max-h-[94dvh] flex flex-col border-0 overflow-hidden"
+      >
         {/* Cabecera */}
         <div className="px-6 py-4 bg-gray-50/90 border-0 flex justify-between items-center">
           <div>
             <span className="text-[11px] font-bold uppercase tracking-wider text-brand-600">
               Módulo de Firmas Corporativas
             </span>
-            <h3 className="text-lg font-bold text-gray-900 leading-tight">{plantilla.titulo}</h3>
+            <h3
+              id="firma-documento-titulo"
+              className="text-lg font-bold text-gray-900 leading-tight"
+            >
+              {plantilla.titulo}
+            </h3>
             <p className="text-xs text-gray-500 mt-0.5">
               Firmante:{' '}
               <span className="font-semibold text-gray-800">
@@ -74,6 +84,8 @@ export default function ModalFirmarDocumento({
           </div>
           <button
             onClick={onClose}
+            disabled={enviando}
+            aria-label="Cerrar formulario de firma"
             className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-200 transition cursor-pointer"
           >
             ✕
@@ -81,7 +93,7 @@ export default function ModalFirmarDocumento({
         </div>
 
         {/* Cuerpo con Scroll */}
-        <div className="p-6 overflow-y-auto space-y-5 text-sm">
+        <div className="p-4 sm:p-6 overflow-y-auto space-y-5 text-sm">
           {error && (
             <div className="p-3.5 text-xs rounded-2xl bg-rose-500/10 text-rose-700 border-0">
               {error}
@@ -93,7 +105,7 @@ export default function ModalFirmarDocumento({
             <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
               Contenido Legal y Condiciones de Cumplimiento
             </label>
-            <div className="p-4 bg-gray-100/80 rounded-2xl border-0 max-h-40 overflow-y-auto text-xs text-gray-700 whitespace-pre-line leading-relaxed shadow-inner">
+            <div className="p-4 bg-gray-100/80 rounded-2xl border-0 max-h-64 overflow-y-auto text-xs text-gray-700 whitespace-pre-line leading-relaxed shadow-inner">
               {plantilla.contenidoLegal}
             </div>
           </div>
@@ -135,7 +147,11 @@ export default function ModalFirmarDocumento({
               <span className="text-[11px] text-gray-400">Use el dedo o lápiz táctil</span>
             </div>
             <div className="rounded-2xl overflow-hidden border-0">
-              <SignaturePad value={firmaSvgBase64} onChange={setFirmaSvgBase64} />
+              <SignaturePad
+                value={firmaSvgBase64}
+                onChange={setFirmaSvgBase64}
+                disabled={enviando}
+              />
             </div>
           </div>
         </div>
@@ -146,14 +162,14 @@ export default function ModalFirmarDocumento({
             <button
               onClick={onClose}
               disabled={enviando}
-              className="px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-100 rounded-xl transition cursor-pointer"
+              className="min-h-11 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100 rounded-xl transition cursor-pointer"
             >
               Cancelar
             </button>
             <button
               onClick={handleConfirmar}
               disabled={!firmaSvgBase64 || !aceptoTerminos || enviando}
-              className="px-5 py-2.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl shadow-xs transition-all active:scale-[0.98] cursor-pointer"
+              className="min-h-11 px-5 py-2.5 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl shadow-xs transition-all active:scale-[0.98] cursor-pointer"
             >
               {enviando ? 'Guardando firma...' : 'Confirmar y Guardar Firma'}
             </button>

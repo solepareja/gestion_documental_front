@@ -4,11 +4,11 @@ import {
   obtenerMaterial,
   crearMaterial,
   modificarMaterial,
-  tiposTallaje,
   obtenerTipoTallaje,
+  tiposTallaje,
 } from '../../services/materiales';
-import Button from '../../components/Button';
 import CustomSelect from '../../components/CustomSelect';
+import Button from '../../components/Button';
 import CreateFormLayout from '../../components/CreateFormLayout';
 
 export default function FormMaterial() {
@@ -20,12 +20,14 @@ export default function FormMaterial() {
     tipo: '',
     nombre: '',
     descripcion: '',
-    tipoTallaje: '',
-    vidaUtilMeses: '',
+    tipoTallaje: 'UNICA',
+    codigo: '',
+    marcaModelo: '',
+    normativa: '',
     stock: '0',
   });
 
-  const [tallas, setTallas] = useState([{ talla: '', stock: '0' }]);
+  const [stockPorTalla, setStockPorTalla] = useState(null);
   const [cargando, setCargando] = useState(false);
   const [cargandoInicial, setCargandoInicial] = useState(esEdicion);
   const [error, setError] = useState(null);
@@ -37,24 +39,16 @@ export default function FormMaterial() {
     obtenerMaterial(id)
       .then((data) => {
         if (!activo) return;
-        setTallas(
-          Object.entries(data.stockPorTalla || {}).length
-            ? Object.entries(data.stockPorTalla).map(([talla, stock]) => ({
-                talla,
-                stock: String(stock),
-              }))
-            : [{ talla: '', stock: String(data.stock ?? 0) }],
-        );
+        setStockPorTalla(Object.keys(data.stockPorTalla || {}).length ? data.stockPorTalla : null);
         setFormData({
           tipo: data.tipo || '',
           nombre: data.nombre || '',
           stock: String(data.stock ?? 0),
           descripcion: data.descripcion || '',
           tipoTallaje: obtenerTipoTallaje(data),
-          vidaUtilMeses:
-            data.vidaUtilMeses !== null && data.vidaUtilMeses !== undefined
-              ? String(data.vidaUtilMeses)
-              : '',
+          codigo: data.codigo || '',
+          marcaModelo: data.marcaModelo || '',
+          normativa: data.normativa || '',
         });
       })
       .catch((err) => {
@@ -84,52 +78,21 @@ export default function FormMaterial() {
       setError('Selecciona la categoría de material: EPI o Vestuario.');
       return;
     }
-    if (!formData.tipoTallaje) {
-      setError('Selecciona si el material es de talla única o necesita talla.');
-      return;
-    }
-    const filas =
-      formData.tipoTallaje === 'UNICA' ? [{ talla: 'ÚNICA', stock: tallas[0].stock }] : tallas;
-    const normalizadas = filas.map((f) => ({
-      talla: f.talla.trim().toUpperCase(),
-      stock: Number(f.stock),
-    }));
-    if (
-      normalizadas.some(
-        (f, i) =>
-          !f.talla ||
-          f.talla.length > 50 ||
-          filas[i].stock.trim() === '' ||
-          !Number.isInteger(f.stock) ||
-          f.stock < 0,
-      ) ||
-      new Set(normalizadas.map((f) => f.talla)).size !== normalizadas.length
-    ) {
-      setError('Indica tallas distintas y un stock entero no negativo para cada una.');
-      return;
-    }
-    const stock = normalizadas.reduce((sum, f) => sum + f.stock, 0);
-    if (!Number.isInteger(stock) || stock < 0 || stock > 2147483647) {
-      setError('El stock debe ser un número entero entre 0 y 2147483647.');
-      return;
-    }
-
     setCargando(true);
     setError(null);
 
     try {
       const payload = {
         tipo: formData.tipo,
-        stock,
-        stockPorTalla: Object.fromEntries(normalizadas.map((f) => [f.talla, f.stock])),
+        stock: Number(formData.stock),
+        stockPorTalla,
         nombre: formData.nombre.trim(),
         descripcion: formData.descripcion.trim() || null,
         tipoTallaje: formData.tipoTallaje,
         requiereTalla: formData.tipoTallaje !== 'UNICA',
-        vidaUtilMeses:
-          formData.tipo !== 'VESTUARIO' && formData.vidaUtilMeses !== ''
-            ? parseInt(formData.vidaUtilMeses, 10)
-            : null,
+        codigo: formData.codigo.trim(),
+        marcaModelo: formData.marcaModelo.trim(),
+        normativa: formData.tipo === 'EPI' ? formData.normativa.trim() : null,
       };
 
       if (esEdicion) {
@@ -153,7 +116,7 @@ export default function FormMaterial() {
       title={esEdicion ? 'Editar material' : 'Añadir material'}
       category="Materiales"
       backTo="/materiales"
-      description="Registra un EPI o prenda de vestuario laboral con sus características y vida útil."
+      description="Registra un EPI o prenda de vestuario laboral con sus características."
     >
       {error && (
         <p role="alert" className="create-error">
@@ -241,10 +204,23 @@ export default function FormMaterial() {
             </div>
           </div>
 
+          <div className="col-span-full sm:col-span-1">
+            <label className="block text-sm font-medium text-gray-700" htmlFor="codigo">
+              Código *
+            </label>
+            <input
+              id="codigo"
+              name="codigo"
+              value={formData.codigo}
+              onChange={handleChange}
+              required
+            />
+          </div>
+
           {/* Nombre */}
           <div className="col-span-full sm:col-span-1">
             <label className="block text-sm font-medium text-gray-700" htmlFor="nombre">
-              Nombre del material *
+              Tipo (nombre) *
             </label>
             <input
               type="text"
@@ -257,145 +233,42 @@ export default function FormMaterial() {
             />
           </div>
 
+          {['marcaModelo', ...(formData.tipo === 'EPI' ? ['normativa'] : [])].map((campo) => (
+            <div key={campo} className="col-span-full sm:col-span-1">
+              <label htmlFor={campo}>
+                {{ codigo: 'Código', marcaModelo: 'Marca/modelo', normativa: 'Normativa' }[campo]} *
+              </label>
+              <input
+                id={campo}
+                name={campo}
+                value={formData[campo]}
+                onChange={handleChange}
+                required
+              />
+            </div>
+          ))}
+
           <div className="col-span-full sm:col-span-1">
-            <label className="block text-sm font-medium text-gray-700" htmlFor="tipoTallaje">
-              Talla *
-            </label>
+            <label htmlFor="tipoTallaje">Talla *</label>
             <CustomSelect
               id="tipoTallaje"
               name="tipoTallaje"
               value={formData.tipoTallaje}
               onChange={handleChange}
+              disabled={cargandoInicial || cargando || Number(formData.stock) > 0}
               required
-              disabled={cargandoInicial || cargando}
             >
-              <option value="" disabled>
-                Selecciona una opción
-              </option>
               {Object.entries(tiposTallaje).map(([valor, texto]) => (
                 <option key={valor} value={valor}>
                   {texto}
                 </option>
               ))}
             </CustomSelect>
-            <span className="text-xs text-gray-400 mt-1 block">
-              Si necesita talla, será obligatorio indicarla al registrar cada entrega.
-            </span>
-          </div>
-
-          <div className="col-span-full space-y-3">
-            {esEdicion && (
-              <p className="text-xs text-gray-500">
-                Revisa el reparto del stock entre las tallas antes de guardar.
+            {Number(formData.stock) > 0 && (
+              <p className="text-xs text-gray-500 mt-1">
+                El tallaje se conserva mientras el material tenga stock.
               </p>
             )}
-            {(formData.tipoTallaje === 'UNICA' ? tallas.slice(0, 1) : tallas).map((fila, index) => (
-              <div key={index} className="flex items-center gap-3">
-                <label className="flex-1">
-                  Talla
-                  <input
-                    aria-label={`Talla ${index + 1}`}
-                    value={formData.tipoTallaje === 'UNICA' ? 'ÚNICA' : fila.talla}
-                    disabled={formData.tipoTallaje === 'UNICA'}
-                    required
-                    maxLength={50}
-                    onChange={(e) =>
-                      setTallas((prev) =>
-                        prev.map((f, i) => (i === index ? { ...f, talla: e.target.value } : f)),
-                      )
-                    }
-                  />
-                </label>
-                <label className="flex-1">
-                  Stock
-                  <input
-                    aria-label={`Stock talla ${index + 1}`}
-                    type="number"
-                    min="0"
-                    max="2147483647"
-                    step="1"
-                    required
-                    value={fila.stock}
-                    onChange={(e) =>
-                      setTallas((prev) =>
-                        prev.map((f, i) => (i === index ? { ...f, stock: e.target.value } : f)),
-                      )
-                    }
-                  />
-                </label>
-                {formData.tipoTallaje !== 'UNICA' && tallas.length > 1 && (
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={() => setTallas((prev) => prev.filter((_, i) => i !== index))}
-                    aria-label={`Eliminar talla ${index + 1}`}
-                    title="Eliminar talla"
-                    className="shrink-0 h-11 w-11 !p-0"
-                  >
-                    <svg
-                      aria-hidden="true"
-                      className="w-5 h-5"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                      />
-                    </svg>
-                  </Button>
-                )}
-              </div>
-            ))}
-            {formData.tipoTallaje !== 'UNICA' && (
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => setTallas((prev) => [...prev, { talla: '', stock: '0' }])}
-              >
-                + Añadir talla
-              </Button>
-            )}
-          </div>
-
-          {/* Vida útil en meses */}
-          {formData.tipo === 'EPI' && (
-            <div className="col-span-full sm:col-span-1">
-              <label className="block text-sm font-medium text-gray-700" htmlFor="vidaUtilMeses">
-                Vida útil estimada (meses)
-              </label>
-              <input
-                type="number"
-                min="1"
-                step="1"
-                id="vidaUtilMeses"
-                name="vidaUtilMeses"
-                value={formData.vidaUtilMeses}
-                onChange={handleChange}
-                placeholder="Ej: 6, 12 o 24 meses"
-              />
-              <span className="text-xs text-gray-400 mt-1 block">
-                Se usa para calcular automáticamente cuándo renovar este material tras su entrega.
-              </span>
-            </div>
-          )}
-
-          {/* Descripción */}
-          <div className="col-span-full">
-            <label className="block text-sm font-medium text-gray-700" htmlFor="descripcion">
-              Descripción y especificaciones técnicas
-            </label>
-            <input
-              type="text"
-              id="descripcion"
-              name="descripcion"
-              value={formData.descripcion}
-              onChange={handleChange}
-              placeholder="Ej: Norma EN ISO 20345:2011, puntera composite, suela antideslizante…"
-            />
           </div>
 
           {/* Botones de acción */}

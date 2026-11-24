@@ -100,7 +100,7 @@ export default function FormVehiculo() {
               type="text"
               id="matricula"
               name="matricula"
-              value={formData.matricula}
+              value={formData.matricula.toUpperCase()}
               onChange={handleChange}
               placeholder="Ej: 1234ABC"
               required

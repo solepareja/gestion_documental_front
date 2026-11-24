@@ -1,5 +1,5 @@
+import useEstadoApartado from '../../components/useEstadoApartado';
 import usePagedList from '../../components/usePagedList';
-import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Button from '../../components/Button';
 import Table from '../../components/Table';
@@ -8,7 +8,10 @@ import ListFilters from '../../components/ListFilters';
 export default function Transportistas() {
   const base = '/transportistas';
   const navigate = useNavigate();
-  const [filtros, setFiltros] = useState({ busqueda: '', tipoTransportista: '' });
+  const [filtros, setFiltros] = useEstadoApartado('transportistas.filtros', {
+    busqueda: '',
+    tipoTransportista: '',
+  });
   const cambiarFiltro = (key, value) => setFiltros((current) => ({ ...current, [key]: value }));
   const recarga = 0;
   const {

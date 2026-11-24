@@ -4,6 +4,7 @@ import api from '../services/api';
 import {
   tiposDocumentoVehiculo,
   tiposDocumentoConductor,
+  tiposDocumentoTransportista,
   documentosPorTipoTransportista,
   resumirDocumentosPorTipo,
   fechaDocumentoVisible,
@@ -13,7 +14,7 @@ import DocumentoEstado from './DocumentoEstado';
 
 const MAPA_TIPOS = {
   vehiculo: tiposDocumentoVehiculo,
-  transportista: tiposDocumentoConductor,
+  transportista: tiposDocumentoTransportista,
   conductor: tiposDocumentoConductor,
 };
 
@@ -31,7 +32,7 @@ export default function DocumentacionEntidad({ entidadTipo, entidadId, tipoTrans
   const id = String(entidadId);
   const paramKey = `${entidadTipo}Id`;
   const tiposMap =
-    entidadTipo === 'transportista' || entidadTipo === 'conductor'
+    entidadTipo === 'transportista'
       ? documentosPorTipoTransportista(tipoTransportista)
       : MAPA_TIPOS[entidadTipo] || tiposDocumentoVehiculo;
   const rutaBase = MAPA_RUTAS[entidadTipo] || 'vehiculos';
@@ -72,8 +73,9 @@ export default function DocumentacionEntidad({ entidadTipo, entidadId, tipoTrans
 
   const tiposConHistorico = { ...tiposMap };
   for (const documento of current?.data || []) {
-    if (!tiposConHistorico[documento.tipo])
-      tiposConHistorico[documento.tipo] = documento.tipo.replaceAll('_', ' ');
+    const tipo = documento.tipo;
+    if (tipo === 'CARNET') continue;
+    if (!tiposConHistorico[tipo]) tiposConHistorico[tipo] = tipo.replaceAll('_', ' ');
   }
   const filas = resumirDocumentosPorTipo(current?.data || [], tiposConHistorico);
 

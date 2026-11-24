@@ -38,7 +38,11 @@ export default function DeleteButton({
       if (onDeleted) onDeleted();
     } catch (err) {
       console.error('Error al eliminar recurso:', err);
-      setError('No se pudo eliminar el elemento. Por favor, inténtalo de nuevo.');
+      setError(
+        err.response?.data?.message ||
+          err.response?.data?.error ||
+          'No se pudo eliminar el elemento. Por favor, inténtalo de nuevo.',
+      );
     } finally {
       setDeleting(false);
     }
@@ -85,7 +89,9 @@ export default function DeleteButton({
             ? `¿Estás seguro de que deseas eliminar «${name}»? Se eliminará también su documentación y el transportista quedará sin este vehículo asignado. Esta acción no se puede deshacer.`
             : resource === 'trabajadores'
               ? `¿Estás seguro de que deseas eliminar «${name}»? Se eliminarán también su documentación, sus firmas y su historial de entregas. Esta acción no se puede deshacer.`
-              : undefined
+              : resource === 'conductores'
+                ? `¿Estás seguro de que deseas eliminar «${name}»? Se eliminarán también su documentación, las fotografías del carnet y sus vínculos con transportistas. Esta acción no se puede deshacer.`
+                : undefined
         }
         cargando={deleting}
         error={error}

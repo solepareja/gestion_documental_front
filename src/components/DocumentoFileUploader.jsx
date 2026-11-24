@@ -1,6 +1,7 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useId } from 'react';
 import { comprimirImagen } from '../utils/imageCompressor';
 import ModalVisorDocumento from './ModalVisorDocumento';
+import { urlArchivoDocumento } from '../services/archivoDocumento';
 
 /**
  * Campo para subir un PDF o imagen de la documentación del vehículo.
@@ -9,17 +10,21 @@ import ModalVisorDocumento from './ModalVisorDocumento';
  */
 export default function DocumentoFileUploader({
   label = 'PDF o imagen del documento',
-  sublabel = 'Formatos admitidos: PDF, JPG, PNG o WebP (máx. 15 MB)',
+  sublabel = 'Formatos admitidos: PDF, JPG, PNG o WebP (máx. 25 MB)',
   value,
   fileName,
   onChange,
   disabled = false,
+  required = false,
+  error,
 }) {
   const [procesando, setProcesando] = useState(false);
   const [errorLocal, setErrorLocal] = useState(null);
   const [arrastrando, setArrastrando] = useState(false);
   const [mostrarModal, setMostrarModal] = useState(false);
   const inputRef = useRef(null);
+  const errorId = useId();
+  const errorMessage = errorLocal || error;
 
   const esPdf =
     value?.startsWith('data:application/pdf') || fileName?.toLowerCase().endsWith('.pdf');
@@ -31,7 +36,8 @@ export default function DocumentoFileUploader({
     // Validar tipo de archivo
     const esTipoPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
     const esTipoImagen =
-      file.type.startsWith('image/') || /\.(jpe?g|png|webp|gif)$/i.test(file.name);
+      ['image/jpeg', 'image/png', 'image/webp'].includes(file.type) ||
+      /\.(jpe?g|png|webp)$/i.test(file.name);
 
     if (!esTipoPdf && !esTipoImagen) {
       setErrorLocal(
@@ -41,8 +47,8 @@ export default function DocumentoFileUploader({
     }
 
     // Validar tamaño máximo (15 MB)
-    if (file.size > 15 * 1024 * 1024) {
-      setErrorLocal('El archivo supera el tamaño máximo permitido de 15 MB.');
+    if (file.size > 25 * 1024 * 1024) {
+      setErrorLocal('El archivo supera el tamaño máximo permitido de 25 MB.');
       return;
     }
 
@@ -108,14 +114,16 @@ export default function DocumentoFileUploader({
   return (
     <div className="flex flex-col">
       <div className="flex items-baseline justify-between mb-1.5">
-        <label className="block text-sm font-bold text-gray-800">{label}</label>
+        <label className="block text-sm font-bold text-gray-800">
+          {label} {required && <span className="text-red-500">*</span>}
+        </label>
         {sublabel && <span className="text-[11px] text-gray-400 font-medium">{sublabel}</span>}
       </div>
 
       <input
         ref={inputRef}
         type="file"
-        accept="image/*,.pdf,application/pdf"
+        accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp"
         onChange={handleInputChange}
         disabled={disabled || procesando}
         className="hidden"
@@ -145,7 +153,7 @@ export default function DocumentoFileUploader({
                   title="Ver imagen completa"
                 >
                   <img
-                    src={value}
+                    src={urlArchivoDocumento(value)}
                     alt={fileName || 'Documento'}
                     className="w-full h-full object-cover"
                   />
@@ -261,6 +269,17 @@ export default function DocumentoFileUploader({
       ) : (
         // Estado vacío: Zona de arrastre / selector
         <div
+          role="button"
+          tabIndex={disabled || procesando ? -1 : 0}
+          aria-label={label}
+          aria-invalid={Boolean(errorMessage)}
+          aria-describedby={errorMessage ? errorId : undefined}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault();
+              if (!disabled && !procesando) inputRef.current?.click();
+            }
+          }}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
@@ -302,8 +321,8 @@ export default function DocumentoFileUploader({
         </div>
       )}
 
-      {errorLocal && (
-        <p className="mt-2 text-xs font-medium text-red-600 flex items-center gap-1">
+      {errorMessage && (
+        <p id={errorId} role="alert" className="field-error flex items-center gap-1">
           <svg
             className="w-3.5 h-3.5 flex-shrink-0"
             fill="none"
@@ -317,7 +336,7 @@ export default function DocumentoFileUploader({
               d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
             />
           </svg>
-          {errorLocal}
+          {errorMessage}
         </p>
       )}
 

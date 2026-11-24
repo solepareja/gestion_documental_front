@@ -79,7 +79,6 @@ export default function DocumentoDetalle() {
   const volver =
     location.state?.volver ||
     (rutaEntidad ? `${rutaEntidad}/documentos/${encodeURIComponent(documento.tipo)}` : '/');
-  const otros = actual?.relacionados?.filter((item) => String(item.id) !== id) || [];
   const campos = documento
     ? [
         [

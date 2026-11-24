@@ -106,7 +106,6 @@ export default function FormTrabajador() {
     const validacionDni = validarDniNie(formData.dni);
     if (!validacionDni.valido) {
       setDniError(validacionDni.mensaje);
-      setError(validacionDni.mensaje);
       return;
     }
     setDniError(null);

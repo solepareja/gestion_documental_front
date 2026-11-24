@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import api from '../../services/api';
 import {
@@ -7,6 +7,7 @@ import {
   tiposDocumentoEmpleado,
   documentosPorTipoTransportista,
   fechaDocumentoParaBack,
+  requiereCaducidad,
 } from '../../services/documentos';
 import Button from '../../components/Button';
 import CreateFormLayout from '../../components/CreateFormLayout';
@@ -16,21 +17,33 @@ import CustomDatePicker from '../../components/CustomDatePicker';
 
 const DESCRIPCIONES_DOCUMENTO = {
   // Vehículos
-  DOCUMENTACION_VEHICULO: 'Documentación del vehículo (ficha técnica y permiso de circulación).',
+  FICHA_TECNICA: 'Ficha técnica del vehículo.',
   PERMISO_CIRCULACION: 'Permiso oficial de circulación del vehículo (DGT).',
   ITV: 'Inspección técnica periódica del vehículo. Caducidad obligatoria.',
   SEGURO: 'Póliza del vehículo / seguro en vigor. Caducidad obligatoria.',
-  TARJETA_TRANSPORTE: 'Tarjeta / Autorización de transporte del vehículo.',
+  TARJETA_TRANSPORTE:
+    'Tarjeta / Autorización de transporte del vehículo. Indica la fecha del próximo vencimiento o visado.',
+  SEGURO_CARGA: 'Seguro de la mercancía transportada. Caducidad obligatoria.',
 
   // Transportistas / Conductores
-  CONTRATO_FIRMADO: 'Contrato laboral o mercantil firmado.',
   ALTA_TRABAJADOR: 'Alta de trabajador/es en la Seguridad Social (Modelo TA.2/S).',
   SEGURO_RESPONSABILIDAD_CIVIL: 'Seguro de responsabilidad civil. Caducidad obligatoria.',
-  CERTIFICADO_SEG_SOCIAL: 'Certificado de estar al corriente de pago en la Seguridad Social.',
-  AEAT: 'Certificado de estar al corriente de obligaciones tributarias con Hacienda (AEAT).',
-  RETA: 'Alta de autónomo (RETA) o justificante de cotización.',
+  CERTIFICADO_SEG_SOCIAL:
+    'Certificado de estar al corriente de pago en la Seguridad Social. Caducidad obligatoria.',
+  AEAT: 'Certificado de estar al corriente de obligaciones tributarias con Hacienda (AEAT). Caducidad obligatoria.',
+  ALTA_AUTONOMO: 'Alta de autónomo (RETA) o justificante de cotización.',
   MODELO_036_037: 'Declaración censal de alta en Hacienda (Modelo 036 o 037).',
-  OTRO: 'Otro documento complementario.',
+};
+
+const ETIQUETAS_REFERENCIA = {
+  SEGURO: 'Número de póliza',
+  SEGURO_RESPONSABILIDAD_CIVIL: 'Número de póliza',
+  SEGURO_CARGA: 'Número de póliza',
+  ITV: 'Número de informe ITV',
+  TARJETA_TRANSPORTE: 'Número de autorización de transporte',
+  CERTIFICADO_SEG_SOCIAL: 'CSV del certificado',
+  AEAT: 'CSV del certificado',
+  MODELO_036_037: 'Número de justificante de presentación',
 };
 
 export default function FormDocumento() {
@@ -63,7 +76,9 @@ export default function FormDocumento() {
       ? paramTipo
       : entidadInicial === 'vehiculo'
         ? 'ITV'
-        : Object.keys(tiposDocumentoTransportista)[0],
+        : entidadInicial === 'conductor'
+          ? 'ALTA_TRABAJADOR'
+          : 'ALTA_AUTONOMO',
     fechaEmision: '',
     fechaCaducidad: '',
     vehiculoId: paramVehiculoId,
@@ -79,8 +94,19 @@ export default function FormDocumento() {
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
-
-  const [loadingDoc, setLoadingDoc] = useState(Boolean(id));
+  const [fieldErrors, setFieldErrors] = useState({});
+  const formRef = useRef(null);
+  const showFieldErrors = (errors) => {
+    setFieldErrors(errors);
+    setError(null);
+    requestAnimationFrame(() => {
+      const field = formRef.current?.querySelector('[aria-invalid="true"]');
+      field?.focus({ preventScroll: true });
+      field?.scrollIntoView({ behavior: 'auto', block: 'center' });
+    });
+  };
+  const [documentoCargado, setDocumentoCargado] = useState(null);
+  const loadingDoc = Boolean(id) && documentoCargado !== id;
   const [loadError, setLoadError] = useState(null);
 
   // Helper para convertir fechas recibidas del backend al formato YYYY-MM-DD del input type="date"
@@ -107,13 +133,12 @@ export default function FormDocumento() {
   useEffect(() => {
     if (!id) return;
     let active = true;
-    setLoadingDoc(true);
-    setLoadError(null);
 
     api
       .get(`/documentos/${id}`)
       .then(({ data }) => {
         if (!active) return;
+        setLoadError(null);
         let tipoEnt = 'vehiculo';
         if (data.transportistaId) tipoEnt = 'transportista';
         if (data.conductorId) tipoEnt = 'conductor';
@@ -134,7 +159,7 @@ export default function FormDocumento() {
           archivo: data.archivo || '',
           archivoNombre: data.archivoNombre || '',
         });
-        setLoadingDoc(false);
+        setDocumentoCargado(id);
       })
       .catch((err) => {
         if (!active) return;
@@ -143,7 +168,7 @@ export default function FormDocumento() {
             ? 'No se ha encontrado este documento.'
             : 'No se pudo cargar el documento. Vuelve a intentarlo.',
         );
-        setLoadingDoc(false);
+        setDocumentoCargado(id);
       });
 
     return () => {
@@ -161,12 +186,12 @@ export default function FormDocumento() {
       .then(({ data }) => {
         if (!active) return;
         setPerfil({ id: String(transportistaActual), tipo: data.tipoTransportista });
-        const disponibles = documentosPorTipoTransportista(data.tipoTransportista);
-        if (!id)
-          setFormData((current) => ({
-            ...current,
-            tipo: disponibles[current.tipo] ? current.tipo : Object.keys(disponibles)[0],
-          }));
+        if (!id) {
+          const disponibles = documentosPorTipoTransportista(data.tipoTransportista);
+          setFormData((current) =>
+            disponibles[current.tipo] ? current : { ...current, tipo: Object.keys(disponibles)[0] },
+          );
+        }
       })
       .catch(() => {
         if (active) setError('No se pudo comprobar la documentación de esta ficha.');
@@ -176,7 +201,7 @@ export default function FormDocumento() {
     };
   }, [entidadTipo, transportistaActual, id]);
 
-  const tiposDisponibles =
+  const tiposLocales =
     entidadTipo === 'vehiculo'
       ? tiposDocumentoVehiculo
       : entidadTipo === 'conductor'
@@ -185,14 +210,28 @@ export default function FormDocumento() {
             perfil?.id === String(transportistaActual) ? perfil.tipo : undefined,
           );
 
+  const tiposDisponibles = { ...tiposLocales };
+  if (id && formData.tipo && !tiposDisponibles[formData.tipo]) {
+    tiposDisponibles[formData.tipo] = `${formData.tipo.replaceAll('_', ' ')} (histórico)`;
+  }
+
   const handleChange = (event) => {
     const { name, value, type, checked } = event.target;
     const valorCampo = type === 'checkbox' ? checked : value;
+    setFieldErrors((current) => ({
+      ...current,
+      [name]: undefined,
+      ...(name === 'tipo' || name === 'fechaEmision' ? { fechaCaducidad: undefined } : {}),
+      ...(name === 'tipo' ? { archivo: undefined } : {}),
+    }));
     setFormData((current) => {
       const updated = {
         ...current,
         [name]: valorCampo,
       };
+      if (name === 'tipo' && value !== current.tipo) {
+        updated.numeroReferencia = '';
+      }
       if (
         name === 'fechaCaducidad' &&
         current.estado !== 'ANULADO' &&
@@ -236,9 +275,11 @@ export default function FormDocumento() {
   const volver = calcularRutaVolver();
 
   // Reglas de negocio para seguros y caducidad obligatoria
-  const esSeguro = formData.tipo === 'SEGURO' || formData.tipo === 'SEGURO_RESPONSABILIDAD_CIVIL';
+  const esSeguro = ['SEGURO', 'SEGURO_RESPONSABILIDAD_CIVIL', 'SEGURO_CARGA'].includes(
+    formData.tipo,
+  );
   const esItv = formData.tipo === 'ITV';
-  const esCaducidadObligatoria = esItv || esSeguro;
+  const esCaducidadObligatoria = requiereCaducidad(formData.tipo);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -257,24 +298,27 @@ export default function FormDocumento() {
       return;
     }
 
+    const errors = {};
     if (!formData.fechaEmision) {
-      setError('La fecha de emisión es obligatoria.');
-      return;
+      errors.fechaEmision = 'La fecha de emisión es obligatoria.';
     }
-
     if (esCaducidadObligatoria && !formData.fechaCaducidad) {
-      setError(`La fecha de caducidad es obligatoria para ${esItv ? 'la ITV' : 'el Seguro'}.`);
-      return;
-    }
-
-    if (
+      errors.fechaCaducidad = 'La fecha de caducidad es obligatoria para este tipo de documento.';
+    } else if (
       formData.fechaCaducidad &&
       formData.fechaEmision &&
       formData.fechaCaducidad < formData.fechaEmision
     ) {
-      setError('La fecha de caducidad no puede ser anterior a la fecha de emisión.');
+      errors.fechaCaducidad = 'La fecha de caducidad no puede ser anterior a la fecha de emisión.';
+    }
+    if (formData.tipo !== 'CARNET' && !formData.archivo?.trim()) {
+      errors.archivo = 'Debes adjuntar el PDF o una imagen del documento.';
+    }
+    if (Object.keys(errors).length) {
+      showFieldErrors(errors);
       return;
     }
+    setFieldErrors({});
 
     setSaving(true);
     setError(null);
@@ -303,8 +347,21 @@ export default function FormDocumento() {
         archivoNombre: formData.archivoNombre ? formData.archivoNombre.trim() : null,
       };
 
-      if (id) await api.put(`/documentos/${id}`, payload);
-      else await api.post('/documentos', payload);
+      let body = payload;
+      let config;
+      if (payload.archivo?.startsWith('data:')) {
+        const blob = await fetch(payload.archivo).then((response) => response.blob());
+        const metadata = { ...payload, archivo: null };
+        body = new FormData();
+        body.append(
+          'documento',
+          new Blob([JSON.stringify(metadata)], { type: 'application/json' }),
+        );
+        body.append('file', blob, payload.archivoNombre || 'documento');
+        config = { headers: { 'Content-Type': undefined } };
+      }
+      if (id) await api.put(`/documentos/${id}`, body, config);
+      else await api.post('/documentos', body, config);
 
       navigate(volver);
     } catch (err) {
@@ -319,21 +376,24 @@ export default function FormDocumento() {
     }
   };
 
+  // Mantener accesibles las referencias ya guardadas en documentos antiguos.
+  const etiquetaReferencia =
+    ETIQUETAS_REFERENCIA[formData.tipo] ||
+    (id && formData.numeroReferencia ? 'Número de referencia / expediente' : null);
+
   const placeholderReferencia = esSeguro
     ? 'Ej. POL-12345678'
     : esItv
       ? 'Ej. Nº informe / registro ITV'
-      : formData.tipo === 'CONTRATO_FIRMADO'
-        ? 'Ej. Nº de contrato'
-        : formData.tipo === 'ALTA_TRABAJADOR'
-          ? 'Ej. Nº de afiliación / registro TGSS'
-          : formData.tipo === 'CERTIFICADO_SEG_SOCIAL' || formData.tipo === 'AEAT'
-            ? 'Ej. CSV (Código Seguro de Verificación)'
-            : formData.tipo === 'MODELO_036_037'
-              ? 'Ej. Justificante de presentación AEAT'
-              : formData.tipo === 'DOCUMENTACION_VEHICULO'
-                ? 'Ej. Nº de bastidor o expediente'
-                : 'Número de referencia o expediente (opcional)';
+      : formData.tipo === 'ALTA_TRABAJADOR'
+        ? 'Ej. Nº de afiliación / registro TGSS'
+        : formData.tipo === 'CERTIFICADO_SEG_SOCIAL' || formData.tipo === 'AEAT'
+          ? 'Ej. CSV (Código Seguro de Verificación)'
+          : formData.tipo === 'MODELO_036_037'
+            ? 'Ej. Justificante de presentación AEAT'
+            : formData.tipo === 'FICHA_TECNICA'
+              ? 'Ej. Nº de bastidor o expediente'
+              : 'Número de referencia o expediente (opcional)';
 
   if (
     !id &&
@@ -370,13 +430,13 @@ export default function FormDocumento() {
         </p>
       )}
 
-      <form onSubmit={handleSubmit}>
+      <form ref={formRef} onSubmit={handleSubmit} noValidate>
         <fieldset
           className="create-form disabled:opacity-60 space-y-6"
           disabled={saving || loadingDoc || Boolean(loadError)}
         >
           {/* Tipo de Documento */}
-          <div>
+          <div className="col-span-full">
             <label htmlFor="tipo">
               Tipo de documento <span className="text-red-500">*</span>
             </label>
@@ -406,12 +466,19 @@ export default function FormDocumento() {
               Fecha de emisión <span className="text-red-500">*</span>
             </label>
             <CustomDatePicker
+              aria-invalid={Boolean(fieldErrors.fechaEmision)}
+              aria-describedby={fieldErrors.fechaEmision ? 'fechaEmision-error' : undefined}
               id="fechaEmision"
               name="fechaEmision"
               value={formData.fechaEmision}
               onChange={handleChange}
               required
             />
+            {fieldErrors.fechaEmision && (
+              <p id="fechaEmision-error" role="alert" className="field-error">
+                {fieldErrors.fechaEmision}
+              </p>
+            )}
           </div>
 
           <div>
@@ -420,6 +487,8 @@ export default function FormDocumento() {
               {esCaducidadObligatoria && <span className="text-red-500 font-bold ml-1">*</span>}
             </label>
             <CustomDatePicker
+              aria-invalid={Boolean(fieldErrors.fechaCaducidad)}
+              aria-describedby={fieldErrors.fechaCaducidad ? 'fechaCaducidad-error' : undefined}
               id="fechaCaducidad"
               name="fechaCaducidad"
               min={formData.fechaEmision || undefined}
@@ -427,6 +496,11 @@ export default function FormDocumento() {
               onChange={handleChange}
               required={esCaducidadObligatoria}
             />
+            {fieldErrors.fechaCaducidad && (
+              <p id="fechaCaducidad-error" role="alert" className="field-error">
+                {fieldErrors.fechaCaducidad}
+              </p>
+            )}
           </div>
 
           {/* Compañía Aseguradora (para Seguros) */}
@@ -445,21 +519,19 @@ export default function FormDocumento() {
           )}
 
           {/* Número de referencia */}
-          <div>
-            <label htmlFor="numeroReferencia">
-              {esSeguro
-                ? 'Número de póliza o referencia'
-                : 'Número de referencia / expediente (opcional)'}
-            </label>
-            <input
-              id="numeroReferencia"
-              name="numeroReferencia"
-              maxLength={255}
-              placeholder={placeholderReferencia}
-              value={formData.numeroReferencia}
-              onChange={handleChange}
-            />
-          </div>
+          {etiquetaReferencia && (
+            <div>
+              <label htmlFor="numeroReferencia">{etiquetaReferencia} (opcional)</label>
+              <input
+                id="numeroReferencia"
+                name="numeroReferencia"
+                maxLength={255}
+                placeholder={placeholderReferencia}
+                value={formData.numeroReferencia}
+                onChange={handleChange}
+              />
+            </div>
+          )}
 
           {/* Estado del documento */}
           <div>
@@ -576,10 +648,13 @@ export default function FormDocumento() {
           {/* Archivo digital */}
           <div className="col-span-full pt-2">
             <DocumentoFileUploader
+              error={fieldErrors.archivo}
               label="PDF o imagen del documento"
+              required={formData.tipo !== 'CARNET'}
               value={formData.archivo}
               fileName={formData.archivoNombre}
               onChange={(archivo, archivoNombre) => {
+                setFieldErrors((current) => ({ ...current, archivo: undefined }));
                 setFormData((prev) => ({
                   ...prev,
                   archivo: archivo || '',

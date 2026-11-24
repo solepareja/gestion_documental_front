@@ -1,9 +1,10 @@
+import { parrafosLegalesEntrega } from '../../utils/entregaLegal';
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { obtenerEntrega, tiposMaterial } from '../../services/materiales';
 import Button from '../../components/Button';
 import DeleteButton from '../../components/DeleteButton';
-import { imprimirOdescargarPdfEntrega } from '../../utils/pdfGenerator';
+import { descargarPdfEntrega } from '../../utils/descargarPdfEntrega';
 
 function formatearFecha(fechaStr) {
   if (!fechaStr) return '—';
@@ -46,7 +47,7 @@ export default function EntregaDetalle() {
 
   const descargarPdf = () => {
     if (entrega) {
-      imprimirOdescargarPdfEntrega(entrega);
+      descargarPdfEntrega(entrega);
     }
   };
 
@@ -134,24 +135,15 @@ export default function EntregaDetalle() {
             />
             <div className="flex-1 basis-48">
               <span className="text-xl sm:text-2xl font-black text-brand-800 tracking-tight block">
-                Fábrica Sofás Valencia S.L.
+                SOFÁS VALENCIA S.L.
               </span>
-              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mt-1">
-                Departamento de Prevención y Recursos Humanos
-              </span>
-              <p className="text-xs text-gray-400 mt-0.5">
-                Gestión y Control de EPIS y Vestuario Laboral
+              <p className="text-xs text-gray-500 mt-1">
+                REGISTRO ENTREGA DE EQUIPOS DE PROTECCIÓN INDIVIDUAL Y VESTUARIO LABORAL
               </p>
             </div>
           </div>
 
           <div className="max-w-full text-left sm:text-right bg-gray-50 sm:bg-transparent p-4 sm:p-0 rounded-2xl border border-gray-100 sm:border-none">
-            <span className="text-xs font-bold uppercase tracking-wider text-gray-400 block">
-              Justificante Oficial
-            </span>
-            <span className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight block mt-0.5">
-              Nº ENT-{String(entrega.id).padStart(5, '0')}
-            </span>
             <span className="text-xs font-semibold text-gray-600 block mt-1">
               Fecha de entrega: {formatearFecha(entrega.fechaEntrega)}
             </span>
@@ -220,6 +212,11 @@ export default function EntregaDetalle() {
                       ) : (
                         l.materialNombre
                       )}
+                      {l.observaciones && (
+                        <p className="mt-2 whitespace-pre-wrap text-xs font-normal text-gray-600">
+                          {l.observaciones}
+                        </p>
+                      )}
                     </td>
                     <td className="p-3.5">
                       <span
@@ -256,13 +253,12 @@ export default function EntregaDetalle() {
 
         {/* Cláusula Legal y Bloque de Firmas */}
         <div className="space-y-4 pt-4 border-t border-gray-200">
-          <p className="text-[11px] text-gray-500 text-justify leading-relaxed">
-            De conformidad con el Real Decreto 773/1997 sobre disposiciones mínimas de seguridad y
-            salud relativas a la utilización por los trabajadores de equipos de protección
-            individual, el trabajador abajo firmante certifica haber recibido los equipos descritos
-            en perfecto estado de uso y funcionamiento, así como las instrucciones pertinentes sobre
-            su uso, conservación y mantenimiento obligatorio durante el desarrollo de sus tareas.
-          </p>
+          <div className="text-[11px] text-gray-500 leading-relaxed space-y-3">
+            <p className="font-bold">DECLARACIÓN DE RECEPCIÓN Y CONFORMIDAD:</p>
+            {parrafosLegalesEntrega.map((parrafo) => (
+              <p key={parrafo}>{parrafo}</p>
+            ))}
+          </div>
 
           <div className="flex justify-end pt-2">
             {/* Firma Digital del Trabajador a la derecha */}

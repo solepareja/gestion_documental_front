@@ -1,7 +1,11 @@
+import { useEffect } from 'react';
+import InstallApp from './components/InstallApp';
+import { installFormValidation } from './components/formValidation';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import MainLayout from './layouts/MainLayout';
+import useTableSpacing from './components/useTableSpacing';
 import Login from './pages/auth/Login';
 import Registro from './pages/auth/Registro';
 import Dashboard from './pages/dashboard/Dashboard';
@@ -18,7 +22,6 @@ import FormTrabajador from './pages/trabajadores/FormTrabajador';
 import FormTransportista from './pages/transportistas/FormTransportista';
 import PersonaDetalle from './pages/PersonaDetalle';
 import FormUsuario from './pages/usuarios/FormUsuario';
-import Documentos from './pages/documentos/Documentos';
 import FormDocumento from './pages/documentos/FormDocumento';
 import DocumentoDetalle from './pages/documentos/DocumentoDetalle';
 import HistorialDocumentoVehiculo from './pages/documentos/HistorialDocumentoVehiculo';
@@ -34,8 +37,11 @@ import FirmasResumen from './pages/firmas/FirmasResumen';
 import FirmaDocumentoDetalle from './pages/firmas/FirmaDocumentoDetalle';
 
 export default function App() {
+  useTableSpacing();
+  useEffect(() => installFormValidation(document.body), []);
   return (
     <AuthProvider>
+      <InstallApp />
       <BrowserRouter>
         <Routes>
           {/* Rutas públicas de autenticación */}
@@ -49,6 +55,7 @@ export default function App() {
 
             <Route element={<MainLayout />}>
               <Route path="/" element={<Inicio />} />
+              <Route path="/tablet" element={<ModoTablet integrado />} />
               <Route path="/calendario" element={<Dashboard />} />
               <Route path="/firmas" element={<FirmasResumen />} />
               <Route path="/firmas/:plantillaId" element={<FirmaDocumentoDetalle />} />

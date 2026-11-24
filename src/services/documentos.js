@@ -1,51 +1,49 @@
-// Tipos de documentación organizados por entidad:
-// - Vehículos: Documentación del vehículo, Póliza del vehículo, Permiso de circulación, ITV, Tarjeta de transporte.
-// - Transportistas / Conductores: Contrato firmado, Alta de trabajador/es, Alta de autónomo (RETA), Seguro de responsabilidad civil, Modelo 036/037, Certificado corriente AEAT, Certificado corriente Seg. Social.
-
+// Catálogo de la aplicación, alineado con TipoDocumento del backend.
 export const tiposDocumentoVehiculo = {
   PERMISO_CIRCULACION: 'Permiso de circulación',
-  DOCUMENTACION_VEHICULO: 'Ficha técnica del vehículo',
+  FICHA_TECNICA: 'Ficha técnica',
   ITV: 'ITV',
   TARJETA_TRANSPORTE: 'Tarjeta de transporte',
-  SEGURO: 'Póliza del vehículo',
+  SEGURO: 'Seguro',
   SEGURO_RESPONSABILIDAD_CIVIL: 'Seguro de responsabilidad civil',
   SEGURO_CARGA: 'Seguro de carga',
 };
 
-export const tiposDocumentoConductor = {
-  ALTA_TRABAJADOR: 'Alta de trabajador/es',
-  RETA: 'Alta de autónomo (RETA)',
+export const tiposDocumentoTransportista = {
+  ALTA_AUTONOMO: 'Alta de autónomo (RETA)',
   MODELO_036_037: 'Modelo 036/037',
   CERTIFICADO_SEG_SOCIAL: 'Certificado corriente de pago en la Seguridad Social',
   AEAT: 'Certificado corriente de pago AEAT',
 };
 
-// El autónomo conserva todos los tipos que ya tenía disponibles.
-export const tiposDocumentoTransportista = tiposDocumentoConductor;
-
-export const tiposDocumentoEmpresa = {
-  MODELO_036_037: tiposDocumentoConductor.MODELO_036_037,
-  CERTIFICADO_SEG_SOCIAL: tiposDocumentoConductor.CERTIFICADO_SEG_SOCIAL,
-  AEAT: tiposDocumentoConductor.AEAT,
+export const tiposDocumentoConductor = {
+  ALTA_TRABAJADOR: 'Alta de trabajador en la Seguridad Social',
 };
 
-export const tiposDocumentoEmpleado = {
-  ALTA_TRABAJADOR: 'Alta del trabajador en la Seguridad Social',
-};
+export const tiposDocumentoEmpleado = tiposDocumentoConductor;
+export const tiposDocumentoEmpresa = tiposDocumentoTransportista;
 
 export function documentosPorTipoTransportista(tipo) {
-  if (tipo === 'EMPRESA') return tiposDocumentoEmpresa;
-  if (tipo === 'CONDUCTOR') return tiposDocumentoEmpleado;
-  if (tipo === 'AUTONOMO') return { RETA: tiposDocumentoConductor.RETA, ...tiposDocumentoEmpresa };
-  return tiposDocumentoTransportista;
+  return tipo === 'CONDUCTOR' ? tiposDocumentoConductor : tiposDocumentoTransportista;
 }
 
 export const tiposDocumento = {
   ...tiposDocumentoVehiculo,
+  ...tiposDocumentoTransportista,
   ...tiposDocumentoConductor,
-  ALTA_AUTONOMO: 'Alta de autónomo',
-  OTRO: 'Otro',
 };
+
+export const tiposConCaducidadObligatoria = [
+  'ITV',
+  'SEGURO',
+  'SEGURO_RESPONSABILIDAD_CIVIL',
+  'SEGURO_CARGA',
+  'TARJETA_TRANSPORTE',
+  'CERTIFICADO_SEG_SOCIAL',
+  'AEAT',
+];
+
+export const requiereCaducidad = (tipo) => tiposConCaducidadObligatoria.includes(tipo);
 
 export const estadosDocumento = {
   VIGENTE: 'Vigente',
