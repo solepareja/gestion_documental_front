@@ -4,7 +4,8 @@ import useLocalPagination from '../../components/useLocalPagination';
 import SearchInput from '../../components/SearchInput';
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { obtenerDetallePlantilla, registrarFirma, obtenerPdfFirmado } from '../../services/firmas';
+import { obtenerDetallePlantilla, registrarFirma } from '../../services/firmas';
+import ModalVisorDocumento from '../../components/ModalVisorDocumento';
 import ModalCrearPlantilla from '../../components/firmas/ModalCrearPlantilla';
 import ModalFirmarDocumento from '../../components/firmas/ModalFirmarDocumento';
 import BarraProgreso from '../../components/firmas/BarraProgreso';
@@ -21,6 +22,7 @@ export default function FirmaDocumentoDetalle() {
   const cargando = plantillaCargada !== plantillaId;
   const [filtro, setFiltro] = useEstadoApartado(`firmas.${plantillaId}.busqueda`, '');
   const [trabajadorAFirmar, setTrabajadorAFirmar] = useState(null);
+  const [firmaVisible, setFirmaVisible] = useState(null);
 
   useEffect(() => {
     let activo = true;
@@ -64,28 +66,6 @@ export default function FirmaDocumentoDetalle() {
         porcentaje: nuevoPorcentaje,
       };
     });
-  };
-
-  const descargarPdfDeFirma = async (firma) => {
-    try {
-      // 1. Si ya tenemos el Base64 o lo pedimos al endpoint
-      const res = await obtenerPdfFirmado(firma.id);
-      if (res && res.pdfBase64) {
-        const link = document.createElement('a');
-        link.href = res.pdfBase64;
-        const nombreLimpio = `${firma.trabajadorNombre}_${firma.trabajadorApellidos}`.replace(
-          /[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ_-]/g,
-          '_',
-        );
-        link.download = `Firma_${detalle?.titulo || 'Documento'}_${nombreLimpio}.pdf`;
-        link.click();
-      } else {
-        alert('Este registro no tiene un PDF adjunto');
-      }
-    } catch (e) {
-      console.error('Error al descargar PDF:', e);
-      alert('No se pudo descargar el archivo firmado.');
-    }
   };
 
   // Filtrado en memoria
@@ -361,11 +341,15 @@ export default function FirmaDocumentoDetalle() {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <button
-                        onClick={() => descargarPdfDeFirma(f)}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-xl border-0 bg-gray-100 hover:bg-gray-200/80 text-gray-700 transition cursor-pointer"
+                        type="button"
+                        onClick={() => setFirmaVisible(f)}
+                        title="Ver documento firmado"
+                        aria-label={`Ver documento firmado por ${f.trabajadorNombre} ${f.trabajadorApellidos}`}
+                        className="inline-flex items-center justify-center p-2 rounded-xl border-0 bg-gray-100 hover:bg-gray-200/80 text-gray-700 transition cursor-pointer"
                       >
                         <svg
-                          className="w-3.5 h-3.5 text-brand-600"
+                          aria-hidden="true"
+                          className="w-4 h-4"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -374,10 +358,15 @@ export default function FirmaDocumentoDetalle() {
                             strokeLinecap="round"
                             strokeLinejoin="round"
                             strokeWidth="2"
-                            d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                          />
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
                           />
                         </svg>
-                        <span>Descargar PDF</span>
                       </button>
                     </td>
                   </tr>
@@ -392,6 +381,13 @@ export default function FirmaDocumentoDetalle() {
         )}
       </div>
 
+      <ModalVisorDocumento
+        abierto={firmaVisible !== null}
+        onCerrar={() => setFirmaVisible(null)}
+        archivo={firmaVisible ? `/firmas/${firmaVisible.id}/archivo` : null}
+        archivoNombre={firmaVisible ? `Firma_${firmaVisible.id}.pdf` : ''}
+        titulo={`${detalle.titulo} · ${firmaVisible?.trabajadorNombre || ''} ${firmaVisible?.trabajadorApellidos || ''}`}
+      />
       {editando && (
         <ModalCrearPlantilla
           plantilla={detalle}

@@ -379,6 +379,8 @@ export default function FormConductor() {
                 <label htmlFor="vehiculoId">Vehículo habitual asignado</label>
                 <CustomSelect
                   id="vehiculoId"
+                  searchable
+                  searchPlaceholder="Buscar por matrícula, marca o modelo…"
                   name="vehiculoId"
                   value={formData.vehiculoId || ''}
                   onChange={handleChange}
@@ -412,7 +414,7 @@ export default function FormConductor() {
               Cancelar
             </Button>
 
-            <Button type="submit" variant="primary" disabled={cargando}>
+            <Button type="submit" variant="form-submit" disabled={cargando}>
               {cargando ? 'Guardando…' : id ? 'Guardar cambios' : 'Crear conductor'}
             </Button>
           </div>

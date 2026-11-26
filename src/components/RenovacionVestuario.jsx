@@ -28,11 +28,6 @@ function FormularioRenovacion({
 }) {
   return (
     <div className="space-y-4">
-      <p className="text-xs sm:text-sm text-gray-500 leading-relaxed">
-        Un único aviso para todo el vestuario cada 6 meses. Las entregas individuales no cambian
-        esta fecha.
-      </p>
-
       {error && (
         <div
           role="alert"
@@ -74,7 +69,58 @@ function FormularioRenovacion({
 
       {datos && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
-          {/* Bloque 1: Programar próxima fecha */}
+          {/* Registrar cambio realizado */}
+          <div className="p-4 rounded-2xl bg-gray-50/80 border border-gray-100 flex flex-col justify-between space-y-3">
+            <div>
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-extrabold uppercase tracking-wider text-gray-500">
+                  Registro de cambio
+                </span>
+                {datos.ultimaRenovacion && (
+                  <span className="text-[11px] font-semibold text-gray-500">
+                    Última: {fechaFormateada(datos.ultimaRenovacion)}
+                  </span>
+                )}
+              </div>
+              <h3 className="text-sm font-bold text-gray-900 mt-0.5">
+                Marcar cambio como realizado
+              </h3>
+              <p className="text-xs text-gray-500 mt-1">
+                El siguiente aviso se programará 6 meses después de la fecha del cambio.
+              </p>
+            </div>
+
+            {datos.proximaFecha ? (
+              <form
+                className="flex flex-wrap items-end gap-2.5 pt-1"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  guardar(true);
+                }}
+              >
+                <div className="flex-1 min-w-[150px]">
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    Fecha del cambio realizado
+                  </label>
+                  <CustomDatePicker
+                    required
+                    value={realizada}
+                    onChange={(e) => setRealizada(e.target.value)}
+                    size="sm"
+                  />
+                </div>
+                <Button type="submit" size="sm" variant="form-submit" disabled={ocupado || !realizada}>
+                  Marcar realizada
+                </Button>
+              </form>
+            ) : (
+              <p className="text-xs text-gray-400 italic py-2">
+                Primero define una fecha de renovación para poder registrar cambios.
+              </p>
+            )}
+          </div>
+
+          {/* Ajustar próxima fecha */}
           <div className="p-4 rounded-2xl bg-gray-50/80 border border-gray-100 flex flex-col justify-between space-y-3">
             <div>
               <span className="text-[11px] font-extrabold uppercase tracking-wider text-gray-500">
@@ -114,66 +160,13 @@ function FormularioRenovacion({
                 />
               </div>
               <Button
-                type="submit"
+                type="submit" variant="form-submit"
                 size="sm"
                 disabled={ocupado || !fecha || fecha === datos.proximaFecha}
               >
                 Guardar fecha
               </Button>
             </form>
-          </div>
-
-          {/* Bloque 2: Registrar cambio realizado */}
-          <div className="p-4 rounded-2xl bg-gray-50/80 border border-gray-100 flex flex-col justify-between space-y-3">
-            <div>
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-extrabold uppercase tracking-wider text-gray-500">
-                  Registro de cambio
-                </span>
-                {datos.ultimaRenovacion && (
-                  <span className="text-[11px] font-semibold text-gray-500">
-                    Última: {fechaFormateada(datos.ultimaRenovacion)}
-                  </span>
-                )}
-              </div>
-              <h3 className="text-sm font-bold text-gray-900 mt-0.5">
-                Marcar cambio como realizado
-              </h3>
-              <p className="text-xs text-gray-500 mt-1">
-                El siguiente aviso se programará 6 meses después de la fecha del cambio.
-              </p>
-            </div>
-
-            {datos.proximaFecha ? (
-              <form
-                className="flex flex-wrap items-end gap-2.5 pt-1"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  guardar(true);
-                }}
-              >
-                <div className="flex-1 min-w-[150px]">
-                  <label className="block text-xs font-medium text-gray-600 mb-1">
-                    Fecha del cambio realizado
-                  </label>
-                  <CustomDatePicker
-                    required
-                    max={hoy()}
-                    min={datos.ultimaRenovacion || undefined}
-                    value={realizada}
-                    onChange={(e) => setRealizada(e.target.value)}
-                    size="sm"
-                  />
-                </div>
-                <Button type="submit" size="sm" variant="primary" disabled={ocupado || !realizada}>
-                  Marcar realizada
-                </Button>
-              </form>
-            ) : (
-              <p className="text-xs text-gray-400 italic py-2">
-                Primero define una fecha de renovación para poder registrar cambios.
-              </p>
-            )}
           </div>
         </div>
       )}

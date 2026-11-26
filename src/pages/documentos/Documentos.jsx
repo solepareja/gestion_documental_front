@@ -124,7 +124,7 @@ export default function Documentos() {
             Documentos
           </h1>
         </div>
-        <Button onClick={() => navigate('/documentos/nuevo' + queryNuevo)}>
+        <Button variant="add" onClick={() => navigate('/documentos/nuevo' + queryNuevo)}>
           + Añadir documento
         </Button>
       </div>

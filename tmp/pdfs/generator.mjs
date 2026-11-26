@@ -308,7 +308,7 @@ export function imprimirOdescargarPdfEntrega(entrega, devolverBase64 = false) {
   doc.setFontSize(6);
   doc.setTextColor(100, 116, 139);
   doc.text(
-    `Firmado electrónicamente el ${fechaDoc}`,
+    `Firmado el ${fechaDoc}`,
     rightCardX + sigCardWidth / 2,
     currentY + 37.5,
     { align: 'center' },
@@ -498,7 +498,7 @@ export function generarPdfDocumentoFirmado({
   doc.setFontSize(6.5);
   doc.setTextColor(148, 163, 184);
   doc.text(
-    'Documento firmado electrónicamente mediante captura táctil de consentimiento conforme a la política interna de Sofás Valencia S.L.',
+    'Documento firmado mediante captura táctil de consentimiento conforme a la política interna de Sofás Valencia S.L.',
     margin,
     285,
   );

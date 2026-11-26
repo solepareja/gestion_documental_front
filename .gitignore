@@ -22,3 +22,11 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Configuracion local y secretos
+.env
+
+# Despliegue y credenciales
+deploy/.env
+deploy/cloudflared/*.json
+deploy/portal.env

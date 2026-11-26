@@ -9,6 +9,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import Button from '../../components/Button';
 import DeleteButton from '../../components/DeleteButton';
 import Table from '../../components/Table';
+import ModalVisorDocumento from '../../components/ModalVisorDocumento';
 import { descargarPdfEntrega } from '../../utils/descargarPdfEntrega';
 
 function formatearFecha(fechaStr) {
@@ -81,6 +82,7 @@ export default function Entregas() {
     String(new Date().getFullYear()),
   );
   const [descargando, setDescargando] = useState(false);
+  const [entregaVisible, setEntregaVisible] = useState(null);
   const navigate = useNavigate();
 
   const {
@@ -242,9 +244,9 @@ export default function Entregas() {
             size="sm"
             variant="secondary"
             className="p-2"
-            title={`Ver justificante de entrega #${e.id}`}
-            aria-label={`Ver justificante de entrega #${e.id}`}
-            onClick={() => navigate(`/entregas/${e.id}`)}
+            title={`Ver PDF original de entrega #${e.id}`}
+            aria-label={`Ver PDF original de entrega #${e.id}`}
+            onClick={() => setEntregaVisible(e)}
             icon={
               <svg
                 aria-hidden="true"
@@ -283,6 +285,13 @@ export default function Entregas() {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
+      <ModalVisorDocumento
+        abierto={entregaVisible !== null}
+        onCerrar={() => setEntregaVisible(null)}
+        archivo={entregaVisible ? `/entregas/${entregaVisible.id}/archivo` : null}
+        archivoNombre={entregaVisible ? `Entrega_${entregaVisible.id}.pdf` : ''}
+        titulo="Justificante original de entrega"
+      />
       {/* Cabecera y acciones */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -296,11 +305,8 @@ export default function Entregas() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Link
-            to="/materiales"
-            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-gray-100/80 hover:bg-gray-200/80 border-0 text-gray-700 font-semibold text-xs sm:text-sm transition-colors"
-          >
+        <div className="flex flex-wrap items-center gap-3">
+          <Button as={Link} to="/materiales" variant="secondary">
             <svg
               className="w-4 h-4 text-gray-500"
               fill="none"
@@ -315,7 +321,7 @@ export default function Entregas() {
               />
             </svg>
             <span>Ver catálogo de material</span>
-          </Link>
+          </Button>
 
           <Button onClick={() => navigate('/entregas/nueva')}>+ Nueva entrega</Button>
         </div>

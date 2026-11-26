@@ -252,8 +252,8 @@ export default function CustomDatePicker({
     return lista;
   }, [anyoVista, mesVista]);
 
-  const emitirCambio = (nuevaFechaISO) => {
-    setAbierto(false);
+  const emitirCambio = (nuevaFechaISO, cerrar = true) => {
+    if (cerrar) setAbierto(false);
     if (onChange) {
       onChange({
         target: { name: name || inputId, value: nuevaFechaISO, id: inputId },
@@ -294,12 +294,31 @@ export default function CustomDatePicker({
 
   const mesAnterior = (e) => {
     e.stopPropagation();
-    setVistaFecha(new Date(anyoVista, mesVista - 1, 1));
+    cambiarVista(anyoVista, mesVista - 1);
   };
 
   const mesSiguiente = (e) => {
     e.stopPropagation();
-    setVistaFecha(new Date(anyoVista, mesVista + 1, 1));
+    cambiarVista(anyoVista, mesVista + 1);
+  };
+
+  const cambiarVista = (anyo, mes) => {
+    const nuevaVista = new Date(anyo, mes, 1);
+    setVistaFecha(nuevaVista);
+    if (!fechaValor) return;
+
+    const dia = fechaValor.getDate();
+    const ultimoDia = new Date(
+      nuevaVista.getFullYear(),
+      nuevaVista.getMonth() + 1,
+      0,
+    ).getDate();
+    // No sustituir el día elegido ni desbordar al mes siguiente si no existe.
+    if (dia > ultimoDia) return;
+
+    const iso = `${nuevaVista.getFullYear()}-${String(nuevaVista.getMonth() + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+    if ((min && iso < min) || (max && iso > max)) return;
+    emitirCambio(iso, false);
   };
 
   const alturaClasses = size === 'sm' ? 'py-1.5 px-3 text-xs' : 'py-2.5 px-3.5 text-sm';
@@ -452,7 +471,7 @@ export default function CustomDatePicker({
                             aria-selected={activo}
                             onClick={(e) => {
                               e.stopPropagation();
-                              setVistaFecha(new Date(anyoVista, idx, 1));
+                              cambiarVista(anyoVista, idx);
                               setMenuAbierto(null);
                             }}
                             className={`flex items-center justify-between px-3 py-1.5 text-xs rounded-xl transition-all cursor-pointer select-none ${
@@ -527,7 +546,7 @@ export default function CustomDatePicker({
                             aria-selected={activo}
                             onClick={(e) => {
                               e.stopPropagation();
-                              setVistaFecha(new Date(a, mesVista, 1));
+                              cambiarVista(a, mesVista);
                               setMenuAbierto(null);
                             }}
                             className={`flex items-center justify-between px-3 py-1.5 text-xs rounded-xl transition-all cursor-pointer select-none ${
@@ -608,6 +627,7 @@ export default function CustomDatePicker({
                     key={c.iso}
                     type="button"
                     disabled={deshabilitadoPorRango}
+                    aria-pressed={Boolean(esSeleccionado)}
                     onClick={() => seleccionarDia(c)}
                     className={`h-8 w-8 mx-auto flex items-center justify-center rounded-xl text-xs font-medium transition-all cursor-pointer ${
                       deshabilitadoPorRango

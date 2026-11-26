@@ -1,41 +1,5 @@
 @import 'tailwindcss';
 
-.install-app {
-  position: fixed;
-  right: max(16px, env(safe-area-inset-right));
-  bottom: max(16px, env(safe-area-inset-bottom));
-  z-index: 40;
-}
-.install-app > button,
-.install-app-help button {
-  border: 0;
-  border-radius: 12px;
-  background: #fa8954;
-  color: #27150c;
-  padding: 12px 18px;
-  font: inherit;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  box-shadow: 0 4px 16px #0f172a18;
-}
-.install-app button:focus-visible {
-  outline: 3px solid #475569;
-  outline-offset: 3px;
-}
-.install-app-help {
-  width: min(340px, calc(100vw - 32px));
-  margin-bottom: 12px;
-  padding: 20px;
-  border-radius: 16px;
-  background: white;
-  color: #334155;
-  box-shadow: 0 8px 32px #0f172a26;
-  font-size: 14px;
-}
-.install-app-help p {
-  margin-block: 12px;
-}
 @media (display-mode: standalone) {
   body {
     overscroll-behavior-y: none;
@@ -295,6 +259,8 @@ input[type='date']::-webkit-calendar-picker-indicator:hover {
 }
 
 .create-page {
+  width: 100%;
+  min-width: 0;
   max-width: 900px;
   margin: 12px auto 48px;
 }
@@ -383,12 +349,12 @@ input[type='date']::-webkit-calendar-picker-indicator:hover {
 }
 
 /* Inputs, selects, textareas y botones trigger sin bordes basados en contraste */
-.create-form input:not([type='checkbox']):not([type='radio']),
+.create-form input:not(.sr-only):not([type='checkbox']):not([type='radio']),
 .create-form select,
 .create-form textarea,
 .create-form button[aria-haspopup='listbox'],
 .create-form button[aria-haspopup='dialog'],
-.create-content input:not([type='checkbox']):not([type='radio']),
+.create-content input:not(.sr-only):not([type='checkbox']):not([type='radio']),
 .create-content select,
 .create-content textarea,
 .create-content button[aria-haspopup='listbox'],
@@ -409,12 +375,12 @@ input[type='date']::-webkit-calendar-picker-indicator:hover {
     box-shadow 0.15s ease;
 }
 
-.create-form input:not([type='checkbox']):not([type='radio']):hover,
+.create-form input:not(.sr-only):not([type='checkbox']):not([type='radio']):hover,
 .create-form select:hover,
 .create-form textarea:hover,
 .create-form button[aria-haspopup='listbox']:hover,
 .create-form button[aria-haspopup='dialog']:hover,
-.create-content input:not([type='checkbox']):not([type='radio']):hover,
+.create-content input:not(.sr-only):not([type='checkbox']):not([type='radio']):hover,
 .create-content select:hover,
 .create-content textarea:hover,
 .create-content button[aria-haspopup='listbox']:hover,
@@ -422,12 +388,12 @@ input[type='date']::-webkit-calendar-picker-indicator:hover {
   background-color: #ebeef2 !important;
 }
 
-.create-form input:not([type='checkbox']):not([type='radio']):focus,
+.create-form input:not(.sr-only):not([type='checkbox']):not([type='radio']):focus,
 .create-form select:focus,
 .create-form textarea:focus,
 .create-form button[aria-haspopup='listbox'][aria-expanded='true'],
 .create-form button[aria-haspopup='dialog'][aria-expanded='true'],
-.create-content input:not([type='checkbox']):not([type='radio']):focus,
+.create-content input:not(.sr-only):not([type='checkbox']):not([type='radio']):focus,
 .create-content select:focus,
 .create-content textarea:focus,
 .create-content button[aria-haspopup='listbox'][aria-expanded='true'],
@@ -455,7 +421,7 @@ input[type='date']::-webkit-calendar-picker-indicator:hover {
   margin-bottom: 0 !important;
   align-items: center !important;
 }
-.create-form .tabla-carnet input:not([type='checkbox']):not([type='radio']) {
+.create-form .tabla-carnet input:not(.sr-only):not([type='checkbox']):not([type='radio']) {
   min-height: 34px !important;
   height: 34px !important;
   padding: 6px 10px !important;
@@ -465,10 +431,10 @@ input[type='date']::-webkit-calendar-picker-indicator:hover {
   background: #f3f4f6 !important;
   border: 0 !important;
 }
-.create-form .tabla-carnet input:not([type='checkbox']):not([type='radio']):hover {
+.create-form .tabla-carnet input:not(.sr-only):not([type='checkbox']):not([type='radio']):hover {
   background-color: #ebeef2 !important;
 }
-.create-form .tabla-carnet input:not([type='checkbox']):not([type='radio']):focus {
+.create-form .tabla-carnet input:not(.sr-only):not([type='checkbox']):not([type='radio']):focus {
   background-color: #ffffff !important;
   box-shadow: 0 0 0 2px var(--color-brand-500) !important;
 }
@@ -564,8 +530,18 @@ body {
 
 html {
   color-scheme: light;
-  overflow-y: scroll;
-  scrollbar-gutter: stable;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  html {
+    overflow-y: scroll;
+    scrollbar-gutter: stable;
+  }
+}
+
+.create-content fieldset,
+.create-header > div:last-child {
+  min-width: 0;
 }
 
 @media print {
@@ -709,8 +685,33 @@ html {
   font-weight: 600;
   color: #374151;
 }
+
+/* Los campos y la firma se ajustan al ancho disponible de la entrega. */
+.entrega-form :where(fieldset, .workflow-section > *, .grid > *) {
+  min-width: 0;
+}
+.entrega-form canvas {
+  max-width: 100%;
+}
+@media (max-width: 640px) {
+  .entrega-form .create-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .entrega-form .create-actions button {
+    min-width: 0;
+    width: 100%;
+    overflow-wrap: anywhere;
+  }
+}
 @media (max-width: 639px) {
   .workflow-section {
     padding: 18px;
+  }
+}
+
+@media (max-width: 640px) {
+  .workflow-section {
+    padding: 16px;
   }
 }

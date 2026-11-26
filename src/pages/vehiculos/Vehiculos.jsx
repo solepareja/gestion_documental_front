@@ -84,7 +84,7 @@ export default function Vehiculos() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">Vehículos</h1>
 
-        <Button onClick={() => navigate('/vehiculos/nuevo')}>+ Añadir vehículo</Button>
+        <Button variant="add" onClick={() => navigate('/vehiculos/nuevo')}>+ Añadir vehículo</Button>
       </div>
 
       {error && <p className="text-red-500 mb-4">{error}</p>}

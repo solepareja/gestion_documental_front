@@ -211,7 +211,7 @@ export default function FormVehiculo() {
             >
               Cancelar
             </Button>
-            <Button type="submit" disabled={cargando}>
+            <Button type="submit" variant="form-submit" disabled={cargando}>
               {cargando ? 'Guardando...' : id ? 'Guardar cambios' : 'Guardar vehículo'}
             </Button>
           </div>

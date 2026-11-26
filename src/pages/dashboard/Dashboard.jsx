@@ -1,3 +1,4 @@
+import Button from '../../components/Button';
 import { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../services/api';
@@ -250,13 +251,23 @@ export default function Dashboard() {
     setAvisos((prev) => prev.filter((a) => a.id !== idAviso));
   };
 
-  // Próximos vencimientos ordenados cronológicamente (omite documentos con avisos desactivados)
+  // Vencimientos de los próximos 3 meses (omite documentos con avisos desactivados)
   const proximosVencimientos = useMemo(() => {
-    const hoyStr = new Date().toISOString().slice(0, 10);
+    const hoy = new Date();
+    const limite = new Date(hoy);
+    limite.setDate(1);
+    limite.setMonth(limite.getMonth() + 3);
+    const ultimoDiaDelMes = new Date(limite.getFullYear(), limite.getMonth() + 1, 0).getDate();
+    limite.setDate(Math.min(hoy.getDate(), ultimoDiaDelMes));
+    const claveLocal = (fecha) =>
+      `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}-${String(fecha.getDate()).padStart(2, '0')}`;
+    const hoyStr = claveLocal(hoy);
+    const limiteStr = claveLocal(limite);
     return eventos
       .filter(
         (ev) =>
           (ev.fecha >= hoyStr || ev.tipo === 'vestuario') &&
+          ev.fecha <= limiteStr &&
           (ev.tipo !== 'documento' || ev.avisos !== false),
       )
       .sort((a, b) => a.fecha.localeCompare(b.fecha))
@@ -272,13 +283,10 @@ export default function Dashboard() {
           <p className="text-sm font-light text-gray-500 mt-1">Calendario de vencimientos.</p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <Link
-            to="/entregas/nueva"
-            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-slate-200/80 bg-slate-50 text-slate-600 text-xs font-medium transition-colors hover:bg-slate-100 hover:border-slate-300 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 focus-visible:ring-offset-2 cursor-pointer"
-          >
+        <div className="flex flex-wrap items-center gap-3">
+          <Button as={Link} to="/entregas/nueva" variant="secondary">
             <svg
-              className="w-3.5 h-3.5"
+              className="w-4 h-4"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -292,7 +300,7 @@ export default function Dashboard() {
               />
             </svg>
             <span>Entrega material</span>
-          </Link>
+          </Button>
         </div>
       </div>
 
@@ -316,7 +324,7 @@ export default function Dashboard() {
           <div>
             <h2 className="text-base font-bold text-gray-900">Próximos vencimientos</h2>
             <p className="text-xs text-gray-500 mt-0.5">
-              Documentos y carnets que requieren atención en las próximas semanas
+              Vencimientos de los próximos 3 meses y renovaciones de vestuario pendientes
             </p>
           </div>
         </div>
@@ -340,12 +348,12 @@ export default function Dashboard() {
                   </span>
                   <span
                     className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full ${
-                      ev.tipo === 'material'
+                      ev.tipo === 'vestuario'
                         ? 'bg-teal-50 text-teal-800'
                         : 'bg-amber-50 text-amber-800'
                     }`}
                   >
-                    {ev.tipo === 'material' ? 'Renovación' : 'Por vencer'}
+                    {ev.tipo === 'vestuario' ? 'Renovación' : 'Por vencer'}
                   </span>
                 </div>
 

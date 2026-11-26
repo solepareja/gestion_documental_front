@@ -244,7 +244,7 @@ export default function FormEntrega() {
         </p>
       )}
 
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} className="entrega-form">
         <fieldset disabled={cargandoDatos || cargando} className="space-y-8 disabled:opacity-60">
           {/* Bloque 1: Trabajador y Fecha */}
           <div className="workflow-section">
@@ -281,7 +281,7 @@ export default function FormEntrega() {
                 </CustomSelect>
 
                 {trabajadorSeleccionado && (
-                  <div className="mt-2.5 text-xs text-gray-600 flex flex-wrap gap-x-4 gap-y-1 bg-white p-3 rounded-2xl border-0 shadow-2xs">
+                  <div className="mt-2.5 text-xs text-gray-600 flex flex-wrap gap-x-4 gap-y-1 bg-white p-3 rounded-2xl border-0 shadow-2xs [overflow-wrap:anywhere]">
                     <span>
                       <strong>DNI:</strong> {trabajadorSeleccionado.dni || 'Sin DNI'}
                     </span>
@@ -551,7 +551,7 @@ export default function FormEntrega() {
             <Button type="button" variant="secondary" onClick={() => navigate('/entregas')}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={cargando}>
+            <Button type="submit" variant="form-submit" disabled={cargando}>
               {cargando ? 'Registrando entrega…' : 'Registrar entrega y generar justificante'}
             </Button>
           </div>

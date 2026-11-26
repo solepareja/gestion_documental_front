@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../services/api';
 import Table from '../../components/Table';
+import Button from '../../components/Button';
 import useLocalPagination from '../../components/useLocalPagination';
 import ListFilters from '../../components/ListFilters';
 import { normalizarTexto } from '../../services/filtros';
@@ -44,12 +45,9 @@ export default function Conductores() {
     <div>
       <div className="flex flex-wrap justify-between items-center gap-3 mb-6">
         <h1 className="text-3xl font-black">Conductores</h1>
-        <Link
-          to="/conductores/nuevo"
-          className="rounded-xl bg-brand-500 text-white text-sm font-semibold px-4 py-2"
-        >
+        <Button as={Link} to="/conductores/nuevo" variant="add">
           + Añadir conductor
-        </Link>
+        </Button>
       </div>
       {error && (
         <p role="alert" className="text-red-600 mb-4">

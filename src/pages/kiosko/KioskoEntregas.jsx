@@ -653,7 +653,7 @@ export default function KioskoEntregas() {
                           setFirma('');
                         }}
                       >
-                        Añadir material
+                        Añadir otro
                       </Button>
                     </div>
                   </section>
@@ -678,7 +678,7 @@ export default function KioskoEntregas() {
                       Cancelar
                     </Button>
                     <Button
-                      type="submit"
+                      type="submit" variant="form-submit"
                       disabled={
                         guardandoEntrega || !trabajadorSeleccionado || !lineas.length || !firma
                       }

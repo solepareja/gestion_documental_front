@@ -48,7 +48,11 @@ export default function ModalFirmarDocumento({
       onClose();
     } catch (err) {
       console.error('Error al registrar la firma:', err);
-      setError('No se pudo registrar la firma en el servidor. Por favor, reintenta.');
+      setError(
+        err.response?.data?.detail ||
+          err.response?.data?.message ||
+          'No se pudo registrar la firma y guardar el PDF en el NAS. Por favor, reintenta.',
+      );
     } finally {
       setEnviando(false);
     }

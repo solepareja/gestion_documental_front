@@ -77,11 +77,8 @@ export default function Trabajadores() {
           </h1>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Link
-            to="/entregas"
-            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200/80 active:scale-[0.98] border-0 text-gray-700 font-semibold text-xs sm:text-sm transition-colors"
-          >
+        <div className="flex flex-wrap items-center gap-3">
+          <Button as={Link} to="/entregas" variant="secondary">
             <svg
               className="w-4 h-4 text-brand-600"
               fill="none"
@@ -96,9 +93,9 @@ export default function Trabajadores() {
               />
             </svg>
             <span>Ver entregas de EPIS</span>
-          </Link>
+          </Button>
 
-          <Button onClick={() => navigate('/trabajadores/nuevo')}>+ Añadir trabajador</Button>
+          <Button variant="add" onClick={() => navigate('/trabajadores/nuevo')}>+ Añadir trabajador</Button>
         </div>
       </div>
 

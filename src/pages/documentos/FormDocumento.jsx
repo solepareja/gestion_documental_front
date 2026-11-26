@@ -670,7 +670,7 @@ export default function FormDocumento() {
             <Button variant="secondary" onClick={() => navigate(volver)}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={saving}>
+            <Button type="submit" variant="form-submit" disabled={saving}>
               {saving ? 'Guardando…' : id ? 'Guardar cambios' : 'Guardar documento'}
             </Button>
           </div>

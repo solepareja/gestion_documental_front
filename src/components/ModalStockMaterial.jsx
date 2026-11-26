@@ -220,7 +220,7 @@ export default function ModalStockMaterial({ material, onClose, onSaved }) {
               <Button type="button" variant="secondary" onClick={onClose}>
                 Cancelar
               </Button>
-              <Button type="submit">{ocupado ? 'Guardando…' : 'Añadir stock'}</Button>
+              <Button variant="form-submit" type="submit">{ocupado ? 'Guardando…' : 'Añadir stock'}</Button>
             </div>
           </fieldset>
         </form>

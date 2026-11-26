@@ -7,6 +7,7 @@ import Button from '../components/Button';
 import DeleteButton from '../components/DeleteButton';
 import IconoVehiculoCarnet from '../components/IconosCarnetDGT';
 import DocumentacionEntidad from '../components/DocumentacionEntidad';
+import ModalVisorDocumento from '../components/ModalVisorDocumento';
 import ConductoresTransportista from '../components/ConductoresTransportista';
 import ModalConfirmacion from '../components/ModalConfirmacion';
 import CustomSelect from '../components/CustomSelect';
@@ -57,6 +58,7 @@ export default function PersonaDetalle({ tipo }) {
   const [state, setState] = useState(null);
   const [entregas, setEntregas] = useState([]);
   const [cargandoEntregas, setCargandoEntregas] = useState(!conductor);
+  const [entregaVisible, setEntregaVisible] = useState(null);
   const [modalFoto, setModalFoto] = useState({ abierta: false, src: '', titulo: '' });
 
   // Asignación rápida de vehículo para conductores
@@ -1147,6 +1149,13 @@ export default function PersonaDetalle({ tipo }) {
             </section>
           )}
 
+          <ModalVisorDocumento
+            abierto={entregaVisible !== null}
+            onCerrar={() => setEntregaVisible(null)}
+            archivo={entregaVisible ? `/entregas/${entregaVisible.id}/archivo` : null}
+            archivoNombre={entregaVisible ? `Entrega_${entregaVisible.id}.pdf` : ''}
+            titulo="Justificante original de entrega"
+          />
           {/* Sección de Entregas de EPIS y Vestuario para Trabajadores */}
           {!conductor && (
             <section className="bg-white rounded-3xl border-0 shadow-xs p-6 space-y-4">
@@ -1232,7 +1241,7 @@ export default function PersonaDetalle({ tipo }) {
                         <Button
                           variant="secondary"
                           size="sm"
-                          onClick={() => navigate(`/entregas/${ent.id}`)}
+                          onClick={() => setEntregaVisible(ent)}
                         >
                           Ver justificante
                         </Button>
@@ -1321,6 +1330,8 @@ export default function PersonaDetalle({ tipo }) {
               </label>
               <CustomSelect
                 value={vehiculoSeleccionadoId}
+                searchable
+                searchPlaceholder="Buscar por matrícula, marca o modelo…"
                 onChange={(e) => setVehiculoSeleccionadoId(e.target.value)}
               >
                 {vehiculos.map((v) => {
@@ -1446,7 +1457,7 @@ export default function PersonaDetalle({ tipo }) {
                 Cancelar
               </Button>
               <Button
-                variant="primary"
+                variant="form-submit"
                 onClick={handleGuardarPermisos}
                 disabled={guardandoPermisos}
               >

@@ -279,7 +279,7 @@ export default function FormMaterial() {
             <Button type="button" variant="secondary" onClick={() => navigate('/materiales')}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={cargando}>
+            <Button type="submit" variant="form-submit" disabled={cargando}>
               {cargando ? 'Guardando…' : esEdicion ? 'Guardar cambios' : 'Crear material'}
             </Button>
           </div>

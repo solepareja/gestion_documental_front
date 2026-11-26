@@ -204,8 +204,13 @@ export default function FirmasResumen() {
             No se encontraron documentos que coincidan con la búsqueda "{filtroTexto}".
           </div>
         ) : (
-          <div className="w-full overflow-hidden">
-            <table className="w-full text-sm border-0 border-collapse">
+          <div
+            className="w-full min-w-0 overflow-x-auto"
+            role="region"
+            aria-label="Documentos y estado de firmas"
+            tabIndex={0}
+          >
+            <table className="w-full min-w-[900px] text-sm border-0 border-collapse">
               <thead className="bg-gray-100/75 border-0">
                 <tr>
                   <th className="px-4 py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider border-0">

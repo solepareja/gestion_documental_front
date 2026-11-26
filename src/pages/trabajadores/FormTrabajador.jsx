@@ -276,7 +276,7 @@ export default function FormTrabajador() {
             >
               Cancelar
             </Button>
-            <Button type="submit" variant="primary" disabled={cargando}>
+            <Button type="submit" variant="form-submit" disabled={cargando}>
               {cargando ? 'Guardando…' : id ? 'Guardar cambios' : 'Guardar trabajador'}
             </Button>
           </div>

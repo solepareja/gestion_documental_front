@@ -582,6 +582,8 @@ export default function VehiculoDetalle() {
               <CustomSelect
                 value={conductorSeleccionadoId}
                 onChange={(e) => setConductorSeleccionadoId(e.target.value)}
+                searchable
+                searchPlaceholder="Buscar por nombre, DNI o matrícula…"
               >
                 {conductores.map((c) => {
                   const yaTieneVehiculo = c.vehiculoId && String(c.vehiculoId) !== String(id);

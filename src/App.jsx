@@ -1,5 +1,4 @@
 import { useEffect } from 'react';
-import InstallApp from './components/InstallApp';
 import { installFormValidation } from './components/formValidation';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
@@ -10,17 +9,11 @@ import Login from './pages/auth/Login';
 import Registro from './pages/auth/Registro';
 import Dashboard from './pages/dashboard/Dashboard';
 import Inicio from './pages/Inicio';
-import Vehiculos from './pages/vehiculos/Vehiculos';
-import Transportistas from './pages/transportistas/Transportistas';
-import Conductores from './pages/transportistas/Conductores';
-import FormConductor from './pages/transportistas/FormConductor';
-import VehiculoDetalle from './pages/vehiculos/VehiculoDetalle';
 import Usuarios from './pages/usuarios/Usuarios';
 import Trabajadores from './pages/trabajadores/Trabajadores';
-import FormVehiculo from './pages/vehiculos/FormVehiculo';
 import FormTrabajador from './pages/trabajadores/FormTrabajador';
-import FormTransportista from './pages/transportistas/FormTransportista';
 import PersonaDetalle from './pages/PersonaDetalle';
+import { TransporteListado, TransporteDetalle } from './pages/transporte/TransporteConsulta';
 import FormUsuario from './pages/usuarios/FormUsuario';
 import FormDocumento from './pages/documentos/FormDocumento';
 import DocumentoDetalle from './pages/documentos/DocumentoDetalle';
@@ -41,7 +34,6 @@ export default function App() {
   useEffect(() => installFormValidation(document.body), []);
   return (
     <AuthProvider>
-      <InstallApp />
       <BrowserRouter>
         <Routes>
           {/* Rutas públicas de autenticación */}
@@ -69,8 +61,8 @@ export default function App() {
                 path="/documentos/:id/editar"
                 element={<FormDocumento key="editar-documento" />}
               />
-              <Route path="/vehiculos" element={<Vehiculos />} />
-              <Route path="/vehiculos/:id" element={<VehiculoDetalle />} />
+              <Route path="/vehiculos" element={<TransporteListado tipo="vehiculos" />} />
+              <Route path="/vehiculos/:id" element={<TransporteDetalle tipo="vehiculos" />} />
               <Route
                 path="/vehiculos/:vehiculoId/documentos/:tipo"
                 element={<HistorialDocumentoVehiculo />}
@@ -87,41 +79,41 @@ export default function App() {
                 path="/trabajadores/:trabajadorId/documentos/:tipo"
                 element={<HistorialDocumento entidadTipo="trabajador" />}
               />
-              <Route path="/transportistas" element={<Transportistas key="transportistas" />} />
-              <Route path="/conductores" element={<Conductores />} />
+              <Route path="/transportistas" element={<TransporteListado tipo="transportistas" />} />
+              <Route path="/conductores" element={<TransporteListado tipo="conductores" />} />
               <Route path="/trabajadores" element={<Trabajadores />} />
-              <Route path="/vehiculos/nuevo" element={<FormVehiculo />} />
-              <Route path="/transportistas/nuevo" element={<FormTransportista />} />
+              <Route path="/vehiculos/nuevo" element={<Navigate to="/vehiculos" replace />} />
+              <Route
+                path="/transportistas/nuevo"
+                element={<Navigate to="/transportistas" replace />}
+              />
               <Route
                 path="/transportistas/:empresaId/conductores/:id"
-                element={<PersonaDetalle tipo="conductores" />}
+                element={<TransporteDetalle tipo="conductores" />}
               />
               <Route
                 path="/transportistas/:empresaId/conductores/nuevo"
-                element={<FormConductor key="nuevo-conductor-empresa" />}
+                element={<Navigate to="/conductores" replace />}
               />
               <Route
                 path="/transportistas/:empresaId/conductores/:id/editar"
-                element={<FormConductor key="editar-conductor-empresa" />}
+                element={<Navigate to="/conductores" replace />}
               />
-              <Route path="/conductores/nuevo" element={<FormConductor key="nuevo-conductor" />} />
+              <Route path="/conductores/nuevo" element={<Navigate to="/conductores" replace />} />
               <Route path="/trabajadores/nuevo" element={<FormTrabajador />} />
-              <Route
-                path="/vehiculos/:id/editar"
-                element={<FormVehiculo key="editar-vehiculo" />}
-              />
+              <Route path="/vehiculos/:id/editar" element={<Navigate to="/vehiculos" replace />} />
               <Route
                 path="/transportistas/:id"
-                element={<PersonaDetalle tipo="transportistas" />}
+                element={<TransporteDetalle tipo="transportistas" />}
               />
-              <Route path="/conductores/:id" element={<PersonaDetalle tipo="conductores" />} />
+              <Route path="/conductores/:id" element={<TransporteDetalle tipo="conductores" />} />
               <Route
                 path="/transportistas/:id/editar"
-                element={<FormTransportista key="editar-transportista" />}
+                element={<Navigate to="/transportistas" replace />}
               />
               <Route
                 path="/conductores/:id/editar"
-                element={<FormConductor key="editar-conductor" />}
+                element={<Navigate to="/conductores" replace />}
               />
               <Route path="/trabajadores/:id" element={<PersonaDetalle tipo="trabajadores" />} />
               <Route

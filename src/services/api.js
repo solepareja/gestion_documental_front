@@ -1,7 +1,10 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
+  // En desarrollo, tambiÃ©n el mÃ³vil accede al backend a travÃ©s de Vite.
+  baseURL: import.meta.env.DEV
+    ? `${window.location.origin}/api`
+    : import.meta.env.VITE_API_URL || '/api',
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',

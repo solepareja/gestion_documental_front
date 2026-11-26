@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import api from '../services/api';
 import { urlArchivoDocumento } from '../services/archivoDocumento';
+import PdfPreview from './PdfPreview';
 
 /**
  * Modal visor para visualizar tanto documentos PDF como imágenes (JPG, PNG, WebP).
@@ -17,9 +19,48 @@ export default function ModalVisorDocumento({
   const esPdf =
     origen?.startsWith('data:application/pdf') || archivoNombre?.toLowerCase().endsWith('.pdf');
   const [carga, setCarga] = useState(null);
+  const [visorNativo, setVisorNativo] = useState(
+    () => window.matchMedia('(hover: hover) and (pointer: fine)').matches,
+  );
+  useEffect(() => {
+    const media = window.matchMedia('(hover: hover) and (pointer: fine)');
+    const actualizar = () => setVisorNativo(media.matches);
+    media.addEventListener('change', actualizar);
+    return () => media.removeEventListener('change', actualizar);
+  }, []);
   const preparado = carga?.origen === origen && carga?.esPdf === esPdf;
   const archivo = preparado ? carga.url : null;
   const error = preparado ? carga.error : null;
+
+  useEffect(() => {
+    if (!abierto || !origen) return;
+    const body = document.body;
+    const root = document.documentElement;
+    const scrollX = window.scrollX;
+    const scrollY = window.scrollY;
+    const anteriores = {
+      position: body.style.position,
+      top: body.style.top,
+      left: body.style.left,
+      width: body.style.width,
+      overflow: body.style.overflow,
+    };
+    const overflowRaiz = root.style.overflow;
+    // Fix the page in place as well as hiding overflow for touch browsers.
+    Object.assign(body.style, {
+      position: 'fixed',
+      top: `-${scrollY}px`,
+      left: `-${scrollX}px`,
+      width: '100%',
+      overflow: 'hidden',
+    });
+    root.style.overflow = 'hidden';
+    return () => {
+      Object.assign(body.style, anteriores);
+      root.style.overflow = overflowRaiz;
+      window.scrollTo({ left: scrollX, top: scrollY, behavior: 'instant' });
+    };
+  }, [abierto, origen]);
 
   useEffect(() => {
     if (!abierto || !origen) return;
@@ -43,18 +84,19 @@ export default function ModalVisorDocumento({
           });
           blob = response.data;
         }
-        const contenido = esPdf
-          ? new Blob([blob], { type: 'application/pdf' })
-          : blob;
+        const contenido = esPdf ? new Blob([blob], { type: 'application/pdf' }) : blob;
         if (controller.signal.aborted) return;
         url = URL.createObjectURL(contenido);
         setCarga({ origen, esPdf, url });
-      } catch {
+      } catch (error) {
         if (!controller.signal.aborted) {
           setCarga({
             origen,
             esPdf,
-            error: 'No se pudo cargar el archivo adjunto. Cierra el visor e inténtalo de nuevo.',
+            error:
+              error.response?.status === 404 && /^\/entregas\//.test(referenciaArchivo || '')
+                ? 'No se encontró el PDF original de esta entrega. Puede que no tenga un archivo guardado o que ya no esté disponible en el NAS.'
+                : 'No se pudo cargar el archivo adjunto. Cierra el visor e inténtalo de nuevo.',
           });
         }
       }
@@ -65,7 +107,7 @@ export default function ModalVisorDocumento({
       setCarga(null);
       if (url) URL.revokeObjectURL(url);
     };
-  }, [abierto, origen, esPdf]);
+  }, [abierto, origen, esPdf, referenciaArchivo]);
   useEffect(() => {
     if (!abierto) return;
     const handleKeyDown = (e) => {
@@ -95,20 +137,20 @@ export default function ModalVisorDocumento({
     if (archivo) window.open(archivo, '_blank', 'noopener,noreferrer');
   };
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/75 backdrop-blur-xs animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden overscroll-none p-3 sm:p-6 bg-black/75 backdrop-blur-xs animate-in fade-in duration-200"
       onClick={onCerrar}
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-visor-titulo"
     >
       <div
-        className="relative bg-white rounded-3xl shadow-2xl max-w-5xl w-full max-h-[92vh] flex flex-col overflow-hidden border-0"
+        className="relative bg-white rounded-3xl shadow-2xl max-w-5xl w-full max-h-[92dvh] flex flex-col overflow-hidden border-0"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Barra superior */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 bg-gray-50/70">
+        <div className="flex shrink-0 items-center justify-between px-5 py-4 border-b border-gray-100 bg-gray-50/70">
           <div className="flex items-center gap-3 min-w-0 pr-3">
             <span
               className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold tracking-wider ${
@@ -183,7 +225,7 @@ export default function ModalVisorDocumento({
         </div>
 
         {/* Contenido visor */}
-        <div className="flex-1 overflow-auto bg-gray-900/5 p-4 flex items-center justify-center min-h-[420px] max-h-[78vh]">
+        <div className="flex-1 min-h-0 overflow-auto overscroll-contain bg-gray-900/5 p-4 max-h-[78dvh]">
           {error ? (
             <p role="alert" className="text-sm text-red-700 text-center">
               {error}
@@ -193,13 +235,15 @@ export default function ModalVisorDocumento({
               Cargando archivo…
             </p>
           ) : esPdf ? (
-            <div className="w-full h-full flex flex-col items-center">
+            visorNativo ? (
               <iframe
                 src={archivo}
                 title={archivoNombre || 'Documento PDF'}
-                className="w-full h-[70vh] rounded-2xl border border-gray-200 bg-white shadow-inner"
+                className="w-full h-[70dvh] rounded-2xl border border-gray-200 bg-white"
               />
-            </div>
+            ) : (
+              <PdfPreview key={archivo} url={archivo} />
+            )
           ) : (
             <div className="flex items-center justify-center w-full h-full p-2">
               <img
@@ -211,6 +255,7 @@ export default function ModalVisorDocumento({
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

@@ -4,6 +4,8 @@ import api from './api';
 export function urlArchivoDocumento(archivo) {
   if (
     !archivo?.startsWith('/documentos/') &&
+    !/^\/entregas\/\d+\/archivo$/.test(archivo || '') &&
+    !/^\/firmas\/\d+\/archivo$/.test(archivo || '') &&
     !/^\/conductores\/\d+\/carnet\/(anverso|reverso)$/.test(archivo || '')
   )
     return archivo;

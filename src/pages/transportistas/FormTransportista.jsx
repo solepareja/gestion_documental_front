@@ -379,6 +379,8 @@ export default function FormTransportista() {
                 <label htmlFor="vehiculo-conductor">Vehículo habitual</label>
                 <CustomSelect
                   id="vehiculo-conductor"
+                  searchable
+                  searchPlaceholder="Buscar por matrícula, marca o modelo…"
                   value={conduccion.vehiculoId}
                   onChange={(e) =>
                     setConduccion((actual) => ({ ...actual, vehiculoId: e.target.value }))
@@ -401,7 +403,7 @@ export default function FormTransportista() {
             <Button variant="secondary" onClick={() => navigate(volver)}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={guardando}>
+            <Button type="submit" variant="form-submit" disabled={guardando}>
               {guardando ? 'Guardando…' : id ? 'Guardar cambios' : 'Crear transportista'}
             </Button>
           </div>

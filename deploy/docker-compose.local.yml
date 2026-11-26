@@ -1,0 +1,5 @@
+# Vista LAN aislada. No habilita login HTTP: Flask mantiene cookie Secure y Origin.
+services:
+  portal:
+    ports:
+      - '${LAN_BIND_IP:-127.0.0.1}:${PUERTO_LOCAL:-8083}:8080'

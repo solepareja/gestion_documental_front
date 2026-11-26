@@ -1,8 +1,8 @@
 {
   "id": "/",
-  "name": "Gestión Documental · Sofás Valencia",
+  "name": "Gestor Documental · Sofás Valencia",
   "short_name": "Documental",
-  "description": "Gestión de documentación, transporte, trabajadores y entregas.",
+  "description": "Gestor de documentación, transporte, trabajadores y entregas.",
   "lang": "es",
   "start_url": "/",
   "scope": "/",

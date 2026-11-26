@@ -44,3 +44,22 @@ The React Compiler is not enabled on this template because of its impact on dev 
 ## Expanding the ESLint configuration
 
 If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+
+
+## Transporte SQL Server — 25/11/2026
+
+Las rutas de transporte usan TransporteConsulta.jsx: listados con busqueda/estado, fichas con NULL como «Sin indicar», varios conductores por vehiculo, varios vehiculos por conductor y vinculos TITULAR/EMPLEADO/AUTONOMO_COLABORADOR. Los datos proceden del backend Flask 0.6.0 (W:/API_Backend_WebGestorDocumental), que consulta las tablas AppLogistica de 200_Pruebas. No hay datos de muestra en estas pantallas.
+
+Esta fase habilita consulta y acceso a documentacion; las antiguas rutas de alta/edicion de maestros redirigen a sus listados hasta migrar sus escrituras. Sus componentes originales se conservan. Las fichas de trabajadores siguen usando PersonaDetalle.
+
+El build de produccion incluye VITE_API_URL=/api en .env.production. Necesita el proxy del portal hacia Flask, que agrega las claves en servidor; ninguna API key debe ponerse en variables VITE_. La configuracion de desarrollo de Vite anterior sigue siendo para Spring: la prueba contra Flask se hara al configurar el proxy/portal. No se ha desplegado ni reiniciado ningun servicio.
+
+Validado con npm run build y eslint de los archivos modificados. Pendiente prueba integral en navegador con Flask. Los datos de gestion de MySQL ya se han importado a SQL Server; informe de conteos, exclusiones y mapa de IDs en W:/API_Backend_WebGestorDocumental/datos/informe_importacion_mysql_2026-11-25.json. Los datos reales de transporte permanecen sin cambios. 25 entregas antiguas carecian de PDF en MySQL y conservan esa ausencia.
+
+
+## Portal Docker preparado
+
+Despliegue adaptado de WebLogisticaFSV: [guía de NAS, Cloudflare y NSSM](deploy/README.md). En el NAS, desde esta carpeta `deploy/`, `sudo sh portal.sh actualizar` compila React dentro de la imagen y recrea el proyecto independiente `gestiondocumental`. Antes hay que completar el `.env` del despliegue, el fichero de secretos externo y el túnel propio. No se ha publicado ni arrancado ningún contenedor desde esta sesión. El backend 0.6.0 sigue siendo una migración parcial; la guía detalla qué está migrado y qué falta.
+
+
+Estado actualizado a 26/11/2026, historial de Cloudflare/NSSM/NAS y comandos de actualización: [Despliegue y actualizaciones](docs/DESPLIEGUE_Y_ACTUALIZACIONES.md). Esta referencia sustituye las notas históricas anteriores de despliegue pendiente.

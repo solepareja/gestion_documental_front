@@ -63,7 +63,7 @@ export default function Transportistas() {
           Transportistas
         </h1>
 
-        <Button onClick={() => navigate(base + '/nuevo')}>+ Añadir transportista</Button>
+        <Button variant="add" onClick={() => navigate(base + '/nuevo')}>+ Añadir transportista</Button>
       </div>
 
       {error && <p className="text-red-500 mb-4">{error}</p>}

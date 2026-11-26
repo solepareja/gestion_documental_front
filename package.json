@@ -16,6 +16,7 @@
     "axios": "^1.20.0",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.9",
+    "pdfjs-dist": "^6.5.438",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "react-router-dom": "^7.18.4",

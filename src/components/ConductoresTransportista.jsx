@@ -186,7 +186,7 @@ export default function ConductoresTransportista({
           </div>
           <div className="flex items-center gap-2 lg:pt-6">
             <Button
-              type="submit"
+              type="submit" variant="form-submit"
               size="sm"
               disabled={guardando || !seleccionado || !tipo || requiereCorregirTipo || !actual}
             >
